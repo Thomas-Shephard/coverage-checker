@@ -1,3 +1,5 @@
+using CoverageChecker.Utils;
+
 namespace CoverageChecker.Results;
 
 public class LineCoverage {
@@ -30,5 +32,9 @@ public class LineCoverage {
         ClassName = className;
         MethodName = methodName;
         MethodSignature = methodSignature;
+    }
+
+    public double CalculateLineCoverage(CoverageType coverageType = CoverageType.Line) {
+        return CoverageUtils.CalculateCoverage([this], coverageType);
     }
 }
