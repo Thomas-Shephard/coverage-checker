@@ -7,15 +7,15 @@ public class CoverageTests {
     public void Coverage_Valid_ReturnsObject() {
         FileCoverage[] files = [
             new FileCoverage([
-                new LineCoverage(true, 1, 0),
-                new LineCoverage(false, 8, 1),
-                new LineCoverage(true, 2, 1)
-            ]),
+                new LineCoverage(1, true, 1, 0),
+                new LineCoverage(2, false, 8, 1),
+                new LineCoverage(3, true, 2, 1)
+            ], "coverage-file-1"),
             new FileCoverage([
-                new LineCoverage(true, 1, 0),
-                new LineCoverage(true, 3, 2),
-                new LineCoverage(false, 4, 3)
-            ])
+                new LineCoverage(1, true, 1, 0),
+                new LineCoverage(2, true, 3, 2),
+                new LineCoverage(3, false, 4, 3)
+            ], "coverage-file-2")
         ];
         Coverage coverage = new(files);
 
