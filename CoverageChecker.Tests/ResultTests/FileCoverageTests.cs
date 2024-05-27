@@ -18,8 +18,12 @@ public class FileCoverageTests {
     [Test]
     public void FileCoverage_ValidNoLines_ReturnsObject() {
         LineCoverage[] lines = [];
-        FileCoverage fileCoverage = new(lines, "coverage-file");
+        FileCoverage fileCoverage = new(lines, "coverage-file", "package-name");
 
-        Assert.That(fileCoverage.Lines, Is.EqualTo(lines));
+        Assert.Multiple(() => {
+            Assert.That(fileCoverage.Lines, Is.EqualTo(lines));
+            Assert.That(fileCoverage.Path, Is.EqualTo("coverage-file"));
+            Assert.That(fileCoverage.PackageName, Is.EqualTo("package-name"));
+        });
     }
 }
