@@ -1,11 +1,17 @@
+using CoverageChecker.Utils;
+
 namespace CoverageChecker.Results;
 
 public class LineCoverage {
+    public int LineNumber { get; }
     public bool IsCovered { get; }
     public int? Branches { get; }
     public int? CoveredBranches { get; }
+    public string? ClassName { get; }
+    public string? MethodName { get; }
+    public string? MethodSignature { get; }
 
-    public LineCoverage(bool isCovered, int? branches = null, int? coveredBranches = null) {
+    public LineCoverage(int lineNumber, bool isCovered, int? branches = null, int? coveredBranches = null, string? className = null, string? methodName = null, string? methodSignature = null) {
         // Either both branches and coveredBranches are null, or both are not null
         if ((branches is null && coveredBranches is not null) || (branches is not null && coveredBranches is null))
             throw new ArgumentException("The branch coverage information is invalid, either both branches and covered branches are null, or both are not null");
@@ -15,9 +21,20 @@ public class LineCoverage {
         // The coveredBranches must be less than or equal to the branches
         if (coveredBranches > branches)
             throw new ArgumentException("The branch coverage information is invalid, there cannot be more covered branches than branches");
+        // If the method signature is not null, the method name must not be null
+        if (methodSignature is not null && methodName is null)
+            throw new ArgumentException("The method signature cannot be set without the method name");
 
+        LineNumber = lineNumber;
         IsCovered = isCovered;
         Branches = branches;
         CoveredBranches = coveredBranches;
+        ClassName = className;
+        MethodName = methodName;
+        MethodSignature = methodSignature;
+    }
+
+    public double CalculateLineCoverage(CoverageType coverageType = CoverageType.Line) {
+        return CoverageUtils.CalculateCoverage([this], coverageType);
     }
 }
