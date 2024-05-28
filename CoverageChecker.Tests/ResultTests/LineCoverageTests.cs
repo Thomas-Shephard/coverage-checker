@@ -56,4 +56,25 @@ public class LineCoverageTests {
     public void LineCoverage_MethodSignatureWithoutMethodName_ThrowsArgumentException() {
         Assert.Throws<ArgumentException>(() => _ = new LineCoverage(LineNumber, IsCovered, methodName: null, methodSignature: "method-signature"));
     }
+
+    [TestCase(true)]
+    [TestCase(false)]
+    public void LineCoverage_CalculateLineCoverage_Line_ReturnsCoverage(bool isCovered) {
+        LineCoverage lineCoverage = new(LineNumber, isCovered);
+
+        double coverage = lineCoverage.CalculateLineCoverage();
+
+        Assert.That(coverage, Is.EqualTo(isCovered ? 1 : 0));
+    }
+
+    [TestCase(3, 2)]
+    [TestCase(5, 3)]
+    [TestCase(10, 5)]
+    public void LineCoverage_CalculateLineCoverage_Branch_ReturnsCoverage(int branches, int coveredBranches) {
+        LineCoverage lineCoverage = new(LineNumber, IsCovered, branches, coveredBranches);
+
+        double coverage = lineCoverage.CalculateLineCoverage(CoverageType.Branch);
+
+        Assert.That(coverage, Is.EqualTo((double)coveredBranches / branches));
+    }
 }

@@ -62,4 +62,104 @@ public class FileCoverageTests {
             Assert.That(fileCoverage.PackageName, Is.Null);
         });
     }
+
+    [Test]
+    public void FileCoverage_CalculateFileCoverage_Line_ReturnsCoverage() {
+        FileCoverage fileCoverage = new([
+            new LineCoverage(1, true),
+            new LineCoverage(2, false),
+            new LineCoverage(3, true)
+        ], "coverage-file");
+
+        double coverage = fileCoverage.CalculateFileCoverage();
+
+        Assert.That(coverage, Is.EqualTo((double)2 / 3));
+    }
+
+    [Test]
+    public void FileCoverage_CalculateFileCoverage_Branch_ReturnsCoverage() {
+        FileCoverage fileCoverage = new([
+            new LineCoverage(1, true, 1, 0),
+            new LineCoverage(2, false, 6, 2),
+            new LineCoverage(3, true, 4, 3)
+        ], "coverage-file");
+
+        double coverage = fileCoverage.CalculateFileCoverage(CoverageType.Branch);
+
+        Assert.That(coverage, Is.EqualTo((double)5 / 11));
+    }
+
+    [Test]
+    public void FileCoverage_CalculateClassCoverage_Line_ReturnsCoverage() {
+        FileCoverage fileCoverage = new([
+            new LineCoverage(1, true, className: "class-name-1"),
+            new LineCoverage(2, false, className: "class-name-2"),
+            new LineCoverage(3, true, className: "class-name-2")
+        ], "coverage-file");
+
+        double coverage = fileCoverage.CalculateClassCoverage("class-name-2");
+
+        Assert.That(coverage, Is.EqualTo((double)1 / 2));
+    }
+
+    [Test]
+    public void FileCoverage_CalculateClassCoverage_Branch_ReturnsCoverage() {
+        FileCoverage fileCoverage = new([
+            new LineCoverage(1, true, 1, 0, "class-name-1"),
+            new LineCoverage(2, false, 6, 2, "class-name-2"),
+            new LineCoverage(3, true, 4, 3, "class-name-2")
+        ], "coverage-file");
+
+        double coverage = fileCoverage.CalculateClassCoverage("class-name-1", CoverageType.Branch);
+
+        Assert.That(coverage, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void FileCoverage_CalculateClassCoverage_ClassDoesNotExist_ThrowsException() {
+        FileCoverage fileCoverage = new([
+            new LineCoverage(1, true, className: "class-name-1"),
+            new LineCoverage(2, false, className: "class-name-2"),
+            new LineCoverage(3, true, className: "class-name-2")
+        ], "coverage-file");
+
+        Assert.Throws<CoverageCalculationException>(() => fileCoverage.CalculateClassCoverage("class-name-3"));
+    }
+
+    [Test]
+    public void FileCoverage_CalculateMethodCoverage_Line_ReturnsCoverage() {
+        FileCoverage fileCoverage = new([
+            new LineCoverage(1, true, methodName: "method-name-1"),
+            new LineCoverage(2, false, methodName: "method-name-2"),
+            new LineCoverage(3, true, methodName: "method-name-2")
+        ], "coverage-file");
+
+        double coverage = fileCoverage.CalculateMethodCoverage("method-name-2");
+
+        Assert.That(coverage, Is.EqualTo((double)1 / 2));
+    }
+
+    [Test]
+    public void FileCoverage_CalculateMethodCoverage_Branch_ReturnsCoverage() {
+        FileCoverage fileCoverage = new([
+            new LineCoverage(1, true, 1, 0, methodName: "method-name-1"),
+            new LineCoverage(2, false, 6, 2, methodName: "method-name-2", methodSignature: "method-signature-1"),
+            new LineCoverage(3, true, 4, 3, methodName: "method-name-2", methodSignature: "method-signature-2")
+        ], "coverage-file");
+
+        double coverage = fileCoverage.CalculateMethodCoverage("method-name-2", "method-signature-1", CoverageType.Branch);
+
+        Assert.That(coverage, Is.EqualTo((double)2 / 6));
+    }
+
+    [Test]
+    public void FileCoverage_CalculateMethodCoverage_MethodDoesNotExist_ThrowsException() {
+        FileCoverage fileCoverage = new([
+            new LineCoverage(1, true, methodName: "method-name-1"),
+            new LineCoverage(2, false, methodName: "method-name-2"),
+            new LineCoverage(3, true, methodName: "method-name-2")
+        ], "coverage-file");
+
+        Assert.Throws<CoverageCalculationException>(() => fileCoverage.CalculateMethodCoverage("method-name-3"));
+    }
 }
