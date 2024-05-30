@@ -1,0 +1,11 @@
+﻿<coverage version="1">
+    <file path="file-1">
+        <lineToCover lineNumber="1" covered="false"/>
+        <lineToCover lineNumber="2" covered="true"/>
+    </file>
+    <file path="file-2">
+        <lineToCover lineNumber="1" covered="false"/>
+        <lineToCover lineNumber="2" covered="false"/>
+        <lineToCover lineNumber="3" covered="false"/>
+    </file>
+</coverage>

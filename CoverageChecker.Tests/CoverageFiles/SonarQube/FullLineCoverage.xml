@@ -1,0 +1,21 @@
+<coverage version="1">
+    <file path="file-1">
+        <lineToCover lineNumber="1" covered="true"/>
+        <lineToCover lineNumber="2" covered="true"/>
+    </file>
+    <file path="file-2">
+        <lineToCover lineNumber="1" covered="true" branchesToCover="2" coveredBranches="1"/>
+        <lineToCover lineNumber="2" covered="true"/>
+        <lineToCover lineNumber="3" covered="true"/>
+        <lineToCover lineNumber="4" covered="true"/>
+    </file>
+    <file path="file-3">
+        <lineToCover lineNumber="1" covered="true"/>
+        <lineToCover lineNumber="2" covered="true" branchesToCover="4" coveredBranches="4"/>
+        <lineToCover lineNumber="3" covered="true"/>
+    </file>
+    <file path="file-4">
+        <lineToCover lineNumber="1" covered="true"/>
+        <lineToCover lineNumber="2" covered="true"/>
+    </file>
+</coverage>

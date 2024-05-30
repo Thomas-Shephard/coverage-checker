@@ -25,5 +25,11 @@
     <ItemGroup>
       <ProjectReference Include="..\CoverageChecker\CoverageChecker.csproj" />
     </ItemGroup>
+    
+    <ItemGroup>
+        <Content Include="CoverageFiles\**\*.xml">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
 
 </Project>
