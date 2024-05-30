@@ -11,10 +11,6 @@ public class CoberturaParser(IEnumerable<string> globPatterns, string? directory
         // Select the coverage element
         XElement coverageElement = coverageFile.GetRequiredElement("coverage");
 
-        // Select the version attribute and ensure that it is '1.9'
-        if (coverageElement.GetRequiredAttribute("version").Value is not "1.9")
-            throw new CoverageParseException("Attribute 'version' on element 'coverage' must be '1.9'");
-
         // Select the packages element
         XElement packagesElement = coverageElement.GetRequiredElement("packages");
 

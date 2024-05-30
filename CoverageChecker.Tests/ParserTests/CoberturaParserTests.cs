@@ -96,13 +96,6 @@ public class CoberturaParserTests {
     }
 
     [Test]
-    public void SonarQubeParser_LoadCoverage_InvalidVersion_ThrowsCoverageParseException() {
-        CoberturaParser coberturaParser = new("InvalidVersion.xml", _directory);
-
-        Assert.Throws<CoverageParseException>(() => coberturaParser.LoadCoverage());
-    }
-
-    [Test]
     public void SonarQubeParser_LoadCoverage_InvalidBranchCoverage1_ThrowsCoverageParseException() {
         CoberturaParser coberturaParser = new("InvalidBranchCoverage1.xml", _directory);
 
