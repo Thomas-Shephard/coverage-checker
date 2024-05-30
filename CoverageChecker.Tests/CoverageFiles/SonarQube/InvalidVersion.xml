@@ -1,0 +1,6 @@
+<coverage version="invalid">
+    <file path="file-1">
+        <lineToCover lineNumber="1" covered="true"/>
+        <lineToCover lineNumber="2" covered="true"/>
+    </file>
+</coverage>
