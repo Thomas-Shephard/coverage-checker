@@ -1,0 +1,10 @@
+﻿<coverage version="1.9">
+    <packages>
+        <package name="package-1">
+            <classes/>
+        </package>
+        <package name="package-2">
+            <classes/>
+        </package>
+    </packages>
+</coverage>
