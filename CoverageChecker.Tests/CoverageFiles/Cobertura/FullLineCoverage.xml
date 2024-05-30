@@ -1,0 +1,47 @@
+<coverage version="1.9">
+    <packages>
+        <package name="package-1">
+            <classes>
+                <class name="class-1" filename="file-1">
+                    <methods>
+                        <method name="method-1" signature="()">
+                            <lines>
+                                <line number="1" hits="1"/>
+                                <line number="2" hits="1"/>
+                            </lines>
+                        </method>
+                    </methods>
+                    <lines/>
+                </class>
+                <class name="class-2" filename="file-1">
+                    <methods/>
+                    <lines>
+                        <line number="1" hits="1" branch="True" condition-coverage="50% (1/2)"/>
+                        <line number="2" hits="1"/>
+                        <line number="3" hits="1"/>
+                        <line number="4" hits="1"/>
+                    </lines>
+                </class>
+            </classes>
+        </package>
+        <package name="package-2">
+            <classes>
+                <class name="class-3" filename="file-2">
+                    <methods/>
+                    <lines>
+                        <line number="1" hits="1"/>
+                        <line number="2" hits="1" branch="True" condition-coverage="100% (4/4)"/>
+                        <line number="3" hits="1"/>
+                    </lines>
+                </class>
+                <class name="class-4" filename="file-3">
+                    <methods/>
+                    <lines>
+                        <line number="1" hits="1"/>
+                        <line number="2" hits="1"/>
+                    </lines>
+                </class>
+            </classes>
+        </package>
+    </packages>
+</coverage>

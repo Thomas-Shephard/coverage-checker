@@ -1,0 +1,20 @@
+﻿<coverage version="1.9">
+    <packages>
+        <package name="package-1">
+            <classes>
+                <class name="class-1" filename="file-1">
+                    <methods/>
+                    <lines/>
+                </class>
+            </classes>
+        </package>
+        <package name="package-2">
+            <classes>
+                <class name="class-2" filename="file-2">
+                    <methods/>
+                    <lines/>
+                </class>
+            </classes>
+        </package>
+    </packages>
+</coverage>

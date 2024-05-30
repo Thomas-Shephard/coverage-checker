@@ -1,0 +1,27 @@
+﻿<coverage version="1.9">
+    <packages>
+        <package name="package-1">
+            <classes>
+                <class name="class-1" filename="file-1">
+                    <methods>
+                        <method name="method-1" signature="()">
+                            <lines>
+                                <line number="1" hits="0"/>
+                                <line number="2" hits="1"/>
+                            </lines>
+                        </method>
+                    </methods>
+                    <lines/>
+                </class>
+                <class name="class-2" filename="file-1">
+                    <methods/>
+                    <lines>
+                        <line number="1" hits="0"/>
+                        <line number="2" hits="0"/>
+                        <line number="3" hits="0"/>
+                    </lines>
+                </class>
+            </classes>
+        </package>
+    </packages>
+</coverage>
