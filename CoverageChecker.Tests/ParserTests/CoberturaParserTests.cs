@@ -122,4 +122,11 @@ public class CoberturaParserTests {
 
         Assert.Throws<CoverageParseException>(() => coberturaParser.LoadCoverage());
     }
+
+    [Test]
+    public void SonarQubeParser_LoadCoverage_InvalidFile_ThrowsCoverageParseException() {
+        CoberturaParser coberturaParser = new("InvalidFile.xml", _directory);
+
+        Assert.Throws<CoverageParseException>(() => coberturaParser.LoadCoverage());
+    }
 }
