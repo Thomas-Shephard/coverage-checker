@@ -7,7 +7,7 @@ public class CoberturaParserTests {
     private readonly string _directory = Path.Combine(TestContext.CurrentContext.TestDirectory, "CoverageFiles", "Cobertura");
 
     [Test]
-    public void SonarQubeParser_LoadCoverage_FullLineCoverage_ReturnsCoverage() {
+    public void CoberturaParser_LoadCoverage_FullLineCoverage_ReturnsCoverage() {
         CoberturaParser coberturaParser = new("FullLineCoverage.xml", _directory);
 
         Coverage coverage = coberturaParser.LoadCoverage();
@@ -24,7 +24,7 @@ public class CoberturaParserTests {
     }
 
     [Test]
-    public void SonarQubeParser_LoadCoverage_FullBranchCoverage_ReturnsCoverage() {
+    public void CoberturaParser_LoadCoverage_FullBranchCoverage_ReturnsCoverage() {
         CoberturaParser coberturaParser = new("FullBranchCoverage.xml", _directory);
 
         Coverage coverage = coberturaParser.LoadCoverage();
@@ -40,7 +40,7 @@ public class CoberturaParserTests {
     }
 
     [Test]
-    public void SonarQubeParser_LoadCoverage_PartialLineCoverage_ReturnsCoverage() {
+    public void CoberturaParser_LoadCoverage_PartialLineCoverage_ReturnsCoverage() {
         CoberturaParser coberturaParser = new("PartialLineCoverage.xml", _directory);
 
         Coverage coverage = coberturaParser.LoadCoverage();
@@ -55,7 +55,7 @@ public class CoberturaParserTests {
     }
 
     [Test]
-    public void SonarQubeParser_LoadCoverage_NoPackages_ReturnsCoverage() {
+    public void CoberturaParser_LoadCoverage_NoPackages_ReturnsCoverage() {
         CoberturaParser coberturaParser = new("NoPackages.xml", _directory);
 
         Coverage coverage = coberturaParser.LoadCoverage();
@@ -68,7 +68,7 @@ public class CoberturaParserTests {
     }
 
     [Test]
-    public void SonarQubeParser_LoadCoverage_NoClasses_ReturnsCoverage() {
+    public void CoberturaParser_LoadCoverage_NoClasses_ReturnsCoverage() {
         CoberturaParser coberturaParser = new("NoClasses.xml", _directory);
 
         Coverage coverage = coberturaParser.LoadCoverage();
@@ -81,7 +81,7 @@ public class CoberturaParserTests {
     }
 
     [Test]
-    public void SonarQubeParser_LoadCoverage_NoLines_ReturnsCoverage() {
+    public void CoberturaParser_LoadCoverage_NoLines_ReturnsCoverage() {
         CoberturaParser coberturaParser = new("NoLines.xml", _directory);
 
         Coverage coverage = coberturaParser.LoadCoverage();
@@ -96,35 +96,35 @@ public class CoberturaParserTests {
     }
 
     [Test]
-    public void SonarQubeParser_LoadCoverage_InvalidBranchCoverage1_ThrowsCoverageParseException() {
+    public void CoberturaParser_LoadCoverage_InvalidBranchCoverage1_ThrowsCoverageParseException() {
         CoberturaParser coberturaParser = new("InvalidBranchCoverage1.xml", _directory);
 
         Assert.Throws<CoverageParseException>(() => coberturaParser.LoadCoverage());
     }
 
     [Test]
-    public void SonarQubeParser_LoadCoverage_InvalidBranchCoverage2_ThrowsCoverageParseException() {
+    public void CoberturaParser_LoadCoverage_InvalidBranchCoverage2_ThrowsCoverageParseException() {
         CoberturaParser coberturaParser = new("InvalidBranchCoverage2.xml", _directory);
 
         Assert.Throws<CoverageParseException>(() => coberturaParser.LoadCoverage());
     }
 
     [Test]
-    public void SonarQubeParser_LoadCoverage_InvalidBranchCoverage3_ThrowsCoverageParseException() {
+    public void CoberturaParser_LoadCoverage_InvalidBranchCoverage3_ThrowsCoverageParseException() {
         CoberturaParser coberturaParser = new("InvalidBranchCoverage3.xml", _directory);
 
         Assert.Throws<CoverageParseException>(() => coberturaParser.LoadCoverage());
     }
 
     [Test]
-    public void SonarQubeParser_LoadCoverage_EmptyFile_ThrowsCoverageParseException() {
+    public void CoberturaParser_LoadCoverage_EmptyFile_ThrowsCoverageParseException() {
         CoberturaParser coberturaParser = new("EmptyFile.xml", _directory);
 
         Assert.Throws<CoverageParseException>(() => coberturaParser.LoadCoverage());
     }
 
     [Test]
-    public void SonarQubeParser_LoadCoverage_InvalidFile_ThrowsCoverageParseException() {
+    public void CoberturaParser_LoadCoverage_InvalidFile_ThrowsCoverageParseException() {
         CoberturaParser coberturaParser = new("InvalidFile.xml", _directory);
 
         Assert.Throws<CoverageParseException>(() => coberturaParser.LoadCoverage());
