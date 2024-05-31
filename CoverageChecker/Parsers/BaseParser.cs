@@ -11,16 +11,21 @@ public abstract class BaseParser(IEnumerable<string> globPatterns, string? direc
     private readonly Matcher _matcher = GlobUtils.CreateFromGlobPatterns(globPatterns);
 
     public Coverage LoadCoverage() {
-        FileCoverage[] fileCoverages = _matcher.GetResultsInFullPath(_directory)
-                                               .Select(filePath => {
-                                                   try {
-                                                       return XDocument.Load(filePath);
-                                                   } catch (Exception) {
-                                                       throw new CoverageParseException("Failed to load coverage file");
-                                                   }
-                                               })
-                                               .SelectMany(LoadCoverageFile)
-                                               .ToArray();
+        string[] filePaths = _matcher.GetResultsInFullPath(_directory)
+                                     .ToArray();
+
+        if (filePaths.Length is 0)
+            throw new CoverageParseException("No coverage files found");
+
+        FileCoverage[] fileCoverages = filePaths.Select(filePath => {
+                                                    try {
+                                                        return XDocument.Load(filePath);
+                                                    } catch (Exception) {
+                                                        throw new CoverageParseException("Failed to load coverage file");
+                                                    }
+                                                })
+                                                .SelectMany(LoadCoverageFile)
+                                                .ToArray();
 
         return new Coverage(fileCoverages);
     }
