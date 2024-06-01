@@ -3,29 +3,34 @@ using CoverageChecker.Results;
 namespace CoverageChecker.Utils;
 
 internal static class CoverageUtils {
-    internal static double CalculateCoverage(this FileCoverage[] files, CoverageType coverageType) {
-        LineCoverage[] lines = files.SelectMany(file => file.Lines)
-                                    .ToArray();
-
-        return lines.CalculateCoverage(coverageType);
+    internal static double CalculateCoverage(this IEnumerable<FileCoverage> files, CoverageType coverageType) {
+        return files.SelectMany(file => file.Lines)
+                    .CalculateCoverage(coverageType);
     }
 
-    internal static double CalculateCoverage(this LineCoverage[] lines, CoverageType coverageType) {
-        int total, covered;
-
-        switch (coverageType) {
-            case CoverageType.Line:
-                total = lines.Length;
-                covered = lines.Count(line => line.IsCovered);
-                break;
-            case CoverageType.Branch:
-                total = lines.Sum(line => line.Branches ?? 0);
-                covered = lines.Sum(line => line.CoveredBranches ?? 0);
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(coverageType), coverageType, "Unknown coverage type");
-        }
+    internal static double CalculateCoverage(this IEnumerable<LineCoverage> lines, CoverageType coverageType) {
+        (int covered, int total) = coverageType switch {
+            CoverageType.Line   => lines.SumCoveredAndTotal(GetCoveredLines, GetLines),
+            CoverageType.Branch => lines.SumCoveredAndTotal(GetCoveredBranches, GetBranches),
+            _                   => throw new ArgumentOutOfRangeException(nameof(coverageType), coverageType, "Unknown coverage type")
+        };
 
         return (double)covered / total;
+
+        int GetLines(LineCoverage _) => 1;
+        int GetCoveredLines(LineCoverage line) => line.IsCovered ? 1 : 0;
+        int GetBranches(LineCoverage line) => line.Branches ?? 0;
+        int GetCoveredBranches(LineCoverage line) => line.CoveredBranches ?? 0;
+    }
+
+    private static (int covered, int total) SumCoveredAndTotal(this IEnumerable<LineCoverage> lines, Func<LineCoverage, int> coveredSelector, Func<LineCoverage, int> totalSelector) {
+        int covered = 0, total = 0;
+
+        foreach (LineCoverage line in lines) {
+            covered += coveredSelector(line);
+            total += totalSelector(line);
+        }
+
+        return (covered, total);
     }
 }
