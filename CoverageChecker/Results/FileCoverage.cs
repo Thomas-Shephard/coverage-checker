@@ -2,14 +2,25 @@ using CoverageChecker.Utils;
 
 namespace CoverageChecker.Results;
 
-public class FileCoverage(LineCoverage[] lines, string path, string? packageName = null) {
-    public LineCoverage[] Lines { get; } = lines;
+public class FileCoverage(string path, string? packageName = null) {
+    internal FileCoverage(IEnumerable<LineCoverage> lines, string path, string? packageName = null) : this(path, packageName) {
+        _lines = lines.ToList();
+    }
+
     public string Path { get; } = path;
     public string? PackageName { get; } = packageName;
+    public IReadOnlyList<LineCoverage> Lines => _lines.AsReadOnly();
+    private readonly List<LineCoverage> _lines = [];
 
-    public bool TryGetLine(int lineNumber, out LineCoverage? line) {
-        line = Lines.FirstOrDefault(line => line.LineNumber == lineNumber);
-        return line is not null;
+    public LineCoverage? GetLine(int lineNumber) {
+        return Lines.FirstOrDefault(line => line.LineNumber == lineNumber);
+    }
+
+    internal void AddLine(LineCoverage line) {
+        if (GetLine(line.LineNumber) is not null)
+            throw new CoverageCalculationException("Line already exists in the file");
+
+        _lines.Add(line);
     }
 
     public double CalculateFileCoverage(CoverageType coverageType = CoverageType.Line) {

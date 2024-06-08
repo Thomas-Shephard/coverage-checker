@@ -13,11 +13,11 @@ public class CoberturaParserTests {
         Coverage coverage = coberturaParser.LoadCoverage();
 
         Assert.Multiple(() => {
-            Assert.That(coverage.Files, Has.Length.EqualTo(4));
-            Assert.That(coverage.Files[0].Lines, Has.Length.EqualTo(2));
-            Assert.That(coverage.Files[1].Lines, Has.Length.EqualTo(4));
-            Assert.That(coverage.Files[2].Lines, Has.Length.EqualTo(3));
-            Assert.That(coverage.Files[3].Lines, Has.Length.EqualTo(2));
+            Assert.That(coverage.Files, Has.Count.EqualTo(4));
+            Assert.That(coverage.Files[0].Lines, Has.Count.EqualTo(2));
+            Assert.That(coverage.Files[1].Lines, Has.Count.EqualTo(4));
+            Assert.That(coverage.Files[2].Lines, Has.Count.EqualTo(3));
+            Assert.That(coverage.Files[3].Lines, Has.Count.EqualTo(2));
             Assert.That(coverage.CalculateOverallCoverage(), Is.EqualTo(1));
             Assert.That(coverage.CalculateOverallCoverage(CoverageType.Branch), Is.EqualTo((double)5 / 6));
         });
@@ -30,10 +30,10 @@ public class CoberturaParserTests {
         Coverage coverage = coberturaParser.LoadCoverage();
 
         Assert.Multiple(() => {
-            Assert.That(coverage.Files, Has.Length.EqualTo(3));
-            Assert.That(coverage.Files[0].Lines, Has.Length.EqualTo(2));
-            Assert.That(coverage.Files[1].Lines, Has.Length.EqualTo(3));
-            Assert.That(coverage.Files[2].Lines, Has.Length.EqualTo(2));
+            Assert.That(coverage.Files, Has.Count.EqualTo(3));
+            Assert.That(coverage.Files[0].Lines, Has.Count.EqualTo(2));
+            Assert.That(coverage.Files[1].Lines, Has.Count.EqualTo(3));
+            Assert.That(coverage.Files[2].Lines, Has.Count.EqualTo(2));
             Assert.That(coverage.CalculateOverallCoverage(), Is.EqualTo(1));
             Assert.That(coverage.CalculateOverallCoverage(CoverageType.Branch), Is.EqualTo(1));
         });
@@ -46,9 +46,9 @@ public class CoberturaParserTests {
         Coverage coverage = coberturaParser.LoadCoverage();
 
         Assert.Multiple(() => {
-            Assert.That(coverage.Files, Has.Length.EqualTo(2));
-            Assert.That(coverage.Files[0].Lines, Has.Length.EqualTo(2));
-            Assert.That(coverage.Files[1].Lines, Has.Length.EqualTo(3));
+            Assert.That(coverage.Files, Has.Count.EqualTo(2));
+            Assert.That(coverage.Files[0].Lines, Has.Count.EqualTo(2));
+            Assert.That(coverage.Files[1].Lines, Has.Count.EqualTo(3));
             Assert.That(coverage.CalculateOverallCoverage(), Is.EqualTo((double)1 / 5));
             Assert.That(coverage.CalculateOverallCoverage(CoverageType.Branch), Is.NaN);
         });
@@ -87,7 +87,7 @@ public class CoberturaParserTests {
         Coverage coverage = coberturaParser.LoadCoverage();
 
         Assert.Multiple(() => {
-            Assert.That(coverage.Files, Has.Length.EqualTo(2));
+            Assert.That(coverage.Files, Has.Count.EqualTo(2));
             Assert.That(coverage.Files[0].Lines, Is.Empty);
             Assert.That(coverage.Files[1].Lines, Is.Empty);
             Assert.That(coverage.CalculateOverallCoverage(), Is.NaN);
