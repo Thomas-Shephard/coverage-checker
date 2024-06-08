@@ -46,12 +46,9 @@ public class CoverageTests {
         ];
         Coverage coverage = new(files);
 
-        bool result = coverage.TryGetFile("coverage-file-1", out FileCoverage? file);
+        FileCoverage? file = coverage.GetFile("coverage-file-1");
 
-        Assert.Multiple(() => {
-            Assert.That(result, Is.True);
-            Assert.That(file, Is.EqualTo(files[0]));
-        });
+        Assert.That(file, Is.EqualTo(files[0]));
     }
 
     [Test]
@@ -70,12 +67,9 @@ public class CoverageTests {
         ];
         Coverage coverage = new(files);
 
-        bool result = coverage.TryGetFile("coverage-file-3", out FileCoverage? file);
+        FileCoverage? file = coverage.GetFile("coverage-file-3");
 
-        Assert.Multiple(() => {
-            Assert.That(result, Is.False);
-            Assert.That(file, Is.Null);
-        });
+        Assert.That(file, Is.Null);
     }
 
     [Test]

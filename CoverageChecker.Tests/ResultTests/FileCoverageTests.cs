@@ -36,12 +36,9 @@ public class FileCoverageTests {
         ];
         FileCoverage fileCoverage = new(lines, "coverage-file");
 
-        bool result = fileCoverage.TryGetLine(1, out LineCoverage? line);
+        LineCoverage? line = fileCoverage.GetLine(1);
 
-        Assert.Multiple(() => {
-            Assert.That(result, Is.True);
-            Assert.That(line, Is.EqualTo(lines[0]));
-        });
+        Assert.That(line, Is.EqualTo(lines[0]));
     }
 
     [Test]
@@ -53,10 +50,9 @@ public class FileCoverageTests {
         ];
         FileCoverage fileCoverage = new(lines, "coverage-file");
 
-        bool result = fileCoverage.TryGetLine(4, out LineCoverage? line);
+        LineCoverage? line = fileCoverage.GetLine(4);
 
         Assert.Multiple(() => {
-            Assert.That(result, Is.False);
             Assert.That(line, Is.Null);
             Assert.That(fileCoverage.Path, Is.EqualTo("coverage-file"));
             Assert.That(fileCoverage.PackageName, Is.Null);
