@@ -57,7 +57,7 @@ public class FileCoverageTests {
 
         fileCoverage.AddLine(new LineCoverage(1, true, 1, 0));
 
-        Assert.Throws<CoverageCalculationException>(() => fileCoverage.AddLine(new LineCoverage(1, true, 1, 0)));
+        Assert.Throws<CoverageCalculationException>(() => fileCoverage.AddLine(new LineCoverage(1, true, 1, 1)));
     }
 
     [Test]

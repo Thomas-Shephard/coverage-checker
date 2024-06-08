@@ -77,4 +77,34 @@ public class LineCoverageTests {
 
         Assert.That(coverage, Is.EqualTo((double)coveredBranches / branches));
     }
+
+    [Test]
+    public void LineCoverage_EquivalentTo_SameObject_ReturnsTrue() {
+        LineCoverage lineCoverage = new(LineNumber, IsCovered);
+
+        Assert.That(lineCoverage.EquivalentTo(lineCoverage), Is.True);
+    }
+
+    [Test]
+    public void LineCoverage_EquivalentTo_NullObject_ReturnsFalse() {
+        LineCoverage lineCoverage = new(LineNumber, IsCovered);
+
+        Assert.That(lineCoverage.EquivalentTo(null), Is.False);
+    }
+
+    [Test]
+    public void LineCoverage_EquivalentTo_Different_ReturnsFalse() {
+        LineCoverage lineCoverage1 = new(LineNumber, true);
+        LineCoverage lineCoverage2 = new(LineNumber, false);
+
+        Assert.That(lineCoverage1.EquivalentTo(lineCoverage2), Is.False);
+    }
+
+    [Test]
+    public void LineCoverage_EquivalentTo_Same_ReturnsTrue() {
+        LineCoverage lineCoverage1 = new(LineNumber, IsCovered);
+        LineCoverage lineCoverage2 = new(LineNumber, IsCovered);
+
+        Assert.That(lineCoverage1.EquivalentTo(lineCoverage2), Is.True);
+    }
 }
