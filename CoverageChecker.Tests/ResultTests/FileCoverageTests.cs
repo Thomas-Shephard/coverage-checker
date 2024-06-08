@@ -28,35 +28,36 @@ public class FileCoverageTests {
     }
 
     [Test]
-    public void FileCoverage_TryGetLine_LineExists_ReturnsTrue() {
+    public void FileCoverage_TryGetLine_ReturnsIfExists() {
         LineCoverage[] lines = [
             new LineCoverage(1, true, 1, 0),
             new LineCoverage(2, false, 6, 2),
             new LineCoverage(3, true, 4, 3)
         ];
-        FileCoverage fileCoverage = new(lines, "coverage-file");
 
-        LineCoverage? line = fileCoverage.GetLine(1);
+        FileCoverage fileCoverage = new("coverage-file");
 
-        Assert.That(line, Is.EqualTo(lines[0]));
-    }
-
-    [Test]
-    public void FileCoverage_TryGetLine_LineDoesNotExist_ReturnsFalse() {
-        LineCoverage[] lines = [
-            new LineCoverage(1, true, 1, 0),
-            new LineCoverage(2, false, 6, 2),
-            new LineCoverage(3, true, 4, 3)
-        ];
-        FileCoverage fileCoverage = new(lines, "coverage-file");
-
-        LineCoverage? line = fileCoverage.GetLine(4);
+        foreach (LineCoverage line in lines) {
+            fileCoverage.AddLine(line);
+        }
 
         Assert.Multiple(() => {
-            Assert.That(line, Is.Null);
+            Assert.That(fileCoverage.GetLine(1), Is.EqualTo(lines[0]));
+            Assert.That(fileCoverage.GetLine(2), Is.EqualTo(lines[1]));
+            Assert.That(fileCoverage.GetLine(3), Is.EqualTo(lines[2]));
+            Assert.That(fileCoverage.GetLine(4), Is.Null);
             Assert.That(fileCoverage.Path, Is.EqualTo("coverage-file"));
             Assert.That(fileCoverage.PackageName, Is.Null);
         });
+    }
+
+    [Test]
+    public void FileCoverage_AddLine_LineAlreadyExists_ThrowsException() {
+        FileCoverage fileCoverage = new("coverage-file");
+
+        fileCoverage.AddLine(new LineCoverage(1, true, 1, 0));
+
+        Assert.Throws<CoverageCalculationException>(() => fileCoverage.AddLine(new LineCoverage(1, true, 1, 0)));
     }
 
     [Test]

@@ -31,45 +31,29 @@ public class CoverageTests {
     }
 
     [Test]
-    public void Coverage_TryGetFile_FileExists_ReturnsTrue() {
-        FileCoverage[] files = [
-            new FileCoverage([
-                new LineCoverage(1, true, 1, 0),
-                new LineCoverage(2, false, 8, 1),
-                new LineCoverage(3, true, 2, 1)
-            ], "coverage-file-1"),
-            new FileCoverage([
-                new LineCoverage(1, true, 1, 0),
-                new LineCoverage(2, true, 3, 2),
-                new LineCoverage(3, false, 4, 3)
-            ], "coverage-file-2")
-        ];
-        Coverage coverage = new(files);
+    public void Coverage_TryGetFile_FileExists_ReturnsIfExists() {
+        Coverage coverage = new();
 
-        FileCoverage? file = coverage.GetFile("coverage-file-1");
+        FileCoverage coverageFile1 = coverage.GetOrCreateFile("coverage-file-1");
 
-        Assert.That(file, Is.EqualTo(files[0]));
-    }
+        coverageFile1.AddLine(new LineCoverage(1, true, 1, 0));
+        coverageFile1.AddLine(new LineCoverage(2, false, 8, 1));
+        coverageFile1.AddLine(new LineCoverage(3, true, 2, 1));
 
-    [Test]
-    public void Coverage_TryGetFile_FileDoesNotExist_ReturnsFalse() {
-        FileCoverage[] files = [
-            new FileCoverage([
-                new LineCoverage(1, true, 1, 0),
-                new LineCoverage(2, false, 8, 1),
-                new LineCoverage(3, true, 2, 1)
-            ], "coverage-file-1"),
-            new FileCoverage([
-                new LineCoverage(1, true, 1, 0),
-                new LineCoverage(2, true, 3, 2),
-                new LineCoverage(3, false, 4, 3)
-            ], "coverage-file-2")
-        ];
-        Coverage coverage = new(files);
+        FileCoverage coverageFile2 = coverage.GetOrCreateFile("coverage-file-2");
 
-        FileCoverage? file = coverage.GetFile("coverage-file-3");
+        coverageFile2.AddLine(new LineCoverage(1, true, 1, 0));
+        coverageFile2.AddLine(new LineCoverage(2, true, 3, 2));
+        coverageFile2.AddLine(new LineCoverage(3, false, 4, 3));
 
-        Assert.That(file, Is.Null);
+        Assert.Multiple(() => {
+            Assert.That(coverage.GetFile("coverage-file-1"), Is.EqualTo(coverageFile1));
+            Assert.That(coverage.GetOrCreateFile("coverage-file-1"), Is.EqualTo(coverageFile1));
+            Assert.That(coverage.GetFile("coverage-file-2"), Is.EqualTo(coverageFile2));
+            Assert.That(coverage.GetOrCreateFile("coverage-file-2"), Is.EqualTo(coverageFile2));
+            Assert.That(coverage.GetFile("coverage-file-3"), Is.Null);
+            Assert.That(coverage.GetOrCreateFile("coverage-file-3").Lines, Is.Empty);
+        });
     }
 
     [Test]
