@@ -16,6 +16,13 @@ public class FileCoverage(string path, string? packageName = null) {
         return Lines.FirstOrDefault(line => line.LineNumber == lineNumber);
     }
 
+    internal void AddLine(LineCoverage line) {
+        if (GetLine(line.LineNumber) is not null)
+            throw new CoverageCalculationException("Line already exists in the file");
+
+        _lines.Add(line);
+    }
+
     public double CalculateFileCoverage(CoverageType coverageType = CoverageType.Line) {
         return Lines.CalculateCoverage(coverageType);
     }

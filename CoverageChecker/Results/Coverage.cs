@@ -14,6 +14,17 @@ public class Coverage() {
         return Files.FirstOrDefault(file => file.Path == path && file.PackageName == packageName);
     }
 
+    internal FileCoverage GetOrCreateFile(string filePath, string? packageName = null) {
+        FileCoverage? file = GetFile(filePath, packageName);
+
+        if (file is not null) return file;
+
+        file = new FileCoverage(filePath, packageName);
+        _files.Add(file);
+
+        return file;
+    }
+
     public double CalculateOverallCoverage(CoverageType coverageType = CoverageType.Line) {
         return Files.CalculateCoverage(coverageType);
     }
