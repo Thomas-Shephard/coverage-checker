@@ -7,66 +7,52 @@ namespace CoverageChecker.Parsers;
 public class CoberturaParser(IEnumerable<string> globPatterns, string? directory = null) : BaseParser(globPatterns, directory) {
     public CoberturaParser(string globPattern, string? directory = null) : this([globPattern], directory) { }
 
-    protected override FileCoverage[] LoadCoverageFile(XDocument coverageFile) {
-        // Select the coverage element
-        XElement coverageElement = coverageFile.GetRequiredElement("coverage");
+    protected override void LoadCoverage(Coverage coverage, XDocument coverageDocument) {
+        XElement coverageElement = coverageDocument.GetRequiredElement("coverage");
 
-        // Select the packages element
         XElement packagesElement = coverageElement.GetRequiredElement("packages");
-
-        // Create a FileCoverage array for each package element
-        return packagesElement.Elements("package")
-                              .SelectMany(CreatePackageCoverage)
-                              .ToArray();
+        foreach (XElement packageElement in packagesElement.Elements("package")) {
+            LoadPackageCoverage(coverage, packageElement);
+        }
     }
 
-    private static FileCoverage[] CreatePackageCoverage(XElement packageElement) {
-        // Select the name attribute
+    private static void LoadPackageCoverage(Coverage coverage, XElement packageElement) {
         string packageName = packageElement.GetRequiredAttribute("name").Value;
 
-        // Select the classes element
         XElement classesElement = packageElement.GetRequiredElement("classes");
-
-        // Create a FileCoverage object for each class element
-        return classesElement.Elements("class")
-                             .Select(classElement => CreateClassCoverage(classElement, packageName))
-                             .ToArray();
+        foreach (XElement classElement in classesElement.Elements("class")) {
+            LoadClassCoverage(coverage, classElement, packageName);
+        }
     }
 
-    private static FileCoverage CreateClassCoverage(XElement classElement, string packageName) {
-        // Select the filename and name attributes
-        string path = classElement.GetRequiredAttribute("filename").Value;
+    private static void LoadClassCoverage(Coverage coverage, XElement classElement, string packageName) {
+        string filePath = classElement.GetRequiredAttribute("filename").Value;
         string className = classElement.GetRequiredAttribute("name").Value;
 
-        // Select the methods and lines elements
+        FileCoverage file = coverage.GetOrCreateFile(filePath, packageName);
+
         XElement methodsElement = classElement.GetRequiredElement("methods");
+        foreach (XElement methodElement in methodsElement.Elements("method")) {
+            LoadMethodCoverage(file, methodElement, className);
+        }
+
         XElement linesElement = classElement.GetRequiredElement("lines");
-
-        // Create a LineCoverage array for each method element and a LineCoverage object for each line element
-        LineCoverage[] lines = methodsElement.Elements("method")
-                                             .SelectMany(methodElement => CreateMethodCoverage(methodElement, className))
-                                             .Concat(linesElement.Elements("line").Select(lineElement => CreateLineCoverage(lineElement, className)))
-                                             .ToArray();
-
-        return new FileCoverage(lines, path, packageName);
+        foreach (XElement lineElement in linesElement.Elements("line")) {
+            file.AddLine(CreateLineCoverage(lineElement, className));
+        }
     }
 
-    private static LineCoverage[] CreateMethodCoverage(XElement methodElement, string className) {
-        // Select the name and signature attributes
+    private static void LoadMethodCoverage(FileCoverage file, XElement methodElement, string className) {
         string methodName = methodElement.GetRequiredAttribute("name").Value;
-        string methodSignature = methodElement.GetRequiredAttribute("signature").Value;
+        string? methodSignature = methodElement.Attribute("signature")?.Value;
 
-        // Select the lines element
         XElement linesElement = methodElement.GetRequiredElement("lines");
-
-        // Create a LineCoverage object for each line element
-        return linesElement.Elements("line")
-                           .Select(lineElement => CreateLineCoverage(lineElement, className, methodName, methodSignature))
-                           .ToArray();
+        foreach (XElement lineElement in linesElement.Elements("line")) {
+            file.AddLine(CreateLineCoverage(lineElement, className, methodName, methodSignature));
+        }
     }
 
     private static LineCoverage CreateLineCoverage(XElement lineElement, string className, string? methodName = null, string? methodSignature = null) {
-        // Select the number, hits, and branch attributes
         int lineNumber = lineElement.ParseRequiredAttribute<int>("number");
         bool isCovered = lineElement.ParseRequiredAttribute<int>("hits") > 0;
         bool hasBranches = lineElement.ParseOptionalAttribute<bool>("branch") ?? false;
