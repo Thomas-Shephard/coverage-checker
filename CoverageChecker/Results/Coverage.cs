@@ -10,9 +10,8 @@ public class Coverage() {
     public IReadOnlyList<FileCoverage> Files => _files.AsReadOnly();
     private readonly List<FileCoverage> _files = [];
 
-    public bool TryGetFile(string path, out FileCoverage? file) {
-        file = Files.FirstOrDefault(file => file.Path == path);
-        return file is not null;
+    public FileCoverage? GetFile(string path, string? packageName = null) {
+        return Files.FirstOrDefault(file => file.Path == path && file.PackageName == packageName);
     }
 
     public double CalculateOverallCoverage(CoverageType coverageType = CoverageType.Line) {

@@ -12,9 +12,8 @@ public class FileCoverage(string path, string? packageName = null) {
     public IReadOnlyList<LineCoverage> Lines => _lines.AsReadOnly();
     private readonly List<LineCoverage> _lines = [];
 
-    public bool TryGetLine(int lineNumber, out LineCoverage? line) {
-        line = Lines.FirstOrDefault(line => line.LineNumber == lineNumber);
-        return line is not null;
+    public LineCoverage? GetLine(int lineNumber) {
+        return Lines.FirstOrDefault(line => line.LineNumber == lineNumber);
     }
 
     public double CalculateFileCoverage(CoverageType coverageType = CoverageType.Line) {
