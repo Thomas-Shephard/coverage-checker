@@ -2,8 +2,13 @@ using CoverageChecker.Utils;
 
 namespace CoverageChecker.Results;
 
-public class Coverage(FileCoverage[] files) {
-    public FileCoverage[] Files { get; } = files;
+public class Coverage() {
+    internal Coverage(IEnumerable<FileCoverage> files) : this() {
+        _files = files.ToList();
+    }
+
+    public IReadOnlyList<FileCoverage> Files => _files.AsReadOnly();
+    private readonly List<FileCoverage> _files = [];
 
     public bool TryGetFile(string path, out FileCoverage? file) {
         file = Files.FirstOrDefault(file => file.Path == path);
