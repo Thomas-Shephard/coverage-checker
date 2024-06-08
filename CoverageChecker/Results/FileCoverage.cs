@@ -17,8 +17,14 @@ public class FileCoverage(string path, string? packageName = null) {
     }
 
     internal void AddLine(LineCoverage line) {
-        if (GetLine(line.LineNumber) is not null)
+        LineCoverage? existingLine = GetLine(line.LineNumber);
+
+        if (existingLine is not null) {
+            // If the line is the same (excluding method name and signature) as the one being added, it is ignored, otherwise an exception is thrown
+            if (existingLine.EquivalentTo(line))
+                return;
             throw new CoverageCalculationException("Line already exists in the file");
+        }
 
         _lines.Add(line);
     }

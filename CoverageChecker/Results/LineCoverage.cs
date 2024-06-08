@@ -37,4 +37,16 @@ public class LineCoverage {
     public double CalculateLineCoverage(CoverageType coverageType = CoverageType.Line) {
         return CoverageUtils.CalculateCoverage([this], coverageType);
     }
+
+    internal bool EquivalentTo(LineCoverage? other) {
+        // Checks if the lines are the same (excluding method name and signature)
+        if (ReferenceEquals(null, other)) return false;
+        if (ReferenceEquals(this, other)) return true;
+
+        return LineNumber == other.LineNumber &&
+               IsCovered == other.IsCovered &&
+               Branches == other.Branches &&
+               CoveredBranches == other.CoveredBranches &&
+               ClassName == other.ClassName;
+    }
 }

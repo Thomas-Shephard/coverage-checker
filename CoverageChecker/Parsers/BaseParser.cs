@@ -17,18 +17,20 @@ public abstract class BaseParser(IEnumerable<string> globPatterns, string? direc
         if (filePaths.Length is 0)
             throw new CoverageParseException("No coverage files found");
 
-        FileCoverage[] fileCoverages = filePaths.Select(filePath => {
-                                                    try {
-                                                        return XDocument.Load(filePath);
-                                                    } catch (Exception) {
-                                                        throw new CoverageParseException("Failed to load coverage file");
-                                                    }
-                                                })
-                                                .SelectMany(LoadCoverageFile)
-                                                .ToArray();
+        Coverage coverage = new();
 
-        return new Coverage(fileCoverages);
+        foreach (string filePath in filePaths) {
+            try {
+                LoadCoverage(coverage, XDocument.Load(filePath));
+            } catch(Exception e) {
+                // Rethrow the exception if it is a CoverageException otherwise throw a generic failed to load exception
+                if (e is CoverageException) throw;
+                throw new CoverageParseException("Failed to load coverage file");
+            }
+        }
+
+        return coverage;
     }
 
-    protected abstract FileCoverage[] LoadCoverageFile(XDocument coverageFile);
+    protected abstract void LoadCoverage(Coverage coverage, XDocument coverageDocument);
 }

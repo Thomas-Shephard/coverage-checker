@@ -7,40 +7,32 @@ namespace CoverageChecker.Parsers;
 public class SonarQubeParser(IEnumerable<string> globPatterns, string? directory = null) : BaseParser(globPatterns, directory) {
     public SonarQubeParser(string globPattern, string? directory = null) : this([globPattern], directory) { }
 
-    protected override FileCoverage[] LoadCoverageFile(XDocument coverageFile) {
-        // Select the coverage element
-        XElement coverageElement = coverageFile.GetRequiredElement("coverage");
+    protected override void LoadCoverage(Coverage coverage, XDocument coverageDocument) {
+        XElement coverageElement = coverageDocument.GetRequiredElement("coverage");
 
-        // Select the version attribute and ensure that it is '1'
+        // Ensure that the coverage file is valid by checking the version attribute
         if (coverageElement.GetRequiredAttribute("version").Value is not "1")
             throw new CoverageParseException("Attribute 'version' on element 'coverage' must be '1'");
 
-        // Create a FileCoverage object for each file element
-        return coverageElement.Elements("file")
-                              .Select(CreateFileCoverage)
-                              .ToArray();
+        foreach (XElement fileElement in coverageElement.Elements("file")) {
+            LoadFileCoverage(coverage, fileElement);
+        }
     }
 
-    private static FileCoverage CreateFileCoverage(XElement fileElement) {
-        // Select the path attribute
-        string path = fileElement.GetRequiredAttribute("path").Value;
+    private static void LoadFileCoverage(Coverage coverage, XElement fileElement) {
+        string filePath = fileElement.GetRequiredAttribute("path").Value;
 
-        // Create a LineCoverage object for each lineToCover element
-        LineCoverage[] lines = fileElement.Elements("lineToCover")
-                                          .Select(CreateLineCoverage)
-                                          .ToArray();
+        FileCoverage file = coverage.GetOrCreateFile(filePath);
 
-        return new FileCoverage(lines, path);
+        foreach (XElement lineToCoverElement in fileElement.Elements("lineToCover")) {
+            file.AddLine(CreateLineCoverage(lineToCoverElement));
+        }
     }
 
     private static LineCoverage CreateLineCoverage(XElement lineToCoverElement) {
-        // Select the lineNumber attribute
         int lineNumber = lineToCoverElement.ParseRequiredAttribute<int>("lineNumber");
-
-        // Select the covered attribute
         bool isCovered = lineToCoverElement.ParseRequiredAttribute<bool>("covered");
 
-        // Select the branchesToCover and coveredBranches attributes (these attributes are optional)
         int? branches = lineToCoverElement.ParseOptionalAttribute<int>("branchesToCover");
         int? coveredBranches = lineToCoverElement.ParseOptionalAttribute<int>("coveredBranches");
 
