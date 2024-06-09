@@ -5,13 +5,11 @@ using Microsoft.Extensions.FileSystemGlobbing;
 
 namespace CoverageChecker.Parsers;
 
-public abstract class BaseParser(IEnumerable<string> globPatterns, string? directory = null) {
-    // If the directory is not provided, use the current directory
-    private readonly string _directory = directory ?? Environment.CurrentDirectory;
+public abstract class BaseParser(string directory, IEnumerable<string> globPatterns) {
     private readonly Matcher _matcher = GlobUtils.CreateFromGlobPatterns(globPatterns);
 
     public Coverage LoadCoverage() {
-        string[] filePaths = _matcher.GetResultsInFullPath(_directory)
+        string[] filePaths = _matcher.GetResultsInFullPath(directory)
                                      .ToArray();
 
         if (filePaths.Length is 0)

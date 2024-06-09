@@ -8,7 +8,7 @@ public class SonarQubeParserTests {
 
     [Test]
     public void SonarQubeParser_LoadCoverage_FullLineCoverage_ReturnsCoverage() {
-        SonarQubeParser sonarQubeParser = new("FullLineCoverage.xml", _directory);
+        SonarQubeParser sonarQubeParser = new(_directory, "FullLineCoverage.xml");
 
         Coverage coverage = sonarQubeParser.LoadCoverage();
 
@@ -25,7 +25,7 @@ public class SonarQubeParserTests {
 
     [Test]
     public void SonarQubeParser_LoadCoverage_FullBranchCoverage_ReturnsCoverage() {
-        SonarQubeParser sonarQubeParser = new("FullBranchCoverage.xml", _directory);
+        SonarQubeParser sonarQubeParser = new(_directory, "FullBranchCoverage.xml");
 
         Coverage coverage = sonarQubeParser.LoadCoverage();
 
@@ -41,7 +41,7 @@ public class SonarQubeParserTests {
 
     [Test]
     public void SonarQubeParser_LoadCoverage_PartialLineCoverage_ReturnsCoverage() {
-        SonarQubeParser sonarQubeParser = new("PartialLineCoverage.xml", _directory);
+        SonarQubeParser sonarQubeParser = new(_directory, "PartialLineCoverage.xml");
 
         Coverage coverage = sonarQubeParser.LoadCoverage();
 
@@ -56,7 +56,7 @@ public class SonarQubeParserTests {
 
     [Test]
     public void SonarQubeParser_LoadCoverage_NoFiles_ReturnsCoverage() {
-        SonarQubeParser sonarQubeParser = new("NoFiles.xml", _directory);
+        SonarQubeParser sonarQubeParser = new(_directory, "NoFiles.xml");
 
         Coverage coverage = sonarQubeParser.LoadCoverage();
 
@@ -69,7 +69,7 @@ public class SonarQubeParserTests {
 
     [Test]
     public void SonarQubeParser_LoadCoverage_NoLines_ReturnsCoverage() {
-        SonarQubeParser sonarQubeParser = new("NoLines.xml", _directory);
+        SonarQubeParser sonarQubeParser = new(_directory, "NoLines.xml");
 
         Coverage coverage = sonarQubeParser.LoadCoverage();
 
@@ -84,21 +84,21 @@ public class SonarQubeParserTests {
 
     [Test]
     public void SonarQubeParser_LoadCoverage_InvalidVersion_ThrowsCoverageParseException() {
-        SonarQubeParser sonarQubeParser = new("InvalidVersion.xml", _directory);
+        SonarQubeParser sonarQubeParser = new(_directory, "InvalidVersion.xml");
 
         Assert.Throws<CoverageParseException>(() => sonarQubeParser.LoadCoverage());
     }
 
     [Test]
     public void SonarQubeParser_LoadCoverage_EmptyFile_ThrowsCoverageParseException() {
-        SonarQubeParser sonarQubeParser = new("EmptyFile.xml", _directory);
+        SonarQubeParser sonarQubeParser = new(_directory, "EmptyFile.xml");
 
         Assert.Throws<CoverageParseException>(() => sonarQubeParser.LoadCoverage());
     }
 
     [Test]
     public void SonarQubeParser_LoadCoverage_InvalidFile_ThrowsCoverageParseException() {
-        SonarQubeParser sonarQubeParser = new("InvalidFile.xml", _directory);
+        SonarQubeParser sonarQubeParser = new(_directory, "InvalidFile.xml");
 
         Assert.Throws<CoverageParseException>(() => sonarQubeParser.LoadCoverage());
     }
