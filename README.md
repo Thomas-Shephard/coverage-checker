@@ -2,9 +2,34 @@
 
 [![Build, Test and Publish](https://github.com/Thomas-Shephard/coverage-checker/actions/workflows/build-test-and-publish.yml/badge.svg)](https://github.com/Thomas-Shephard/coverage-checker/actions/workflows/build-test-and-publish.yml)
 
-Allows for the checking of code coverage using the provided NuGet package.
+Allows for the checking of code coverage using the provided GitHub action or NuGet package.
 
-## Installation
+## GitHub Action
+
+### Usage
+
+The code coverage must already have been generated and saved in a file. The action will then parse the coverage file and check the coverage. If desired, the action will fail if the coverage is below the specified threshold.
+
+The action supports the following coverage file formats:
+
+- SonarQube
+- Cobertura
+
+```yaml
+- name: Check coverage
+  uses: Thomas-Shephard/coverage-checker@v0.2.0
+  with:
+    format: 'cobertura'
+    directory: 'coverage'
+    glob: '**/coverage.cobertura.xml'
+    line-threshold: 80
+    branch-threshold: 80
+    fail-if-below-threshold: true
+```
+
+## NuGet Package
+
+### Installation
 
 Install the CoverageChecker NuGet package using the .NET CLI:
 
@@ -12,9 +37,9 @@ Install the CoverageChecker NuGet package using the .NET CLI:
 dotnet add package CoverageChecker
 ```
 
-## Features
+### Features
 
-### Coverage File Parsing
+#### Coverage File Parsing
 
 Multiple coverage file formats are supported, as shown below:
 
@@ -23,11 +48,11 @@ Multiple coverage file formats are supported, as shown below:
 | [SonarQube](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/test-coverage/generic-test-data/) | CoverageChecker.Parsers.SonarQubeParser |
 | [Cobertura](https://github.com/cobertura/web/blob/master/htdocs/xml/coverage-04.dtd)                              | CoverageChecker.Parsers.CoberturaParser |
 
-### Coverage Checking
+#### Coverage Checking
 
 The coverage checker can be used to check the coverage of a project; both line and branch coverage are supported. Coverage can be calculated based on package, file, class, method, line, etc.
 
-#### Code Example
+##### Code Example
 
 ```csharp
 using CoverageChecker;
