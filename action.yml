@@ -1,0 +1,41 @@
+name: 'Coverage Checker'
+description: 'Checks the code coverage of a project'
+runs:
+  using: 'docker'
+  image: 'CoverageChecker.GitHubAction/Dockerfile'
+  args:
+    - '--format'
+    - ${{ inputs.format }}
+    - '--glob-patterns'
+    - ${{ inputs.glob-pattern }}
+    - '--directory'
+    - ${{ inputs.directory }}
+    - '--line-threshold'
+    - ${{ inputs.line-threshold }}
+    - '--branch-threshold'
+    - ${{ inputs.branch-threshold }}
+    - '--fail-if-below-threshold'
+    - ${{ inputs.fail-if-below-threshold }}
+inputs:
+  format:
+    description: 'Coverage file format'
+    required: true
+  glob-pattern:
+    description: 'Glob patterns to search for coverage files'
+    required: true
+  directory:
+    description: 'Directory to search for coverage files'
+    required: false
+    default: '.'
+  line-threshold:
+    description: 'Coverage threshold'
+    required: false
+    default: '80'
+  branch-threshold:
+    description: 'Branch coverage threshold'
+    required: false
+    default: '80'
+  fail-if-below-threshold:
+    description: 'Fail if coverage is below threshold'
+    required: false
+    default: 'true'
