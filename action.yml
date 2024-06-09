@@ -2,7 +2,7 @@ name: 'Coverage Checker'
 description: 'Checks the code coverage of a project'
 runs:
   using: 'docker'
-  image: 'CoverageChecker.GitHubAction/Dockerfile'
+  image: 'GitHubAction.Dockerfile'
   args:
     - '--format'
     - ${{ inputs.format }}
