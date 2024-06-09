@@ -34,10 +34,10 @@ using CoverageChecker;
 using CoverageChecker.Parsers;
 using CoverageChecker.Results;
 
-const string globPattern = "*.xml";
 const string directory = @"file-directory";
+const string globPattern = "*.xml";
 
-CoberturaParser parser = new(globPattern, directory);
+CoberturaParser parser = new(directory, globPattern);
 Coverage coverage = parser.LoadCoverage();
 
 foreach (FileCoverage fileCoverage in coverage.Files) {
