@@ -8,7 +8,7 @@ public class CoberturaParserTests {
 
     [Test]
     public void CoberturaParser_LoadCoverage_FullLineCoverage_ReturnsCoverage() {
-        CoberturaParser coberturaParser = new("FullLineCoverage.xml", _directory);
+        CoberturaParser coberturaParser = new(_directory, "FullLineCoverage.xml");
 
         Coverage coverage = coberturaParser.LoadCoverage();
 
@@ -24,7 +24,7 @@ public class CoberturaParserTests {
 
     [Test]
     public void CoberturaParser_LoadCoverage_FullBranchCoverage_ReturnsCoverage() {
-        CoberturaParser coberturaParser = new("FullBranchCoverage.xml", _directory);
+        CoberturaParser coberturaParser = new(_directory, "FullBranchCoverage.xml");
 
         Coverage coverage = coberturaParser.LoadCoverage();
 
@@ -39,7 +39,7 @@ public class CoberturaParserTests {
 
     [Test]
     public void CoberturaParser_LoadCoverage_PartialLineCoverage_ReturnsCoverage() {
-        CoberturaParser coberturaParser = new("PartialLineCoverage.xml", _directory);
+        CoberturaParser coberturaParser = new(_directory, "PartialLineCoverage.xml");
 
         Coverage coverage = coberturaParser.LoadCoverage();
 
@@ -53,7 +53,7 @@ public class CoberturaParserTests {
 
     [Test]
     public void CoberturaParser_LoadCoverage_NoPackages_ReturnsCoverage() {
-        CoberturaParser coberturaParser = new("NoPackages.xml", _directory);
+        CoberturaParser coberturaParser = new(_directory, "NoPackages.xml");
 
         Coverage coverage = coberturaParser.LoadCoverage();
 
@@ -66,7 +66,7 @@ public class CoberturaParserTests {
 
     [Test]
     public void CoberturaParser_LoadCoverage_NoClasses_ReturnsCoverage() {
-        CoberturaParser coberturaParser = new("NoClasses.xml", _directory);
+        CoberturaParser coberturaParser = new(_directory, "NoClasses.xml");
 
         Coverage coverage = coberturaParser.LoadCoverage();
 
@@ -79,7 +79,7 @@ public class CoberturaParserTests {
 
     [Test]
     public void CoberturaParser_LoadCoverage_NoLines_ReturnsCoverage() {
-        CoberturaParser coberturaParser = new("NoLines.xml", _directory);
+        CoberturaParser coberturaParser = new(_directory, "NoLines.xml");
 
         Coverage coverage = coberturaParser.LoadCoverage();
 
@@ -94,35 +94,35 @@ public class CoberturaParserTests {
 
     [Test]
     public void CoberturaParser_LoadCoverage_InvalidBranchCoverage1_ThrowsCoverageParseException() {
-        CoberturaParser coberturaParser = new("InvalidBranchCoverage1.xml", _directory);
+        CoberturaParser coberturaParser = new(_directory, "InvalidBranchCoverage1.xml");
 
         Assert.Throws<CoverageParseException>(() => coberturaParser.LoadCoverage());
     }
 
     [Test]
     public void CoberturaParser_LoadCoverage_InvalidBranchCoverage2_ThrowsCoverageParseException() {
-        CoberturaParser coberturaParser = new("InvalidBranchCoverage2.xml", _directory);
+        CoberturaParser coberturaParser = new(_directory, "InvalidBranchCoverage2.xml");
 
         Assert.Throws<CoverageParseException>(() => coberturaParser.LoadCoverage());
     }
 
     [Test]
     public void CoberturaParser_LoadCoverage_InvalidBranchCoverage3_ThrowsCoverageParseException() {
-        CoberturaParser coberturaParser = new("InvalidBranchCoverage3.xml", _directory);
+        CoberturaParser coberturaParser = new(_directory, "InvalidBranchCoverage3.xml");
 
         Assert.Throws<CoverageParseException>(() => coberturaParser.LoadCoverage());
     }
 
     [Test]
     public void CoberturaParser_LoadCoverage_EmptyFile_ThrowsCoverageParseException() {
-        CoberturaParser coberturaParser = new("EmptyFile.xml", _directory);
+        CoberturaParser coberturaParser = new(_directory, "EmptyFile.xml");
 
         Assert.Throws<CoverageParseException>(() => coberturaParser.LoadCoverage());
     }
 
     [Test]
     public void CoberturaParser_LoadCoverage_InvalidFile_ThrowsCoverageParseException() {
-        CoberturaParser coberturaParser = new("InvalidFile.xml", _directory);
+        CoberturaParser coberturaParser = new(_directory, "InvalidFile.xml");
 
         Assert.Throws<CoverageParseException>(() => coberturaParser.LoadCoverage());
     }
