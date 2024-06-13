@@ -27,6 +27,16 @@ The action supports the following coverage file formats:
     fail-if-below-threshold: true
 ```
 
+### Inputs
+| Name                      | Description                                                        | Required | Default               |
+|---------------------------|--------------------------------------------------------------------|----------|-----------------------|
+| `format`                  | The format of the coverage file. Options: `sonarqube`, `cobertura` | Yes      |                       |
+| `directory`               | The directory containing the coverage file(s).                     | No       | The current directory |
+| `glob-pattern`            | The glob pattern to match the coverage file(s).                    | Yes      |                       |
+| `line-threshold`          | The line coverage threshold.                                       | No       | 80                    |
+| `branch-threshold`        | The branch coverage threshold.                                     | No       | 80                    |
+| `fail-if-below-threshold` | Whether to fail the action if the coverage is below the threshold. | No       | true                  |
+
 ## NuGet Package
 
 ### Installation
