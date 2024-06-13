@@ -37,9 +37,9 @@ jobs:
           glob-pattern: 'coverage/**/coverage.cobertura.xml'
           line-threshold: 100
           branch-threshold: 100
-  publish:
+  publish-nuget-package:
     if: startsWith(github.ref, 'refs/tags/v')
-    name: Publish
+    name: Publish NuGet Package
     needs: build-and-test
     runs-on: ubuntu-latest
     steps:
@@ -52,10 +52,41 @@ jobs:
       - name: Output version of .NET
         run: dotnet --version
       - name: Add GitHub source
-        run: dotnet nuget add source "https://nuget.pkg.github.com/Thomas-Shephard/index.json" --name "github.com" --username "Thomas-Shephard" --password ${{ secrets.NUGET_GITHUB_TOKEN }} --store-password-in-clear-text
+        run: dotnet nuget add source "https://nuget.pkg.github.com/Thomas-Shephard/index.json" --name "github.com" --username "Thomas-Shephard" --password ${{ secrets.PUBLISH_TO_GITHUB_TOKEN }} --store-password-in-clear-text
       - name: Pack project
         run: dotnet pack CoverageChecker /p:PackageVersion=${GITHUB_REF_NAME#v} --configuration Release
       - name: Push to sources
         run: |
           dotnet nuget push **/*.nupkg --source "github.com"
-          dotnet nuget push **/*.nupkg --api-key ${{ secrets.NUGET_ORG_TOKEN }} --source "nuget.org"
+          dotnet nuget push **/*.nupkg --api-key ${{ secrets.PUBLISH_TO_NUGET_TOKEN }} --source "nuget.org"
+  publish-docker-container:
+    if: startsWith(github.ref, 'refs/tags/v')
+    name: Publish Docker Container
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_REGISTRY: ghcr.io
+      DOCKER_REGISTRY_OWNER: 'Thomas-Shephard'
+    steps:
+      - name: Login to GitHub Docker registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ env.DOCKER_REGISTRY_OWNER }}
+          password: ${{ secrets.PUBLISH_TO_GITHUB_TOKEN }}
+      - name: Produce Docker metadata
+        id: metadata
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REGISTRY_OWNER }}/coverage-checker-github-action
+          tags: |
+            type=semver,pattern={{major}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}.{{minor}}.{{patch}}
+      - name: Build and push to Docker registry
+        uses: docker/build-push-action@v5
+        with:
+          file: GitHubAction.Dockerfile
+          push: true
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
