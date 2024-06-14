@@ -83,6 +83,7 @@ jobs:
             type=semver,pattern={{major}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}.{{minor}}.{{patch}}
+            type=semver,pattern={{version}}
       - name: Build and push to Docker registry
         uses: docker/build-push-action@v5
         with:
@@ -90,3 +91,25 @@ jobs:
           push: true
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
+  update-cached-container-version:
+    name: Update Cached Container Version
+    needs: publish-docker-container
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Edit cached container version
+        run: sed -i "s/latest/${GITHUB_REF_NAME#v}/g" action.yml
+      - name: Commit changes
+        run: |
+          git config --local user.name "github-actions[bot]";
+          git config --local user.email "github-actions[bot]@users.noreply.github.com";
+          git commit -am "Update cached container version";
+      - name: Push changes
+        uses: ad-m/github-push-action@v0.8.0
+        with:
+          github_token: ${{ secrets.PUSH_TO_GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
+          force: true
