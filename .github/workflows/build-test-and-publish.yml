@@ -12,6 +12,7 @@ env:
 
 jobs:
   build-and-test:
+    if: github.event.head_commit.message != 'Update cached container version'
     name: Build and Test
     runs-on: ubuntu-latest
     steps:
