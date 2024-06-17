@@ -17,6 +17,7 @@ The action supports the following coverage file formats:
 
 ```yaml
 - name: Check coverage
+  id: check-coverage
   uses: Thomas-Shephard/coverage-checker@v0.2.0
   with:
     format: 'cobertura'
@@ -36,6 +37,21 @@ The action supports the following coverage file formats:
 | `line-threshold`          | The line coverage threshold.                                       | No       | 80                    |
 | `branch-threshold`        | The branch coverage threshold.                                     | No       | 80                    |
 | `fail-if-below-threshold` | Whether to fail the action if the coverage is below the threshold. | No       | true                  |
+
+### Outputs
+| Name              | Description                         |
+|-------------------|-------------------------------------|
+| `line-coverage`   | The line coverage of the project.   |
+| `branch-coverage` | The branch coverage of the project. |
+
+These outputs can be used in subsequent steps, as shown below:
+
+```yaml
+- name: Use coverage results
+  run: |
+    echo "Line coverage ${{ steps.check-coverage.outputs.line-coverage }}"
+    echo "Branch coverage ${{ steps.check-coverage.outputs.branch-coverage }}"
+```
 
 ## NuGet Package
 
