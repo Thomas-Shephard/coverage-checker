@@ -7,8 +7,16 @@ public class CoverageAnalyzer(ActionInputs options) {
     internal void AnalyzeAsync() {
         Coverage coverage = CreateParser().LoadCoverage();
 
-        CheckLineCoverage(coverage);
-        CheckBranchCoverage(coverage);
+        CheckLineCoverage(coverage, out double calculatedLineCoverage);
+        CheckBranchCoverage(coverage, out double calculatedBranchCoverage);
+
+        string? githubOutput = Environment.GetEnvironmentVariable("GITHUB_OUTPUT");
+
+        if (githubOutput is not null) {
+            using StreamWriter writer = new(githubOutput, append: true);
+            writer.WriteLine($"line-coverage={calculatedLineCoverage * 100:F2}");
+            writer.WriteLine($"branch-coverage={calculatedBranchCoverage * 100:F2}");
+        }
     }
 
     private BaseParser CreateParser() {
@@ -25,8 +33,8 @@ public class CoverageAnalyzer(ActionInputs options) {
         return null;
     }
 
-    private void CheckLineCoverage(Coverage coverage) {
-        double calculatedLineCoverage = coverage.CalculateOverallCoverage();
+    private void CheckLineCoverage(Coverage coverage, out double calculatedLineCoverage) {
+        calculatedLineCoverage = coverage.CalculateOverallCoverage();
 
         if (double.IsNaN(options.LineCoverageThreshold)) {
             OutputWarning("No line coverage found", "Are there any lines?");
@@ -39,8 +47,8 @@ public class CoverageAnalyzer(ActionInputs options) {
         }
     }
 
-    private void CheckBranchCoverage(Coverage coverage) {
-        double calculatedBranchCoverage = coverage.CalculateOverallCoverage(CoverageType.Branch);
+    private void CheckBranchCoverage(Coverage coverage, out double calculatedBranchCoverage) {
+        calculatedBranchCoverage = coverage.CalculateOverallCoverage(CoverageType.Branch);
 
         if (double.IsNaN(calculatedBranchCoverage)) {
             OutputWarning("No branch coverage found", "Are there any branches?");
