@@ -16,6 +16,8 @@ runs:
     - ${{ inputs.branch-threshold }}
     - '--fail-if-below-threshold'
     - ${{ inputs.fail-if-below-threshold }}
+    - '--fail-if-no-files-found'
+    - ${{ inputs.fail-if-no-files-found }}
 inputs:
   format:
     description: 'Coverage file format'
@@ -37,5 +39,9 @@ inputs:
     default: '80'
   fail-if-below-threshold:
     description: 'Fail if coverage is below threshold'
+    required: false
+    default: 'true'
+  fail-if-no-files-found:
+    description: 'Fail if no coverage files are found'
     required: false
     default: 'true'
