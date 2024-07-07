@@ -37,6 +37,7 @@ The action supports the following coverage file formats:
 | `line-threshold`          | The line coverage threshold.                                       | No       | 80                    |
 | `branch-threshold`        | The branch coverage threshold.                                     | No       | 80                    |
 | `fail-if-below-threshold` | Whether to fail the action if the coverage is below the threshold. | No       | true                  |
+| `fail-if-no-files-found`  | Whether to fail the action if no coverage files are found.         | No       | true                  |
 
 ### Outputs
 | Name              | Description                         |

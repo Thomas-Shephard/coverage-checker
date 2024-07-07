@@ -21,11 +21,11 @@ public class CoverageAnalyzer(ActionInputs options) {
 
     private BaseParser CreateParser() {
         if (string.Equals(options.Format, "Cobertura", StringComparison.OrdinalIgnoreCase)) {
-            return new CoberturaParser(options.Directory, options.GlobPatterns);
+            return new CoberturaParser(options.Directory, options.GlobPatterns, options.FailIfNoFilesFound);
         }
 
         if (string.Equals(options.Format, "SonarQube", StringComparison.OrdinalIgnoreCase)) {
-            return new SonarQubeParser(options.Directory, options.GlobPatterns);
+            return new SonarQubeParser(options.Directory, options.GlobPatterns, options.FailIfNoFilesFound);
         }
 
         OutputError("Invalid coverage format", $"Format '{options.Format}' is not supported (Supported formats: Cobertura and SonarQube)");

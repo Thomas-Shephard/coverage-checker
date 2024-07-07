@@ -5,14 +5,14 @@ using Microsoft.Extensions.FileSystemGlobbing;
 
 namespace CoverageChecker.Parsers;
 
-public abstract class BaseParser(string directory, IEnumerable<string> globPatterns) {
+public abstract class BaseParser(string directory, IEnumerable<string> globPatterns, bool failIfNoFilesFound) {
     private readonly Matcher _matcher = GlobUtils.CreateFromGlobPatterns(globPatterns);
 
     public Coverage LoadCoverage() {
         string[] filePaths = _matcher.GetResultsInFullPath(directory)
                                      .ToArray();
 
-        if (filePaths.Length is 0)
+        if (filePaths.Length is 0 && failIfNoFilesFound)
             throw new CoverageParseException("No coverage files found");
 
         Coverage coverage = new();
