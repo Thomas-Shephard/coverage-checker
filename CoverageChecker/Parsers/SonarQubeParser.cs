@@ -4,8 +4,8 @@ using CoverageChecker.Utils;
 
 namespace CoverageChecker.Parsers;
 
-public class SonarQubeParser(string directory, IEnumerable<string> globPatterns) : BaseParser(directory, globPatterns) {
-    public SonarQubeParser(string directory, string globPattern) : this(directory, [globPattern]) { }
+public class SonarQubeParser(string directory, IEnumerable<string> globPatterns, bool failIfNoFilesFound = true) : BaseParser(directory, globPatterns, failIfNoFilesFound) {
+    public SonarQubeParser(string directory, string globPattern, bool failIfNoFilesFound = true) : this(directory, [globPattern], failIfNoFilesFound) { }
 
     protected override void LoadCoverage(Coverage coverage, XDocument coverageDocument) {
         XElement coverageElement = coverageDocument.GetRequiredElement("coverage");
