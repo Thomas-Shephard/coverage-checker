@@ -5,49 +5,37 @@ using Moq;
 namespace CoverageChecker.Tests.UtilTests;
 
 public class GlobUtilTests {
+    [TestCase]
+    [TestCase("*")]
     [TestCase("**/*.cs")]
-    [TestCase("!**/obj/**")]
+    [TestCase("!**/obj/**", "!**/obj/**", "**/*.cs", "!**/bin/**")]
     [TestCase("**/*.cs", "!**/obj/**", "!**/bin/**")]
-    [TestCase("!**/obj/**", "**/*.cs", "**/*.csproj")]
-    public void GlobUtils_CreateFromGlobPatterns_CreatesMatcher(params string[] globPatterns) {
-        // Mock the Matcher class to verify that the correct AddInclude and AddExclude calls are made
+    [TestCase("!**/obj/**", "**/*.cs", "**/*.csproj", "!**/bin/**", "!**/obj/**")]
+    public void GlobUtils_AddFromGlobPatterns_AddsPatterns(params string[] globPatterns) {
         Mock<Matcher> matcher = new();
+        matcher.Object.AddFromGlobPatterns(globPatterns);
 
-        GlobUtils.CreateFromGlobPatterns(globPatterns, matcher.Object);
+        IEnumerable<(string globPattern, int occurrences)> globPatternOccurrences = globPatterns.GroupBy(g => g)
+                                                                                                .Select(g => (g.Key, g.Count()));
 
-        // Separate the include and exclude patterns into separate arrays
-        string[] expectedIncludePatterns = globPatterns
-                                           .Where(p => !p.StartsWith('!'))
-                                           .ToArray();
+        foreach ((string globPattern, int occurrences) in globPatternOccurrences) {
+            if (globPattern.StartsWith('!')) {
+                string expectedGlobalPattern = globPattern[1..];
+                matcher.Verify(m => m.AddExclude(expectedGlobalPattern), Times.Exactly(occurrences));
+            } else {
+                matcher.Verify(m => m.AddInclude(globPattern), Times.Exactly(occurrences));
+            }
+        }
 
-        string[] expectedExcludePatterns = globPatterns
-                                           .Where(p => p.StartsWith('!'))
-                                           .Select(p => p[1..])
-                                           .ToArray();
-
-        // Verify that the correct number of AddInclude and AddExclude calls are made with the correct arguments
-        matcher.Verify(m => m.AddInclude(It.IsIn(expectedIncludePatterns)), Times.Exactly(expectedIncludePatterns.Length));
-        matcher.Verify(m => m.AddExclude(It.IsIn(expectedExcludePatterns)), Times.Exactly(expectedExcludePatterns.Length));
+        matcher.VerifyNoOtherCalls();
     }
 
     [Test]
-    public void GlobUtils_CreateFromGlobPatterns_EmptyPatterns_CreatesMatcher() {
-        Matcher matcher = GlobUtils.CreateFromGlobPatterns([]);
+    public void GlobUtils_AddFromGlobPatterns_EmptyPatterns_DoesNotAddPatterns() {
+        Mock<Matcher> matcher = new();
+        matcher.Object.AddFromGlobPatterns([]);
 
-        // Ensure that the matcher is not null when no patterns are provided
-        Assert.That(matcher, Is.Not.Null);
-    }
-
-    [Test]
-    public void GlobUtils_CreateFromGlobPatterns_AllPatterns_CreatesMatcher() {
-        Matcher matcher = GlobUtils.CreateFromGlobPatterns(["*"]);
-
-        string[] actual = matcher.GetResultsInFullPath(Environment.CurrentDirectory).ToArray();
-        string[] expected = Directory.GetFiles(Environment.CurrentDirectory);
-
-        // Ensure that the matcher found at least one file
-        Assert.That(actual, Is.Not.Empty);
-        // Ensure that the matcher found all files in the current directory
-        Assert.That(actual, Is.EquivalentTo(expected));
+        matcher.Verify(m => m.AddInclude(It.IsAny<string>()), Times.Never);
+        matcher.Verify(m => m.AddExclude(It.IsAny<string>()), Times.Never);
     }
 }
