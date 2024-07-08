@@ -2,7 +2,7 @@ using System.Xml.Linq;
 
 namespace CoverageChecker.Utils;
 
-internal static class CoverageParseUtils {
+internal static class CoverageFileParseUtils {
     internal static XElement GetRequiredElement(this XContainer container, XName name) {
         return container.Element(name) ?? throw new CoverageParseException($"Element '{name}' not found");
     }
