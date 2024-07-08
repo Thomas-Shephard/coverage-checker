@@ -36,15 +36,15 @@ public class CoverageTests {
 
         FileCoverage coverageFile1 = coverage.GetOrCreateFile("coverage-file-1");
 
-        coverageFile1.AddLine(new LineCoverage(1, true, 1, 0));
-        coverageFile1.AddLine(new LineCoverage(2, false, 8, 1));
-        coverageFile1.AddLine(new LineCoverage(3, true, 2, 1));
+        coverageFile1.AddLine(1, true, 1, 0);
+        coverageFile1.AddLine(2, false, 8, 1);
+        coverageFile1.AddLine(3, true, 2, 1);
 
         FileCoverage coverageFile2 = coverage.GetOrCreateFile("coverage-file-2");
 
-        coverageFile2.AddLine(new LineCoverage(1, true, 1, 0));
-        coverageFile2.AddLine(new LineCoverage(2, true, 3, 2));
-        coverageFile2.AddLine(new LineCoverage(3, false, 4, 3));
+        coverageFile2.AddLine(1, true, 1, 0);
+        coverageFile2.AddLine(2, true, 3, 2);
+        coverageFile2.AddLine(3, false, 4, 3);
 
         Assert.Multiple(() => {
             Assert.That(coverage.GetFile("coverage-file-1"), Is.EqualTo(coverageFile1));

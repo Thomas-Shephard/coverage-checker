@@ -35,11 +35,7 @@ public class FileCoverageTests {
             new LineCoverage(3, true, 4, 3)
         ];
 
-        FileCoverage fileCoverage = new("coverage-file");
-
-        foreach (LineCoverage line in lines) {
-            fileCoverage.AddLine(line);
-        }
+        FileCoverage fileCoverage = new(lines, "coverage-file");
 
         Assert.Multiple(() => {
             Assert.That(fileCoverage.GetLine(1), Is.EqualTo(lines[0]));
@@ -55,9 +51,9 @@ public class FileCoverageTests {
     public void FileCoverage_AddLine_LineAlreadyExists_ThrowsException() {
         FileCoverage fileCoverage = new("coverage-file");
 
-        fileCoverage.AddLine(new LineCoverage(1, true, 1, 0));
+        fileCoverage.AddLine(1, true, 1, 0);
 
-        Assert.Throws<CoverageCalculationException>(() => fileCoverage.AddLine(new LineCoverage(1, true, 1, 1)));
+        Assert.Throws<CoverageCalculationException>(() => fileCoverage.AddLine(1, true, 1, 1));
     }
 
     [Test]
