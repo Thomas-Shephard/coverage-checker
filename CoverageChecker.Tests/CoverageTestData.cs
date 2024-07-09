@@ -4,6 +4,10 @@ namespace CoverageChecker.Tests;
 
 internal static class CoverageTestData {
     internal const string FilePath = "file-path";
+    internal const string PackageName = "package-name";
+    internal const string ClassName = "class-name";
+    internal const string MethodName = "method-name";
+    internal const string MethodSignature = "method-signature";
 
     internal static readonly FileCoverage[] FilesEmpty = [];
     internal static readonly LineCoverage[] LinesEmpty = [];
