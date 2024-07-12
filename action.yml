@@ -2,7 +2,7 @@ name: 'Code Coverage Checker'
 description: 'Checks the code coverage of a project'
 runs:
   using: 'docker'
-  image: 'docker://ghcr.io/thomas-shephard/coverage-checker-github-action:latest'
+  image: 'docker://ghcr.io/thomas-shephard/coverage-checker-github-action:0.3.1'
   args:
     - '--format'
     - ${{ inputs.format }}
