@@ -48,11 +48,52 @@ public class FileCoverageTests {
     }
 
     [Test]
-    public void FileCoverage_AddLine_LineAlreadyExists_ThrowsException() {
+    public void FileCoverage_AddLine_LineSubstantivelySame1_UpdatesLine() {
         FileCoverage fileCoverage = new(CoverageTestData.FilePath);
 
-        Assert.DoesNotThrow(() => fileCoverage.AddLine(1, true, 1, 0));
-        Assert.Throws<CoverageCalculationException>(() => fileCoverage.AddLine(1, true, 1, 1));
+        fileCoverage.AddLine(1, true, 1, 0);
+        Assert.Multiple(() => {
+            Assert.That(fileCoverage.GetLine(1)?.IsCovered, Is.True);
+            Assert.That(fileCoverage.GetLine(1)?.CoveredBranches, Is.EqualTo(0));
+        });
+
+        Assert.DoesNotThrow(() => fileCoverage.AddLine(1, true, 1, 1));
+        Assert.Multiple(() => {
+            Assert.That(fileCoverage.GetLine(1)?.IsCovered, Is.True);
+            Assert.That(fileCoverage.GetLine(1)?.CoveredBranches, Is.EqualTo(1));
+        });
+
+        Assert.DoesNotThrow(() => fileCoverage.AddLine(1, false, 1, 0));
+        Assert.Multiple(() => {
+            Assert.That(fileCoverage.GetLine(1)?.IsCovered, Is.True);
+            Assert.That(fileCoverage.GetLine(1)?.CoveredBranches, Is.EqualTo(1));
+        });
+    }
+
+    [Test]
+    public void FileCoverage_AddLine_LineSubstantivelySame2_UpdatesLine() {
+        FileCoverage fileCoverage = new(CoverageTestData.FilePath);
+
+        fileCoverage.AddLine(2, false);
+        Assert.Multiple(() => {
+            Assert.That(fileCoverage.GetLine(2)?.IsCovered, Is.False);
+            Assert.That(fileCoverage.GetLine(2)?.CoveredBranches, Is.Null);
+        });
+
+        Assert.DoesNotThrow(() => fileCoverage.AddLine(2, true));
+        Assert.Multiple(() => {
+            Assert.That(fileCoverage.GetLine(2)?.IsCovered, Is.True);
+            Assert.That(fileCoverage.GetLine(2)?.CoveredBranches, Is.Null);
+        });
+    }
+
+    [Test]
+    public void FileCoverage_AddLine_LineNotSubstantivelySame_ThrowsException() {
+        FileCoverage fileCoverage = new(CoverageTestData.FilePath);
+
+        fileCoverage.AddLine(1, true, 1, 0);
+
+        Assert.Throws<CoverageCalculationException>(() => fileCoverage.AddLine(1, false, 2, 1));
     }
 
     [Test]
