@@ -48,6 +48,23 @@ public class FileCoverageTests {
     }
 
     [Test]
+    public void FileCoverage_AddLine_LineExactlySame_DoesntUpdateLine() {
+        FileCoverage fileCoverage = new(CoverageTestData.FilePath);
+
+        fileCoverage.AddLine(1, true);
+        Assert.Multiple(() => {
+            Assert.That(fileCoverage.GetLine(1)?.IsCovered, Is.True);
+            Assert.That(fileCoverage.GetLine(1)?.CoveredBranches, Is.Null);
+        });
+
+        Assert.DoesNotThrow(() => fileCoverage.AddLine(1, true));
+        Assert.Multiple(() => {
+            Assert.That(fileCoverage.GetLine(1)?.IsCovered, Is.True);
+            Assert.That(fileCoverage.GetLine(1)?.CoveredBranches, Is.Null);
+        });
+    }
+
+    [Test]
     public void FileCoverage_AddLine_LineSubstantivelySame1_UpdatesLine() {
         FileCoverage fileCoverage = new(CoverageTestData.FilePath);
 
