@@ -1,6 +1,6 @@
 using CoverageChecker.Results;
 
-namespace CoverageChecker.Tests.ResultTests;
+namespace CoverageChecker.UnitTests.ResultTests;
 
 public class LineCoverageTests {
     [TestCase(1, false, null, null, CoverageTestData.ClassName, CoverageTestData.MethodName, CoverageTestData.MethodSignature)]

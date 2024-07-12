@@ -18,7 +18,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <InternalsVisibleTo Include="CoverageChecker.Tests"/>
+        <InternalsVisibleTo Include="CoverageChecker.UnitTests"/>
     </ItemGroup>
     
     <ItemGroup>

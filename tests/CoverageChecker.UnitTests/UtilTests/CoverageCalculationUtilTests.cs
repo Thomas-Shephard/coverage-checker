@@ -1,7 +1,7 @@
 using CoverageChecker.Results;
 using CoverageChecker.Utils;
 
-namespace CoverageChecker.Tests.UtilTests;
+namespace CoverageChecker.UnitTests.UtilTests;
 
 public class CoverageCalculationUtilFileTests {
     [Test]

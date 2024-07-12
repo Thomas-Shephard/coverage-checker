@@ -23,7 +23,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\CoverageChecker\CoverageChecker.csproj" />
+      <ProjectReference Include="..\..\src\CoverageChecker\CoverageChecker.csproj" />
     </ItemGroup>
     
     <ItemGroup>
