@@ -63,10 +63,10 @@ public class CoverageAnalyzer(ActionInputs options) {
 
     private void OutputInsufficientCoverage(string title, string message) {
         if (options.FailIfBelowThreshold) {
-            OutputWarning(title, message);
+            OutputError(title, message);
             Environment.Exit(1);
         } else {
-            OutputError(title, message);
+            OutputWarning(title, message);
         }
     }
 
