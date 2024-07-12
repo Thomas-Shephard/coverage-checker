@@ -2,7 +2,7 @@ using CoverageChecker.Utils;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Moq;
 
-namespace CoverageChecker.Tests.UtilTests;
+namespace CoverageChecker.UnitTests.UtilTests;
 
 public class GlobUtilTests {
     [TestCase]

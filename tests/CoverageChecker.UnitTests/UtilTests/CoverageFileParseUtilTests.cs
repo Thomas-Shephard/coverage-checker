@@ -1,7 +1,7 @@
 using System.Xml.Linq;
 using CoverageChecker.Utils;
 
-namespace CoverageChecker.Tests.UtilTests;
+namespace CoverageChecker.UnitTests.UtilTests;
 
 public class CoverageFileParseUtilTests {
     private const string ElementName = "element";

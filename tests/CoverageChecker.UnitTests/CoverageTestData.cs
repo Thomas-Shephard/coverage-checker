@@ -1,6 +1,6 @@
 ﻿using CoverageChecker.Results;
 
-namespace CoverageChecker.Tests;
+namespace CoverageChecker.UnitTests;
 
 internal static class CoverageTestData {
     internal const string FilePath = "file-path";

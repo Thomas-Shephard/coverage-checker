@@ -1,20 +1,19 @@
-﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoverageChecker", "CoverageChecker\CoverageChecker.csproj", "{C86B9311-BF9D-4173-B814-D4F38ADF26E0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoverageChecker", "src\CoverageChecker\CoverageChecker.csproj", "{C86B9311-BF9D-4173-B814-D4F38ADF26E0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoverageChecker.Tests", "CoverageChecker.Tests\CoverageChecker.Tests.csproj", "{41DBCAB1-CCE5-47E0-A550-647546CBC424}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoverageChecker.GitHubAction", "src\CoverageChecker.GitHubAction\CoverageChecker.GitHubAction.csproj", "{32F57D39-941A-400E-B395-6AED9CB8738A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoverageChecker.GitHubAction", "CoverageChecker.GitHubAction\CoverageChecker.GitHubAction.csproj", "{32F57D39-941A-400E-B395-6AED9CB8738A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoverageChecker.UnitTests", "tests\CoverageChecker.UnitTests\CoverageChecker.UnitTests.csproj", "{41DBCAB1-CCE5-47E0-A550-647546CBC424}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{4D8E225F-73A7-46FE-9D94-6C2496BF45E6}"
-    ProjectSection(SolutionItems) = preProject
-        .gitignore = .gitignore
-        action.yml = action.yml
-        GitHubAction.Dockerfile = GitHubAction.Dockerfile
-    EndProjectSection
+				ProjectSection(SolutionItems) = preProject
+								.gitignore = .gitignore
+								action.yml = action.yml
+								GitHubAction.Dockerfile = GitHubAction.Dockerfile
+				EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
