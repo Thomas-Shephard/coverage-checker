@@ -1,7 +1,7 @@
 using CoverageChecker.Parsers;
 using CoverageChecker.Results;
 
-namespace CoverageChecker.UnitTests.ParserTests;
+namespace CoverageChecker.EndToEndTests.ParserTests;
 
 public class SonarQubeParserTests {
     private readonly string _directory = Path.Combine(TestContext.CurrentContext.TestDirectory, "CoverageFiles", "SonarQube");
