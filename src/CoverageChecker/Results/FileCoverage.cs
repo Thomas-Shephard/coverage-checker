@@ -22,10 +22,23 @@ public class FileCoverage(string path, string? packageName = null) {
         LineCoverage? existingLine = GetLine(lineNumber);
 
         if (existingLine is not null) {
-            // If the line is the same (excluding method name and signature) as the one being added, it is ignored, otherwise an exception is thrown
-            if (existingLine.EquivalentTo(line))
+            // If the lines are the same (excluding method name and signature), there is no need to update it
+            if (existingLine.EquivalentTo(line)) {
                 return;
-            throw new CoverageCalculationException("Line already exists in the file");
+            }
+
+            // If the lines are not substantively the same, throw an exception
+            if (existingLine.Branches != line.Branches || existingLine.ClassName != line.ClassName) {
+                throw new CoverageCalculationException("Line already exists in the file");
+            }
+
+            // Update the existing line with the new coverage information
+            existingLine.IsCovered = existingLine.IsCovered || line.IsCovered;
+            if (existingLine.Branches is not null) {
+                existingLine.CoveredBranches = Math.Max(existingLine.CoveredBranches ?? 0, line.CoveredBranches ?? 0);
+            }
+
+            return;
         }
 
         _lines.Add(line);
