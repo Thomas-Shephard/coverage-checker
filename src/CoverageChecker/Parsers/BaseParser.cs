@@ -20,9 +20,7 @@ public abstract class BaseParser(string directory, IEnumerable<string> globPatte
         foreach (string filePath in filePaths) {
             try {
                 LoadCoverage(coverage, XDocument.Load(filePath));
-            } catch(Exception e) {
-                // Rethrow the exception if it is a CoverageException otherwise throw a generic failed to load exception
-                if (e is CoverageException) throw;
+            } catch (Exception e) when (e is not CoverageException) {
                 throw new CoverageParseException("Failed to load coverage file");
             }
         }
