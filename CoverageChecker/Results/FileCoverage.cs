@@ -16,8 +16,10 @@ public class FileCoverage(string path, string? packageName = null) {
         return Lines.FirstOrDefault(line => line.LineNumber == lineNumber);
     }
 
-    internal void AddLine(LineCoverage line) {
-        LineCoverage? existingLine = GetLine(line.LineNumber);
+    internal void AddLine(int lineNumber, bool isCovered, int? branches = null, int? coveredBranches = null, string? className = null, string? methodName = null, string? methodSignature = null) {
+        LineCoverage line = new(lineNumber, isCovered, branches, coveredBranches, className, methodName, methodSignature);
+
+        LineCoverage? existingLine = GetLine(lineNumber);
 
         if (existingLine is not null) {
             // If the line is the same (excluding method name and signature) as the one being added, it is ignored, otherwise an exception is thrown

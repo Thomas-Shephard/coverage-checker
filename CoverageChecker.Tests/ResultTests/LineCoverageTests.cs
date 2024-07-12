@@ -3,20 +3,17 @@ using CoverageChecker.Results;
 namespace CoverageChecker.Tests.ResultTests;
 
 public class LineCoverageTests {
-    private const int LineNumber = 1;
-    private const bool IsCovered = true;
-
-    [TestCase(null, null, "class-name", "method-name", "method-signature")]
-    [TestCase(1, 0, "class-name", null, null)]
-    [TestCase(3, 0, null, "method-name", "method-signature")]
-    [TestCase(3, 2, null, "method-name", null)]
-    [TestCase(3, 3, null, null, null)]
-    public void LineCoverage_BranchesAndCoveredBranchesMatchNullability_ReturnsObject(int? branches, int? coveredBranches, string? className, string? methodName, string? methodSignature) {
-        LineCoverage lineCoverage = new(LineNumber, IsCovered, branches, coveredBranches, className, methodName, methodSignature);
+    [TestCase(1, false, null, null, CoverageTestData.ClassName, CoverageTestData.MethodName, CoverageTestData.MethodSignature)]
+    [TestCase(2, false, 1, 0, CoverageTestData.ClassName, null, null)]
+    [TestCase(1, false, 3, 0, null, CoverageTestData.MethodName, CoverageTestData.MethodSignature)]
+    [TestCase(2, true, 3, 2, null, CoverageTestData.MethodName, null)]
+    [TestCase(5, true, 3, 3, null, null, null)]
+    public void LineCoverage_ConstructorValid_ReturnsObject(int lineNumber, bool isCovered, int? branches, int? coveredBranches, string? className, string? methodName, string? methodSignature) {
+        LineCoverage lineCoverage = new(lineNumber, isCovered, branches, coveredBranches, className, methodName, methodSignature);
 
         Assert.Multiple(() => {
-            Assert.That(lineCoverage.LineNumber, Is.EqualTo(LineNumber));
-            Assert.That(lineCoverage.IsCovered, Is.EqualTo(IsCovered));
+            Assert.That(lineCoverage.LineNumber, Is.EqualTo(lineNumber));
+            Assert.That(lineCoverage.IsCovered, Is.EqualTo(isCovered));
             Assert.That(lineCoverage.Branches, Is.EqualTo(branches));
             Assert.That(lineCoverage.CoveredBranches, Is.EqualTo(coveredBranches));
             Assert.That(lineCoverage.ClassName, Is.EqualTo(className));
@@ -27,40 +24,40 @@ public class LineCoverageTests {
 
     [TestCase(null, 0)]
     [TestCase(1, null)]
-    public void LineCoverage_BranchesAndCoveredBranchesMismatchNullability_ThrowsArgumentException(int? branches, int? coveredBranches) {
-        Assert.Throws<ArgumentException>(() => _ = new LineCoverage(LineNumber, IsCovered, branches, coveredBranches));
+    public void LineCoverage_ConstructorWithMismatchedNullabilityBetweenBranchesAndCoveredBranches_ThrowsException(int? branches, int? coveredBranches) {
+        Assert.Throws<ArgumentException>(() => _ = new LineCoverage(1, true, branches, coveredBranches));
     }
 
     [TestCase(0)]
     [TestCase(-1)]
     [TestCase(-10)]
-    public void LineCoverage_NonPositiveBranches_ThrowsArgumentException(int branches) {
-        Assert.Throws<ArgumentException>(() => _ = new LineCoverage(LineNumber, IsCovered, branches, 0));
+    public void LineCoverage_ConstructorWithNonPositiveBranches_ThrowsException(int branches) {
+        Assert.Throws<ArgumentException>(() => _ = new LineCoverage(1, true, branches, 0));
     }
 
     [TestCase(-1)]
     [TestCase(-5)]
     [TestCase(-10)]
-    public void LineCoverage_NegativeCoveredBranches_ThrowsArgumentException(int coveredBranches) {
-        Assert.Throws<ArgumentException>(() => _ = new LineCoverage(LineNumber, IsCovered, 1, coveredBranches));
+    public void LineCoverage_ConstructorWithNegativeCoveredBranches_ThrowsException(int coveredBranches) {
+        Assert.Throws<ArgumentException>(() => _ = new LineCoverage(1, true, 1, coveredBranches));
     }
 
     [TestCase(2, 3)]
     [TestCase(3, 5)]
     [TestCase(1, 10)]
-    public void LineCoverage_CoveredBranchesGreaterThanBranches_ThrowsArgumentException(int branches, int coveredBranches) {
-        Assert.Throws<ArgumentException>(() => _ = new LineCoverage(LineNumber, IsCovered, branches, coveredBranches));
+    public void LineCoverage_ConstructorWithCoveredBranchesGreaterThanBranches_ThrowsException(int branches, int coveredBranches) {
+        Assert.Throws<ArgumentException>(() => _ = new LineCoverage(1, true, branches, coveredBranches));
     }
 
     [Test]
-    public void LineCoverage_MethodSignatureWithoutMethodName_ThrowsArgumentException() {
-        Assert.Throws<ArgumentException>(() => _ = new LineCoverage(LineNumber, IsCovered, methodName: null, methodSignature: "method-signature"));
+    public void LineCoverage_ConstructorWithMethodSignatureWithoutMethodName_ThrowsException() {
+        Assert.Throws<ArgumentException>(() => _ = new LineCoverage(1, true, methodName: null, methodSignature: CoverageTestData.MethodSignature));
     }
 
     [TestCase(true)]
     [TestCase(false)]
-    public void LineCoverage_CalculateLineCoverage_Line_ReturnsCoverage(bool isCovered) {
-        LineCoverage lineCoverage = new(LineNumber, isCovered);
+    public void LineCoverage_CalculateLineCoverage_LineCoverage_ReturnsCoverage(bool isCovered) {
+        LineCoverage lineCoverage = new(1, isCovered);
 
         double coverage = lineCoverage.CalculateLineCoverage();
 
@@ -70,8 +67,8 @@ public class LineCoverageTests {
     [TestCase(3, 2)]
     [TestCase(5, 3)]
     [TestCase(10, 5)]
-    public void LineCoverage_CalculateLineCoverage_Branch_ReturnsCoverage(int branches, int coveredBranches) {
-        LineCoverage lineCoverage = new(LineNumber, IsCovered, branches, coveredBranches);
+    public void LineCoverage_CalculateLineCoverage_BranchCoverage_ReturnsCoverage(int branches, int coveredBranches) {
+        LineCoverage lineCoverage = new(1, true, branches, coveredBranches);
 
         double coverage = lineCoverage.CalculateLineCoverage(CoverageType.Branch);
 
@@ -80,31 +77,31 @@ public class LineCoverageTests {
 
     [Test]
     public void LineCoverage_EquivalentTo_SameObject_ReturnsTrue() {
-        LineCoverage lineCoverage = new(LineNumber, IsCovered);
+        LineCoverage lineCoverage = new(1, false);
 
         Assert.That(lineCoverage.EquivalentTo(lineCoverage), Is.True);
     }
 
     [Test]
-    public void LineCoverage_EquivalentTo_NullObject_ReturnsFalse() {
-        LineCoverage lineCoverage = new(LineNumber, IsCovered);
+    public void LineCoverage_EquivalentTo_EqualObjects_ReturnsTrue() {
+        LineCoverage lineCoverage1 = new(2, false);
+        LineCoverage lineCoverage2 = new(2, false);
+
+        Assert.That(lineCoverage1.EquivalentTo(lineCoverage2), Is.True);
+    }
+
+    [Test]
+    public void LineCoverage_EquivalentTo_Null_ReturnsFalse() {
+        LineCoverage lineCoverage = new(1, true);
 
         Assert.That(lineCoverage.EquivalentTo(null), Is.False);
     }
 
     [Test]
-    public void LineCoverage_EquivalentTo_Different_ReturnsFalse() {
-        LineCoverage lineCoverage1 = new(LineNumber, true);
-        LineCoverage lineCoverage2 = new(LineNumber, false);
+    public void LineCoverage_EquivalentTo_DifferentObjects_ReturnsFalse() {
+        LineCoverage lineCoverage1 = new(1, true);
+        LineCoverage lineCoverage2 = new(2, false);
 
         Assert.That(lineCoverage1.EquivalentTo(lineCoverage2), Is.False);
-    }
-
-    [Test]
-    public void LineCoverage_EquivalentTo_Same_ReturnsTrue() {
-        LineCoverage lineCoverage1 = new(LineNumber, IsCovered);
-        LineCoverage lineCoverage2 = new(LineNumber, IsCovered);
-
-        Assert.That(lineCoverage1.EquivalentTo(lineCoverage2), Is.True);
     }
 }

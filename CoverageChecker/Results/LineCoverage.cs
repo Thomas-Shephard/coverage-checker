@@ -35,7 +35,9 @@ public class LineCoverage {
     }
 
     public double CalculateLineCoverage(CoverageType coverageType = CoverageType.Line) {
-        return CoverageUtils.CalculateCoverage([this], coverageType);
+        LineCoverage[] lines = [this];
+
+        return lines.CalculateCoverage(coverageType);
     }
 
     internal bool EquivalentTo(LineCoverage? other) {

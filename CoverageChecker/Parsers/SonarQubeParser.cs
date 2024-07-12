@@ -25,17 +25,17 @@ public class SonarQubeParser(string directory, IEnumerable<string> globPatterns,
         FileCoverage file = coverage.GetOrCreateFile(filePath);
 
         foreach (XElement lineToCoverElement in fileElement.Elements("lineToCover")) {
-            file.AddLine(CreateLineCoverage(lineToCoverElement));
+            LoadLineCoverage(file, lineToCoverElement);
         }
     }
 
-    private static LineCoverage CreateLineCoverage(XElement lineToCoverElement) {
+    private static void LoadLineCoverage(FileCoverage file, XElement lineToCoverElement) {
         int lineNumber = lineToCoverElement.ParseRequiredAttribute<int>("lineNumber");
         bool isCovered = lineToCoverElement.ParseRequiredAttribute<bool>("covered");
 
         int? branches = lineToCoverElement.ParseOptionalAttribute<int>("branchesToCover");
         int? coveredBranches = lineToCoverElement.ParseOptionalAttribute<int>("coveredBranches");
 
-        return new LineCoverage(lineNumber, isCovered, branches, coveredBranches);
+        file.AddLine(lineNumber, isCovered, branches, coveredBranches);
     }
 }

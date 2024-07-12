@@ -6,7 +6,7 @@ using Microsoft.Extensions.FileSystemGlobbing;
 namespace CoverageChecker.Parsers;
 
 public abstract class BaseParser(string directory, IEnumerable<string> globPatterns, bool failIfNoFilesFound) {
-    private readonly Matcher _matcher = GlobUtils.CreateFromGlobPatterns(globPatterns);
+    private readonly Matcher _matcher = new Matcher().AddFromGlobPatterns(globPatterns);
 
     public Coverage LoadCoverage() {
         string[] filePaths = _matcher.GetResultsInFullPath(directory)

@@ -38,7 +38,7 @@ public class CoberturaParser(string directory, IEnumerable<string> globPatterns,
 
         XElement linesElement = classElement.GetRequiredElement("lines");
         foreach (XElement lineElement in linesElement.Elements("line")) {
-            file.AddLine(CreateLineCoverage(lineElement, className));
+            LoadLineCoverage(file, lineElement, className);
         }
     }
 
@@ -48,24 +48,25 @@ public class CoberturaParser(string directory, IEnumerable<string> globPatterns,
 
         XElement linesElement = methodElement.GetRequiredElement("lines");
         foreach (XElement lineElement in linesElement.Elements("line")) {
-            file.AddLine(CreateLineCoverage(lineElement, className, methodName, methodSignature));
+            LoadLineCoverage(file, lineElement, className, methodName, methodSignature);
         }
     }
 
-    private static LineCoverage CreateLineCoverage(XElement lineElement, string className, string? methodName = null, string? methodSignature = null) {
+    private static void LoadLineCoverage(FileCoverage file, XElement lineElement, string className, string? methodName = null, string? methodSignature = null) {
         int lineNumber = lineElement.ParseRequiredAttribute<int>("number");
         bool isCovered = lineElement.ParseRequiredAttribute<int>("hits") > 0;
         bool hasBranches = lineElement.ParseOptionalAttribute<bool>("branch") ?? false;
 
         if (!hasBranches) {
-            return new LineCoverage(lineNumber, isCovered, className: className, methodName: methodName, methodSignature: methodSignature);
+            file.AddLine(lineNumber, isCovered, className: className, methodName: methodName, methodSignature: methodSignature);
+            return;
         }
 
         // Select the condition-coverage attribute
         string conditionCoverage = lineElement.GetRequiredAttribute("condition-coverage").Value;
         (int branches, int coveredBranches) = ParseConditionCoverage(conditionCoverage);
 
-        return new LineCoverage(lineNumber, isCovered, branches, coveredBranches, className, methodName, methodSignature);
+        file.AddLine(lineNumber, isCovered, branches, coveredBranches, className, methodName, methodSignature);
     }
 
     private static (int branches, int coveredBranches) ParseConditionCoverage(string conditionCoverage) {
