@@ -4,9 +4,9 @@ namespace CoverageChecker.Results;
 
 public class LineCoverage {
     public int LineNumber { get; }
-    public bool IsCovered { get; }
+    public bool IsCovered { get; internal set; }
     public int? Branches { get; }
-    public int? CoveredBranches { get; }
+    public int? CoveredBranches { get; internal set; }
     public string? ClassName { get; }
     public string? MethodName { get; }
     public string? MethodSignature { get; }
