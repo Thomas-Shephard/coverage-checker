@@ -96,34 +96,39 @@ public class CoberturaParserTests {
     public void CoberturaParser_LoadCoverage_InvalidBranchCoverage1_ThrowsCoverageParseException() {
         CoberturaParser coberturaParser = new(_directory, "InvalidBranchCoverage1.xml");
 
-        Assert.Throws<CoverageParseException>(() => coberturaParser.LoadCoverage());
+        Exception e = Assert.Throws<CoverageParseException>(() => coberturaParser.LoadCoverage());
+        Assert.That(e.Message, Is.EqualTo("Attribute 'condition-coverage' on element 'line' is not in the correct format"));
     }
 
     [Test]
     public void CoberturaParser_LoadCoverage_InvalidBranchCoverage2_ThrowsCoverageParseException() {
         CoberturaParser coberturaParser = new(_directory, "InvalidBranchCoverage2.xml");
 
-        Assert.Throws<CoverageParseException>(() => coberturaParser.LoadCoverage());
+        Exception e = Assert.Throws<CoverageParseException>(() => coberturaParser.LoadCoverage());
+        Assert.That(e.Message, Is.EqualTo("Attribute 'condition-coverage' on element 'line' is not in the correct format"));
     }
 
     [Test]
     public void CoberturaParser_LoadCoverage_InvalidBranchCoverage3_ThrowsCoverageParseException() {
         CoberturaParser coberturaParser = new(_directory, "InvalidBranchCoverage3.xml");
 
-        Assert.Throws<CoverageParseException>(() => coberturaParser.LoadCoverage());
+        Exception e = Assert.Throws<CoverageParseException>(() => coberturaParser.LoadCoverage());
+        Assert.That(e.Message, Is.EqualTo("Attribute 'condition-coverage' on element 'line' is not in the correct format"));
     }
 
     [Test]
     public void CoberturaParser_LoadCoverage_EmptyFile_ThrowsCoverageParseException() {
         CoberturaParser coberturaParser = new(_directory, "EmptyFile.xml");
 
-        Assert.Throws<CoverageParseException>(() => coberturaParser.LoadCoverage());
+        Exception e = Assert.Throws<CoverageParseException>(() => coberturaParser.LoadCoverage());
+        Assert.That(e.Message, Is.EqualTo("Failed to load coverage file"));
     }
 
     [Test]
     public void CoberturaParser_LoadCoverage_InvalidFile_ThrowsCoverageParseException() {
         CoberturaParser coberturaParser = new(_directory, "InvalidFile.xml");
 
-        Assert.Throws<CoverageParseException>(() => coberturaParser.LoadCoverage());
+        Exception e = Assert.Throws<CoverageParseException>(() => coberturaParser.LoadCoverage());
+        Assert.That(e.Message, Is.EqualTo("No coverage files found"));
     }
 }

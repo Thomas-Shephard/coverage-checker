@@ -110,7 +110,8 @@ public class FileCoverageTests {
 
         fileCoverage.AddLine(1, true, 1, 0);
 
-        Assert.Throws<CoverageCalculationException>(() => fileCoverage.AddLine(1, false, 2, 1));
+        Exception e = Assert.Throws<CoverageCalculationException>(() => fileCoverage.AddLine(1, false, 2, 1));
+        Assert.That(e.Message, Is.EqualTo("Line already exists in the file"));
     }
 
     [Test]
@@ -165,7 +166,8 @@ public class FileCoverageTests {
             new LineCoverage(3, true, className: $"{CoverageTestData.ClassName}-2")
         ], CoverageTestData.FilePath);
 
-        Assert.Throws<CoverageCalculationException>(() => fileCoverage.CalculateClassCoverage($"{CoverageTestData.ClassName}-unknown"));
+        Exception e = Assert.Throws<CoverageCalculationException>(() => fileCoverage.CalculateClassCoverage($"{CoverageTestData.ClassName}-unknown"));
+        Assert.That(e.Message, Is.EqualTo("No lines found for the specified class name"));
     }
 
     [Test]
@@ -202,6 +204,7 @@ public class FileCoverageTests {
             new LineCoverage(3, true, methodName: $"{CoverageTestData.MethodName}-2")
         ], CoverageTestData.FilePath);
 
-        Assert.Throws<CoverageCalculationException>(() => fileCoverage.CalculateMethodCoverage($"{CoverageTestData.MethodName}-unknown"));
+        Exception e = Assert.Throws<CoverageCalculationException>(() => fileCoverage.CalculateMethodCoverage($"{CoverageTestData.MethodName}-unknown"));
+        Assert.That(e.Message, Is.EqualTo("No lines found for the specified method"));
     }
 }
