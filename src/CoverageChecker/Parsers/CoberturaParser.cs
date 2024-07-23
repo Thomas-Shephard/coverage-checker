@@ -4,28 +4,26 @@ using CoverageChecker.Utils;
 
 namespace CoverageChecker.Parsers;
 
-public class CoberturaParser(string directory, IEnumerable<string> globPatterns, bool failIfNoFilesFound = true) : BaseParser(directory, globPatterns, failIfNoFilesFound) {
-    public CoberturaParser(string directory, string globPattern, bool failIfNoFilesFound = true) : this(directory, [globPattern], failIfNoFilesFound) { }
-
-    protected override void LoadCoverage(Coverage coverage, XDocument coverageDocument) {
+public class CoberturaParser(Coverage coverage) : BaseParser {
+    protected override void LoadCoverage(XDocument coverageDocument) {
         XElement coverageElement = coverageDocument.GetRequiredElement("coverage");
 
         XElement packagesElement = coverageElement.GetRequiredElement("packages");
         foreach (XElement packageElement in packagesElement.Elements("package")) {
-            LoadPackageCoverage(coverage, packageElement);
+            LoadPackageCoverage(packageElement);
         }
     }
 
-    private static void LoadPackageCoverage(Coverage coverage, XElement packageElement) {
+    private void LoadPackageCoverage(XElement packageElement) {
         string packageName = packageElement.GetRequiredAttribute("name").Value;
 
         XElement classesElement = packageElement.GetRequiredElement("classes");
         foreach (XElement classElement in classesElement.Elements("class")) {
-            LoadClassCoverage(coverage, classElement, packageName);
+            LoadClassCoverage(classElement, packageName);
         }
     }
 
-    private static void LoadClassCoverage(Coverage coverage, XElement classElement, string packageName) {
+    private void LoadClassCoverage(XElement classElement, string packageName) {
         string filePath = classElement.GetRequiredAttribute("filename").Value;
         string className = classElement.GetRequiredAttribute("name").Value;
 

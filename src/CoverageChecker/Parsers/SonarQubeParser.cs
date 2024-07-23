@@ -4,10 +4,8 @@ using CoverageChecker.Utils;
 
 namespace CoverageChecker.Parsers;
 
-public class SonarQubeParser(string directory, IEnumerable<string> globPatterns, bool failIfNoFilesFound = true) : BaseParser(directory, globPatterns, failIfNoFilesFound) {
-    public SonarQubeParser(string directory, string globPattern, bool failIfNoFilesFound = true) : this(directory, [globPattern], failIfNoFilesFound) { }
-
-    protected override void LoadCoverage(Coverage coverage, XDocument coverageDocument) {
+public class SonarQubeParser(Coverage coverage) : BaseParser {
+    protected override void LoadCoverage(XDocument coverageDocument) {
         XElement coverageElement = coverageDocument.GetRequiredElement("coverage");
 
         // Ensure that the coverage file is valid by checking the version attribute
@@ -15,11 +13,11 @@ public class SonarQubeParser(string directory, IEnumerable<string> globPatterns,
             throw new CoverageParseException("Attribute 'version' on element 'coverage' must be '1'");
 
         foreach (XElement fileElement in coverageElement.Elements("file")) {
-            LoadFileCoverage(coverage, fileElement);
+            LoadFileCoverage(fileElement);
         }
     }
 
-    private static void LoadFileCoverage(Coverage coverage, XElement fileElement) {
+    private void LoadFileCoverage(XElement fileElement) {
         string filePath = fileElement.GetRequiredAttribute("path").Value;
 
         FileCoverage file = coverage.GetOrCreateFile(filePath);
