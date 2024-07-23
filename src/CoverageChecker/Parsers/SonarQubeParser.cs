@@ -4,7 +4,7 @@ using CoverageChecker.Utils;
 
 namespace CoverageChecker.Parsers;
 
-public class SonarQubeParser(Coverage coverage) : BaseParser {
+internal class SonarQubeParser(Coverage coverage) : BaseParser {
     protected override void LoadCoverage(XDocument coverageDocument) {
         XElement coverageElement = coverageDocument.GetRequiredElement("coverage");
 
