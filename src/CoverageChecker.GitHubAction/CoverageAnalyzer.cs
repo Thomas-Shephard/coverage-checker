@@ -5,7 +5,7 @@ namespace CoverageChecker.GitHubAction;
 
 public class CoverageAnalyzer(ActionInputs options) {
     internal void AnalyzeAsync() {
-        Coverage coverage = CreateParser().LoadCoverage();
+        /*Coverage coverage = CreateParser().LoadCoverage();
 
         CheckLineCoverage(coverage, out double calculatedLineCoverage);
         CheckBranchCoverage(coverage, out double calculatedBranchCoverage);
@@ -16,11 +16,11 @@ public class CoverageAnalyzer(ActionInputs options) {
             using StreamWriter writer = new(githubOutput, append: true);
             writer.WriteLine($"line-coverage={calculatedLineCoverage * 100:F2}");
             writer.WriteLine($"branch-coverage={calculatedBranchCoverage * 100:F2}");
-        }
+        }*/
     }
 
-    private BaseParser CreateParser() {
-        if (string.Equals(options.Format, "Cobertura", StringComparison.OrdinalIgnoreCase)) {
+    private void CreateParser() {
+        /*if (string.Equals(options.Format, "Cobertura", StringComparison.OrdinalIgnoreCase)) {
             return new CoberturaParser(options.Directory, options.GlobPatterns, options.FailIfNoFilesFound);
         }
 
@@ -30,7 +30,8 @@ public class CoverageAnalyzer(ActionInputs options) {
 
         OutputError("Invalid coverage format", $"Format '{options.Format}' is not supported (Supported formats: Cobertura and SonarQube)");
         Environment.Exit(1);
-        return null;
+        return null;*/
+        throw new NotImplementedException();
     }
 
     private void CheckLineCoverage(Coverage coverage, out double calculatedLineCoverage) {

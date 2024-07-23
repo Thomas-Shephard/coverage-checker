@@ -6,9 +6,9 @@ ILoggerFactory loggerFactory = LoggerFactory.Create(builder => builder.AddConsol
 ILogger logger = loggerFactory.CreateLogger<Program>();
 
 if (args.Length is 0) logger.LogInformation("No input arguments provided");
-else logger.LogInformation("Arguments:{NewLine}{Arguments}", Environment.NewLine, string.Join(' ', args));
+else logger.LogInformation("Input arguments: {Arguments}", string.Join(' ', args));
 
-Parser.Default.ParseArguments<CliArguments>(args)
-      .ThrowOnParseError(logger)
-      .LogParsedArguments(logger)
-      .WithParsed(cliArguments => new CoverageAnalyzer(cliArguments, loggerFactory).AnalyzeAsync());
+await Parser.Default.ParseArguments<CliArguments>(args)
+            .ThrowOnParseError(logger)
+            .LogParsedArguments(logger)
+            .WithParsedAsync(cliArguments => new CoverageAnalyzer(cliArguments, loggerFactory).AnalyzeAsync());

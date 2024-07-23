@@ -1,4 +1,4 @@
-﻿namespace CoverageChecker.CommandLineInterface;
+﻿namespace CoverageChecker;
 
 public enum CoverageFormat {
     Cobertura,

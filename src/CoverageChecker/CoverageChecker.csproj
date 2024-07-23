@@ -19,6 +19,7 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="CoverageChecker.UnitTests"/>
+        <InternalsVisibleTo Include="CoverageChecker.EndToEndTests"/>
     </ItemGroup>
     
     <ItemGroup>

@@ -7,10 +7,10 @@ public class SonarQubeParserTests {
     private readonly string _directory = Path.Combine(TestContext.CurrentContext.TestDirectory, "CoverageFiles", "SonarQube");
 
     [Test]
-    public void SonarQubeParser_LoadCoverage_FullLineCoverage_ReturnsCoverage() {
+    public async Task SonarQubeParser_LoadCoverage_FullLineCoverage_ReturnsCoverage() {
         SonarQubeParser sonarQubeParser = new(_directory, "FullLineCoverage.xml");
 
-        Coverage coverage = sonarQubeParser.LoadCoverage();
+        Coverage coverage = await sonarQubeParser.LoadCoverage();
 
         Assert.Multiple(() => {
             Assert.That(coverage.Files, Has.Count.EqualTo(4));
@@ -24,10 +24,10 @@ public class SonarQubeParserTests {
     }
 
     [Test]
-    public void SonarQubeParser_LoadCoverage_FullBranchCoverage_ReturnsCoverage() {
+    public async Task SonarQubeParser_LoadCoverage_FullBranchCoverage_ReturnsCoverage() {
         SonarQubeParser sonarQubeParser = new(_directory, "FullBranchCoverage.xml");
 
-        Coverage coverage = sonarQubeParser.LoadCoverage();
+        Coverage coverage = await sonarQubeParser.LoadCoverage();
 
         Assert.Multiple(() => {
             Assert.That(coverage.Files, Has.Count.EqualTo(3));
@@ -40,10 +40,10 @@ public class SonarQubeParserTests {
     }
 
     [Test]
-    public void SonarQubeParser_LoadCoverage_PartialLineCoverage_ReturnsCoverage() {
+    public async Task SonarQubeParser_LoadCoverage_PartialLineCoverage_ReturnsCoverage() {
         SonarQubeParser sonarQubeParser = new(_directory, "PartialLineCoverage.xml");
 
-        Coverage coverage = sonarQubeParser.LoadCoverage();
+        Coverage coverage = await sonarQubeParser.LoadCoverage();
 
         Assert.Multiple(() => {
             Assert.That(coverage.Files, Has.Count.EqualTo(2));
@@ -55,10 +55,10 @@ public class SonarQubeParserTests {
     }
 
     [Test]
-    public void SonarQubeParser_LoadCoverage_NoFiles_ReturnsCoverage() {
+    public async Task SonarQubeParser_LoadCoverage_NoFiles_ReturnsCoverage() {
         SonarQubeParser sonarQubeParser = new(_directory, "NoFiles.xml");
 
-        Coverage coverage = sonarQubeParser.LoadCoverage();
+        Coverage coverage = await sonarQubeParser.LoadCoverage();
 
         Assert.Multiple(() => {
             Assert.That(coverage.Files, Is.Empty);
@@ -68,10 +68,10 @@ public class SonarQubeParserTests {
     }
 
     [Test]
-    public void SonarQubeParser_LoadCoverage_NoLines_ReturnsCoverage() {
+    public async Task SonarQubeParser_LoadCoverage_NoLines_ReturnsCoverage() {
         SonarQubeParser sonarQubeParser = new(_directory, "NoLines.xml");
 
-        Coverage coverage = sonarQubeParser.LoadCoverage();
+        Coverage coverage = await sonarQubeParser.LoadCoverage();
 
         Assert.Multiple(() => {
             Assert.That(coverage.Files, Has.Count.EqualTo(2));
@@ -86,20 +86,20 @@ public class SonarQubeParserTests {
     public void SonarQubeParser_LoadCoverage_InvalidVersion_ThrowsCoverageParseException() {
         SonarQubeParser sonarQubeParser = new(_directory, "InvalidVersion.xml");
 
-        Assert.Throws<CoverageParseException>(() => sonarQubeParser.LoadCoverage());
+        Assert.ThrowsAsync<CoverageParseException>(() => sonarQubeParser.LoadCoverage());
     }
 
     [Test]
     public void SonarQubeParser_LoadCoverage_EmptyFile_ThrowsCoverageParseException() {
         SonarQubeParser sonarQubeParser = new(_directory, "EmptyFile.xml");
 
-        Assert.Throws<CoverageParseException>(() => sonarQubeParser.LoadCoverage());
+        Assert.ThrowsAsync<CoverageParseException>(() => sonarQubeParser.LoadCoverage());
     }
 
     [Test]
     public void SonarQubeParser_LoadCoverage_InvalidFile_ThrowsCoverageParseException() {
         SonarQubeParser sonarQubeParser = new(_directory, "InvalidFile.xml");
 
-        Assert.Throws<CoverageParseException>(() => sonarQubeParser.LoadCoverage());
+        Assert.ThrowsAsync<CoverageParseException>(() => sonarQubeParser.LoadCoverage());
     }
 }

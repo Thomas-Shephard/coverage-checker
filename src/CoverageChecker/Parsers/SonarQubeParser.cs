@@ -1,40 +1,45 @@
+using System.Xml;
 using System.Xml.Linq;
 using CoverageChecker.Results;
 using CoverageChecker.Utils;
 
 namespace CoverageChecker.Parsers;
 
-public class SonarQubeParser(string directory, IEnumerable<string> globPatterns, bool failIfNoFilesFound = true) : BaseParser(directory, globPatterns, failIfNoFilesFound) {
-    public SonarQubeParser(string directory, string globPattern, bool failIfNoFilesFound = true) : this(directory, [globPattern], failIfNoFilesFound) { }
+internal class SonarQubeParser(string directory, IEnumerable<string> globPatterns, bool failIfNoFilesFound = true) : BaseParser(directory, globPatterns, failIfNoFilesFound) {
+    internal SonarQubeParser(string directory, string globPattern, bool failIfNoFilesFound = true) : this(directory, [globPattern], failIfNoFilesFound) { }
 
-    protected override void LoadCoverage(Coverage coverage, XDocument coverageDocument) {
-        XElement coverageElement = coverageDocument.GetRequiredElement("coverage");
+    protected override async Task LoadCoverage(Coverage coverage, XmlReader reader) {
+        // Check that the root element is 'coverage' and read the 'version' attribute
+        // Check root element is 'coverage' but DO NOT consume the element
+        await reader.ReadAsync();
 
-        // Ensure that the coverage file is valid by checking the version attribute
-        if (coverageElement.GetRequiredAttribute("version").Value is not "1")
-            throw new CoverageParseException("Attribute 'version' on element 'coverage' must be '1'");
+        string version = reader.GetRequiredAttribute("version");
 
-        foreach (XElement fileElement in coverageElement.Elements("file")) {
-            LoadFileCoverage(coverage, fileElement);
-        }
+        if (version is not "1")
+            throw new CoverageParseException("Unsupported version of the SonarQube coverage report");
+
+        await reader.ReadElementsAndParse("file", async () => {
+            await LoadFileCoverage(coverage, reader);
+        });
     }
 
-    private static void LoadFileCoverage(Coverage coverage, XElement fileElement) {
-        string filePath = fileElement.GetRequiredAttribute("path").Value;
+    private static async Task LoadFileCoverage(Coverage coverage, XmlReader reader) {
+        string filePath = reader.GetRequiredAttribute("path");
 
         FileCoverage file = coverage.GetOrCreateFile(filePath);
 
-        foreach (XElement lineToCoverElement in fileElement.Elements("lineToCover")) {
-            LoadLineCoverage(file, lineToCoverElement);
-        }
+        await reader.ReadElementsAndParse("lineToCover", () => {
+            LoadLineCoverage(file, reader);
+            return Task.CompletedTask;
+        });
     }
 
-    private static void LoadLineCoverage(FileCoverage file, XElement lineToCoverElement) {
-        int lineNumber = lineToCoverElement.ParseRequiredAttribute<int>("lineNumber");
-        bool isCovered = lineToCoverElement.ParseRequiredAttribute<bool>("covered");
+    private static void LoadLineCoverage(FileCoverage file, XmlReader reader) {
+        int lineNumber = int.Parse(reader.GetRequiredAttribute("lineNumber"));
+        bool isCovered = bool.Parse(reader.GetRequiredAttribute("covered"));
 
-        int? branches = lineToCoverElement.ParseOptionalAttribute<int>("branchesToCover");
-        int? coveredBranches = lineToCoverElement.ParseOptionalAttribute<int>("coveredBranches");
+        int? branches = reader.GetAttribute("branchesToCover") is not null ? int.Parse(reader.GetRequiredAttribute("branchesToCover")) : null;
+        int? coveredBranches = reader.GetAttribute("coveredBranches") is not null ? int.Parse(reader.GetRequiredAttribute("coveredBranches")) : null;
 
         file.AddLine(lineNumber, isCovered, branches, coveredBranches);
     }

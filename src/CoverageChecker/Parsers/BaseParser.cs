@@ -1,3 +1,4 @@
+using System.Xml;
 using System.Xml.Linq;
 using CoverageChecker.Results;
 using CoverageChecker.Utils;
@@ -5,10 +6,10 @@ using Microsoft.Extensions.FileSystemGlobbing;
 
 namespace CoverageChecker.Parsers;
 
-public abstract class BaseParser(string directory, IEnumerable<string> globPatterns, bool failIfNoFilesFound) {
+internal abstract class BaseParser(string directory, IEnumerable<string> globPatterns, bool failIfNoFilesFound) {
     private readonly Matcher _matcher = new Matcher().AddFromGlobPatterns(globPatterns);
 
-    public Coverage LoadCoverage() {
+    internal async Task <Coverage> LoadCoverage() {
         string[] filePaths = _matcher.GetResultsInFullPath(directory)
                                      .ToArray();
 
@@ -19,7 +20,13 @@ public abstract class BaseParser(string directory, IEnumerable<string> globPatte
 
         foreach (string filePath in filePaths) {
             try {
-                LoadCoverage(coverage, XDocument.Load(filePath));
+                XmlReaderSettings settings = new() {
+                    Async = true,
+                    IgnoreWhitespace = true
+                };
+
+                using XmlReader reader = XmlReader.Create(filePath, settings);
+                await LoadCoverage(coverage, reader);
             } catch (Exception e) when (e is not CoverageException) {
                 throw new CoverageParseException("Failed to load coverage file");
             }
@@ -28,5 +35,5 @@ public abstract class BaseParser(string directory, IEnumerable<string> globPatte
         return coverage;
     }
 
-    protected abstract void LoadCoverage(Coverage coverage, XDocument coverageDocument);
+    protected abstract Task LoadCoverage(Coverage coverage, XmlReader reader);
 }

@@ -7,10 +7,10 @@ public class CoberturaParserTests {
     private readonly string _directory = Path.Combine(TestContext.CurrentContext.TestDirectory, "CoverageFiles", "Cobertura");
 
     [Test]
-    public void CoberturaParser_LoadCoverage_FullLineCoverage_ReturnsCoverage() {
+    public async Task CoberturaParser_LoadCoverage_FullLineCoverage_ReturnsCoverage() {
         CoberturaParser coberturaParser = new(_directory, "FullLineCoverage.xml");
 
-        Coverage coverage = coberturaParser.LoadCoverage();
+        Coverage coverage = await coberturaParser.LoadCoverage();
 
         Assert.Multiple(() => {
             Assert.That(coverage.Files, Has.Count.EqualTo(3));
@@ -23,10 +23,10 @@ public class CoberturaParserTests {
     }
 
     [Test]
-    public void CoberturaParser_LoadCoverage_FullBranchCoverage_ReturnsCoverage() {
+    public async Task CoberturaParser_LoadCoverage_FullBranchCoverage_ReturnsCoverage() {
         CoberturaParser coberturaParser = new(_directory, "FullBranchCoverage.xml");
 
-        Coverage coverage = coberturaParser.LoadCoverage();
+        Coverage coverage = await coberturaParser.LoadCoverage();
 
         Assert.Multiple(() => {
             Assert.That(coverage.Files, Has.Count.EqualTo(2));
@@ -38,10 +38,10 @@ public class CoberturaParserTests {
     }
 
     [Test]
-    public void CoberturaParser_LoadCoverage_PartialLineCoverage_ReturnsCoverage() {
+    public async Task CoberturaParser_LoadCoverage_PartialLineCoverage_ReturnsCoverage() {
         CoberturaParser coberturaParser = new(_directory, "PartialLineCoverage.xml");
 
-        Coverage coverage = coberturaParser.LoadCoverage();
+        Coverage coverage = await coberturaParser.LoadCoverage();
 
         Assert.Multiple(() => {
             Assert.That(coverage.Files, Has.Count.EqualTo(1));
@@ -52,10 +52,10 @@ public class CoberturaParserTests {
     }
 
     [Test]
-    public void CoberturaParser_LoadCoverage_NoPackages_ReturnsCoverage() {
+    public async Task CoberturaParser_LoadCoverage_NoPackages_ReturnsCoverage() {
         CoberturaParser coberturaParser = new(_directory, "NoPackages.xml");
 
-        Coverage coverage = coberturaParser.LoadCoverage();
+        Coverage coverage = await coberturaParser.LoadCoverage();
 
         Assert.Multiple(() => {
             Assert.That(coverage.Files, Is.Empty);
@@ -65,10 +65,10 @@ public class CoberturaParserTests {
     }
 
     [Test]
-    public void CoberturaParser_LoadCoverage_NoClasses_ReturnsCoverage() {
+    public async Task CoberturaParser_LoadCoverage_NoClasses_ReturnsCoverage() {
         CoberturaParser coberturaParser = new(_directory, "NoClasses.xml");
 
-        Coverage coverage = coberturaParser.LoadCoverage();
+        Coverage coverage = await coberturaParser.LoadCoverage();
 
         Assert.Multiple(() => {
             Assert.That(coverage.Files, Is.Empty);
@@ -78,10 +78,10 @@ public class CoberturaParserTests {
     }
 
     [Test]
-    public void CoberturaParser_LoadCoverage_NoLines_ReturnsCoverage() {
+    public async Task CoberturaParser_LoadCoverage_NoLines_ReturnsCoverage() {
         CoberturaParser coberturaParser = new(_directory, "NoLines.xml");
 
-        Coverage coverage = coberturaParser.LoadCoverage();
+        Coverage coverage = await coberturaParser.LoadCoverage();
 
         Assert.Multiple(() => {
             Assert.That(coverage.Files, Has.Count.EqualTo(2));
@@ -96,34 +96,35 @@ public class CoberturaParserTests {
     public void CoberturaParser_LoadCoverage_InvalidBranchCoverage1_ThrowsCoverageParseException() {
         CoberturaParser coberturaParser = new(_directory, "InvalidBranchCoverage1.xml");
 
-        Assert.Throws<CoverageParseException>(() => coberturaParser.LoadCoverage());
+        Assert.ThrowsAsync<CoverageParseException>(() => coberturaParser.LoadCoverage());
     }
 
     [Test]
     public void CoberturaParser_LoadCoverage_InvalidBranchCoverage2_ThrowsCoverageParseException() {
         CoberturaParser coberturaParser = new(_directory, "InvalidBranchCoverage2.xml");
 
-        Assert.Throws<CoverageParseException>(() => coberturaParser.LoadCoverage());
+        Exception e = Assert.ThrowsAsync<CoverageParseException>(() => coberturaParser.LoadCoverage());
+        Assert.That(e.Message, Is.EqualTo("Failed to parse branch coverage"));
     }
 
     [Test]
     public void CoberturaParser_LoadCoverage_InvalidBranchCoverage3_ThrowsCoverageParseException() {
         CoberturaParser coberturaParser = new(_directory, "InvalidBranchCoverage3.xml");
 
-        Assert.Throws<CoverageParseException>(() => coberturaParser.LoadCoverage());
+        Assert.ThrowsAsync<CoverageParseException>(() => coberturaParser.LoadCoverage());
     }
 
     [Test]
     public void CoberturaParser_LoadCoverage_EmptyFile_ThrowsCoverageParseException() {
         CoberturaParser coberturaParser = new(_directory, "EmptyFile.xml");
 
-        Assert.Throws<CoverageParseException>(() => coberturaParser.LoadCoverage());
+        Assert.ThrowsAsync<CoverageParseException>(() => coberturaParser.LoadCoverage());
     }
 
     [Test]
     public void CoberturaParser_LoadCoverage_InvalidFile_ThrowsCoverageParseException() {
         CoberturaParser coberturaParser = new(_directory, "InvalidFile.xml");
 
-        Assert.Throws<CoverageParseException>(() => coberturaParser.LoadCoverage());
+        Assert.ThrowsAsync<CoverageParseException>(() => coberturaParser.LoadCoverage());
     }
 }
