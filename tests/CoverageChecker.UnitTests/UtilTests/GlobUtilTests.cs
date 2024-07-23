@@ -11,9 +11,9 @@ public class GlobUtilTests {
     [TestCase("!**/obj/**", "!**/obj/**", "**/*.cs", "!**/bin/**")]
     [TestCase("**/*.cs", "!**/obj/**", "!**/bin/**")]
     [TestCase("!**/obj/**", "**/*.cs", "**/*.csproj", "!**/bin/**", "!**/obj/**")]
-    public void GlobUtils_AddFromGlobPatterns_AddsPatterns(params string[] globPatterns) {
+    public void GlobUtils_AddGlobPatterns_AddsPatterns(params string[] globPatterns) {
         Mock<Matcher> matcher = new();
-        matcher.Object.AddFromGlobPatterns(globPatterns);
+        matcher.Object.AddGlobPatterns(globPatterns);
 
         IEnumerable<(string globPattern, int occurrences)> globPatternOccurrences = globPatterns.GroupBy(g => g)
                                                                                                 .Select(g => (g.Key, g.Count()));
@@ -31,9 +31,9 @@ public class GlobUtilTests {
     }
 
     [Test]
-    public void GlobUtils_AddFromGlobPatterns_EmptyPatterns_DoesNotAddPatterns() {
+    public void GlobUtils_AddGlobPatterns_EmptyPatterns_DoesNotAddPatterns() {
         Mock<Matcher> matcher = new();
-        matcher.Object.AddFromGlobPatterns([]);
+        matcher.Object.AddGlobPatterns([]);
 
         matcher.Verify(m => m.AddInclude(It.IsAny<string>()), Times.Never);
         matcher.Verify(m => m.AddExclude(It.IsAny<string>()), Times.Never);
