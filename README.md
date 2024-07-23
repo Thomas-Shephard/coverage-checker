@@ -66,31 +66,34 @@ dotnet add package CoverageChecker
 
 ### Features
 
-#### Coverage File Parsing
+#### Supported Coverage Formats
 
-Multiple coverage file formats are supported, as shown below:
+The following coverage formats are supported:
+ * [Cobertura](https://github.com/cobertura/web/blob/master/htdocs/xml/coverage-04.dtd) - `CoverageFormat.Cobertura`
+ * [SonarQube](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/test-coverage/generic-test-data/) - `CoverageFormat.SonarQube`
 
-| Format                                                                                                            | Class                                   |
-|-------------------------------------------------------------------------------------------------------------------|-----------------------------------------|
-| [SonarQube](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/test-coverage/generic-test-data/) | CoverageChecker.Parsers.SonarQubeParser |
-| [Cobertura](https://github.com/cobertura/web/blob/master/htdocs/xml/coverage-04.dtd)                              | CoverageChecker.Parsers.CoberturaParser |
+#### Coverage Analysis
 
-#### Coverage Checking
-
-The coverage checker can be used to check the coverage of a project; both line and branch coverage are supported. Coverage can be calculated based on package, file, class, method, line, etc.
+The coverage analyser can be used to check the coverage of a project; both line and branch coverage are supported. Coverage can be calculated based on package, file, class, method, line, etc.
 
 ##### Code Example
 
 ```csharp
 using CoverageChecker;
-using CoverageChecker.Parsers;
 using CoverageChecker.Results;
 
+const CoverageFormat coverageFormat = CoverageFormat.Cobertura;
 const string directory = @"file-directory";
 const string globPattern = "*.xml";
+const bool failIfNoFilesFound = false;
 
-CoberturaParser parser = new(directory, globPattern);
-Coverage coverage = parser.LoadCoverage();
+CoverageAnalyser analyser = new(coverageFormat, directory, globPattern, failIfNoFilesFound);
+Coverage coverage = analyser.AnalyseCoverage();
+
+if (coverage.Files.Count is 0) {
+    Console.WriteLine("No coverage files found");
+    return;
+}
 
 foreach (FileCoverage fileCoverage in coverage.Files) {
     Console.WriteLine($"Package {fileCoverage.PackageName ?? ""}: File={fileCoverage.Path} Lines={fileCoverage.Lines.Count}");
