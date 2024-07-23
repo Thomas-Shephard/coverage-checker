@@ -26,7 +26,8 @@ public class CoverageFileParseUtilTests {
 
     [Test]
     public void CoverageParseUtils_GetRequiredElement_ElementNotFound_ThrowsCoverageParseException() {
-        Assert.Throws<CoverageParseException>(() => ContainerWithElement.GetRequiredElement($"unknown-{ElementName}"));
+        Exception e = Assert.Throws<CoverageParseException>(() => ContainerWithElement.GetRequiredElement($"unknown-{ElementName}"));
+        Assert.That(e.Message, Is.EqualTo("Element 'unknown-element' not found"));
     }
 
     [Test]
@@ -41,7 +42,8 @@ public class CoverageFileParseUtilTests {
 
     [Test]
     public void CoverageParseUtils_GetRequiredAttribute_AttributeNotFound_ThrowsCoverageParseException() {
-        Assert.Throws<CoverageParseException>(() => ElementWithAttributeWithStringValue.GetRequiredAttribute($"unknown-{AttributeName}"));
+        Exception e = Assert.Throws<CoverageParseException>(() => ElementWithAttributeWithStringValue.GetRequiredAttribute($"unknown-{AttributeName}"));
+        Assert.That(e.Message, Is.EqualTo("Attribute 'unknown-attribute' not found on element 'element'"));
     }
 
     [Test]
@@ -53,7 +55,8 @@ public class CoverageFileParseUtilTests {
 
     [Test]
     public void CoverageParseUtils_ParseOptionalAttribute_AttributeFoundWithInvalidValue_ThrowsCoverageParseException() {
-        Assert.Throws<CoverageParseException>(() => ElementWithAttributeWithStringValue.ParseOptionalAttribute<int>(AttributeName));
+        Exception e = Assert.Throws<CoverageParseException>(() => ElementWithAttributeWithStringValue.ParseOptionalAttribute<int>(AttributeName));
+        Assert.That(e.Message, Is.EqualTo("Attribute 'attribute' on element 'element' is not a valid Int32"));
     }
 
     [Test]
@@ -72,11 +75,13 @@ public class CoverageFileParseUtilTests {
 
     [Test]
     public void CoverageParseUtils_ParseRequiredAttribute_AttributeFoundWithInvalidValue_ThrowsCoverageParseException() {
-        Assert.Throws<CoverageParseException>(() => ElementWithAttributeWithStringValue.ParseRequiredAttribute<int>(AttributeName));
+        Exception e = Assert.Throws<CoverageParseException>(() => ElementWithAttributeWithStringValue.ParseRequiredAttribute<int>(AttributeName));
+        Assert.That(e.Message, Is.EqualTo("Attribute 'attribute' on element 'element' is not a valid Int32"));
     }
 
     [Test]
     public void CoverageParseUtils_ParseRequiredAttribute_AttributeNotFound_ThrowsCoverageParseException() {
-        Assert.Throws<CoverageParseException>(() => ElementWithAttributeWithNumericValue.ParseRequiredAttribute<int>($"unknown-{AttributeName}"));
+        Exception e = Assert.Throws<CoverageParseException>(() => ElementWithAttributeWithNumericValue.ParseRequiredAttribute<int>($"unknown-{AttributeName}"));
+        Assert.That(e.Message, Is.EqualTo("Attribute 'unknown-attribute' not found on element 'element'"));
     }
 }

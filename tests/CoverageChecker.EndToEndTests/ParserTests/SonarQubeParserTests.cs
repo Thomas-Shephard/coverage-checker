@@ -86,20 +86,23 @@ public class SonarQubeParserTests {
     public void SonarQubeParser_LoadCoverage_InvalidVersion_ThrowsCoverageParseException() {
         SonarQubeParser sonarQubeParser = new(_directory, "InvalidVersion.xml");
 
-        Assert.Throws<CoverageParseException>(() => sonarQubeParser.LoadCoverage());
+        Exception e = Assert.Throws<CoverageParseException>(() => sonarQubeParser.LoadCoverage());
+        Assert.That(e.Message, Is.EqualTo("Attribute 'version' on element 'coverage' must be '1'"));
     }
 
     [Test]
     public void SonarQubeParser_LoadCoverage_EmptyFile_ThrowsCoverageParseException() {
         SonarQubeParser sonarQubeParser = new(_directory, "EmptyFile.xml");
 
-        Assert.Throws<CoverageParseException>(() => sonarQubeParser.LoadCoverage());
+        Exception e = Assert.Throws<CoverageParseException>(() => sonarQubeParser.LoadCoverage());
+        Assert.That(e.Message, Is.EqualTo("Failed to load coverage file"));
     }
 
     [Test]
     public void SonarQubeParser_LoadCoverage_InvalidFile_ThrowsCoverageParseException() {
         SonarQubeParser sonarQubeParser = new(_directory, "InvalidFile.xml");
 
-        Assert.Throws<CoverageParseException>(() => sonarQubeParser.LoadCoverage());
+        Exception e = Assert.Throws<CoverageParseException>(() => sonarQubeParser.LoadCoverage());
+        Assert.That(e.Message, Is.EqualTo("No coverage files found"));
     }
 }

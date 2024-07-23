@@ -118,6 +118,7 @@ public class CoverageTests {
 
         Coverage coverage = new(files);
 
-        Assert.Throws<CoverageCalculationException>(() => coverage.CalculatePackageCoverage($"{CoverageTestData.PackageName}-unknown"));
+        Exception e = Assert.Throws<CoverageCalculationException>(() => coverage.CalculatePackageCoverage($"{CoverageTestData.PackageName}-unknown"));
+        Assert.That(e.Message, Is.EqualTo("No files found for the specified package name"));
     }
 }

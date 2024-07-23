@@ -191,7 +191,8 @@ public class CoverageCalculationUtilFileTests {
     public void CoverageCalculationUtils_InvalidCoverageOnLines_ThrowsException() {
         LineCoverage[] lines = CoverageTestData.Lines3Of5Covered;
 
-        Assert.Throws<ArgumentOutOfRangeException>(() => lines.CalculateCoverage((CoverageType)3));
+        Exception e = Assert.Throws<ArgumentOutOfRangeException>(() => lines.CalculateCoverage((CoverageType)3));
+        Assert.That(e.Message, Is.EqualTo($"Unknown coverage type (Parameter 'coverageType'){Environment.NewLine}Actual value was 3."));
     }
 
     [Test]
@@ -201,6 +202,7 @@ public class CoverageCalculationUtilFileTests {
             new FileCoverage(CoverageTestData.Lines3Of3CoveredWith2Of2Branches, $"{CoverageTestData.FilePath}-2")
         ];
 
-        Assert.Throws<ArgumentOutOfRangeException>(() => files.CalculateCoverage((CoverageType)2));
+        Exception e = Assert.Throws<ArgumentOutOfRangeException>(() => files.CalculateCoverage((CoverageType)2));
+        Assert.That(e.Message, Is.EqualTo($"Unknown coverage type (Parameter 'coverageType'){Environment.NewLine}Actual value was 2."));
     }
 }

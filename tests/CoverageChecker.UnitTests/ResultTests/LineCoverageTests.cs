@@ -25,33 +25,38 @@ public class LineCoverageTests {
     [TestCase(null, 0)]
     [TestCase(1, null)]
     public void LineCoverage_ConstructorWithMismatchedNullabilityBetweenBranchesAndCoveredBranches_ThrowsException(int? branches, int? coveredBranches) {
-        Assert.Throws<ArgumentException>(() => _ = new LineCoverage(1, true, branches, coveredBranches));
+        Exception e = Assert.Throws<ArgumentException>(() => _ = new LineCoverage(1, true, branches, coveredBranches));
+        Assert.That(e.Message, Is.EqualTo("The branch coverage information is invalid, either both branches and covered branches are null, or both are not null"));
     }
 
     [TestCase(0)]
     [TestCase(-1)]
     [TestCase(-10)]
     public void LineCoverage_ConstructorWithNonPositiveBranches_ThrowsException(int branches) {
-        Assert.Throws<ArgumentException>(() => _ = new LineCoverage(1, true, branches, 0));
+        Exception e = Assert.Throws<ArgumentException>(() => _ = new LineCoverage(1, true, branches, 0));
+        Assert.That(e.Message, Is.EqualTo("The branch coverage information is invalid, there must be at least one branch and zero covered branches"));
     }
 
     [TestCase(-1)]
     [TestCase(-5)]
     [TestCase(-10)]
     public void LineCoverage_ConstructorWithNegativeCoveredBranches_ThrowsException(int coveredBranches) {
-        Assert.Throws<ArgumentException>(() => _ = new LineCoverage(1, true, 1, coveredBranches));
+        Exception e = Assert.Throws<ArgumentException>(() => _ = new LineCoverage(1, true, 1, coveredBranches));
+        Assert.That(e.Message, Is.EqualTo("The branch coverage information is invalid, there must be at least one branch and zero covered branches"));
     }
 
     [TestCase(2, 3)]
     [TestCase(3, 5)]
     [TestCase(1, 10)]
     public void LineCoverage_ConstructorWithCoveredBranchesGreaterThanBranches_ThrowsException(int branches, int coveredBranches) {
-        Assert.Throws<ArgumentException>(() => _ = new LineCoverage(1, true, branches, coveredBranches));
+        Exception e = Assert.Throws<ArgumentException>(() => _ = new LineCoverage(1, true, branches, coveredBranches));
+        Assert.That(e.Message, Is.EqualTo("The branch coverage information is invalid, there cannot be more covered branches than branches"));
     }
 
     [Test]
     public void LineCoverage_ConstructorWithMethodSignatureWithoutMethodName_ThrowsException() {
-        Assert.Throws<ArgumentException>(() => _ = new LineCoverage(1, true, methodName: null, methodSignature: CoverageTestData.MethodSignature));
+        Exception e = Assert.Throws<ArgumentException>(() => _ = new LineCoverage(1, true, methodName: null, methodSignature: CoverageTestData.MethodSignature));
+        Assert.That(e.Message, Is.EqualTo("The method signature cannot be set without the method name"));
     }
 
     [TestCase(true)]
