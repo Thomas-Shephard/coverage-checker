@@ -3,7 +3,7 @@ using System.Xml.Linq;
 namespace CoverageChecker.Parsers;
 
 internal abstract class BaseParser {
-    internal void ParseCoverageFile(string filePath) {
+    internal void ParseCoverageFromFilePath(string filePath) {
         try {
             LoadCoverage(XDocument.Load(filePath));
         } catch (Exception e) when (e is not CoverageException) {
