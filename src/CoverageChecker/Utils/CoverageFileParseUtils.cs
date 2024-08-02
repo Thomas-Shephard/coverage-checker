@@ -1,36 +1,92 @@
-using System.Xml.Linq;
+using System.Xml;
 
 namespace CoverageChecker.Utils;
 
 internal static class CoverageFileParseUtils {
-    internal static XElement GetRequiredElement(this XContainer container, XName name) {
-        return container.Element(name) ?? throw new CoverageParseException($"Element '{name}' not found");
+    internal static bool TryEnterElement(this XmlReader reader, string elementName, Action action, bool throwIfNotFound = true) {
+        int depth = reader.Depth;
+
+        if (reader.IsStartOfElement(elementName)) {
+            bool isEmptyElement = reader.IsEmptyElement;
+
+            if (!isEmptyElement) {
+                reader.Read();
+                action();
+
+                if (reader.ConsumeElement(depth, elementName, isEmptyElement))
+                    return true;
+            } else {
+                reader.Read();
+            }
+
+            return !isEmptyElement;
+        }
+
+        if (throwIfNotFound)
+            throw new CoverageParseException($"Element '{elementName}' not found");
+        return false;
     }
 
-    internal static XAttribute GetRequiredAttribute(this XElement element, XName name) {
-        return element.Attribute(name) ?? throw new CoverageParseException($"Attribute '{name}' not found on element '{element.Name}'");
+    private static bool IsStartOfElement(this XmlReader reader, string elementName) {
+        return reader.NodeType == XmlNodeType.Element && reader.Name == elementName;
     }
 
-    internal static T? ParseOptionalAttribute<T>(this XElement element, XName name, IFormatProvider? provider = null) where T : struct, IParsable<T> {
-        string? attributeValue = element.Attribute(name)?.Value;
+    internal static void ParseElements(this XmlReader reader, string elementName, Action action) {
+        int depth = reader.Depth;
+
+        while (depth == reader.Depth) {
+            if (reader.IsStartOfElement(elementName)) {
+                action();
+
+                if (reader.Depth == depth && reader.Name == elementName && reader.NodeType == XmlNodeType.Element)
+                    continue;
+            }
+
+            if (reader.ConsumeElement(depth, elementName, reader.IsEmptyElement))
+                return;
+        }
+    }
+
+    internal static bool ConsumeElement(this XmlReader reader, int depth, string elementName, bool isEmptyElement) {
+        if (reader.Depth < depth)
+            return true;
+        if (reader.Depth == depth && reader.Name != elementName)
+            throw new CoverageParseException($"Expected end element '{elementName}' but found '{reader.Name}'");
+
+        if (reader.Depth == depth && reader.Name == elementName && reader.NodeType == XmlNodeType.EndElement) {
+            // No need to read to the end element if we are already at the end element
+        } else if (!isEmptyElement && reader.Depth > depth) {
+            while (reader.Read() && reader.Depth > depth) { }
+
+            if (reader.NodeType != XmlNodeType.EndElement || reader.Name != elementName)
+                throw new CoverageParseException($"Expected end element '{elementName}' but found '{reader.Name}'");
+        }
+
+        reader.Read();
+        return false;
+    }
+
+    internal static T GetRequiredAttribute<T>(this XmlReader reader, string attributeName) where T : IParsable<T> {
+        string? attributeValue = reader.GetAttribute(attributeName);
+
+        if (!T.TryParse(attributeValue, null, out T? parsedValue))
+            throw new CoverageParseException($"Failed to parse attribute '{attributeName}' on node '{reader.Name}'");
+
+        if (parsedValue is null)
+            throw new CoverageParseException($"Attribute '{attributeName}' not found on node '{reader.Name}'");
+
+        return parsedValue;
+    }
+
+    internal static T? GetOptionalAttribute<T>(this XmlReader reader, string attributeName) where T : struct, IParsable<T> {
+        string? attributeValue = reader.GetAttribute(attributeName);
 
         if (attributeValue is null)
             return null;
 
-        // If the attribute is found, try to parse the value into the specified type
-        if (!T.TryParse(attributeValue, provider, out T value))
-            throw new CoverageParseException($"Attribute '{name}' on element '{element.Name}' is not a valid {typeof(T).Name}");
+        if (!T.TryParse(attributeValue, null, out T parsedValue))
+            throw new CoverageParseException($"Failed to parse attribute '{attributeName}' on node '{reader.Name}'");
 
-        return value;
-    }
-
-    internal static T ParseRequiredAttribute<T>(this XElement element, XName name, IFormatProvider? provider = null) where T : IParsable<T> {
-        string attributeValue = element.GetRequiredAttribute(name).Value;
-
-        // Try to parse the attribute value into the specified type
-        if (!T.TryParse(attributeValue, provider, out T? value))
-            throw new CoverageParseException($"Attribute '{name}' on element '{element.Name}' is not a valid {typeof(T).Name}");
-
-        return value;
+        return parsedValue;
     }
 }
