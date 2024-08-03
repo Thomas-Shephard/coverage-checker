@@ -4,6 +4,9 @@ namespace CoverageChecker.Utils;
 
 internal static class CoverageFileParseUtils {
     internal static bool TryEnterElement(this XmlReader reader, string elementName, Action action, bool throwIfNotFound = true) {
+        if (reader.NodeType == XmlNodeType.None)
+            reader.Read();
+
         int depth = reader.Depth;
 
         if (reader.IsStartOfElement(elementName)) {

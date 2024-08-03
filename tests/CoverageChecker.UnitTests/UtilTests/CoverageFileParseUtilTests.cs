@@ -20,15 +20,6 @@ public class CoverageFileParseUtilTests {
         XmlReader reader = XmlReader.Create(new StringReader(xml), XmlReaderSettings);
         IXmlLineInfo lineInfo = reader as IXmlLineInfo ?? throw new Exception("This reader does not support line info");
 
-        reader.Read();
-
-        Assert.Multiple(() => {
-            Assert.That(reader.NodeType, Is.EqualTo(XmlNodeType.Element));
-            Assert.That(reader.Name, Is.EqualTo("element"));
-            Assert.That(lineInfo.LineNumber, Is.EqualTo(1));
-            Assert.That(lineInfo.LinePosition, Is.EqualTo(2));
-        });
-
         bool enteredElement = reader.TryEnterElement("element", () => {
             Assert.Multiple(() => {
                 Assert.That(reader.NodeType, Is.EqualTo(XmlNodeType.Element));
@@ -52,15 +43,6 @@ public class CoverageFileParseUtilTests {
         XmlReader reader = XmlReader.Create(new StringReader(xml), XmlReaderSettings);
         IXmlLineInfo lineInfo = reader as IXmlLineInfo ?? throw new Exception("This reader does not support line info");
 
-        reader.Read();
-
-        Assert.Multiple(() => {
-            Assert.That(reader.NodeType, Is.EqualTo(XmlNodeType.Element));
-            Assert.That(reader.Name, Is.EqualTo("element"));
-            Assert.That(lineInfo.LineNumber, Is.EqualTo(1));
-            Assert.That(lineInfo.LinePosition, Is.EqualTo(2));
-        });
-
         reader.TryEnterElement("element", () => {
             Assert.Fail("Should not enter element");
         });
@@ -76,12 +58,6 @@ public class CoverageFileParseUtilTests {
         const string xml = "<element/>";
 
         XmlReader reader = XmlReader.Create(new StringReader(xml), XmlReaderSettings);
-        reader.Read();
-
-        Assert.Multiple(() => {
-            Assert.That(reader.NodeType, Is.EqualTo(XmlNodeType.Element));
-            Assert.That(reader.Name, Is.EqualTo("element"));
-        });
 
         Exception e = Assert.Throws<CoverageParseException>(() => reader.TryEnterElement("child", () => { }));
         Assert.That(e.Message, Is.EqualTo("Element 'child' not found"));
@@ -92,12 +68,6 @@ public class CoverageFileParseUtilTests {
         const string xml = "<element/>";
 
         XmlReader reader = XmlReader.Create(new StringReader(xml), XmlReaderSettings);
-        reader.Read();
-
-        Assert.Multiple(() => {
-            Assert.That(reader.NodeType, Is.EqualTo(XmlNodeType.Element));
-            Assert.That(reader.Name, Is.EqualTo("element"));
-        });
 
         bool enteredElement = reader.TryEnterElement("child", () => { }, throwIfNotFound: false);
         Assert.That(enteredElement, Is.False);
@@ -114,8 +84,6 @@ public class CoverageFileParseUtilTests {
 
         XmlReader reader = XmlReader.Create(new StringReader(xml), XmlReaderSettings);
         IXmlLineInfo lineInfo = reader as IXmlLineInfo ?? throw new Exception("This reader does not support line info");
-
-        reader.Read();
 
         reader.TryEnterElement("element", () => {
             int childCount = 0;
@@ -149,8 +117,6 @@ public class CoverageFileParseUtilTests {
 
         XmlReader reader = XmlReader.Create(new StringReader(xml), XmlReaderSettings);
         IXmlLineInfo lineInfo = reader as IXmlLineInfo ?? throw new Exception("This reader does not support line info");
-
-        reader.Read();
 
         reader.TryEnterElement("element", () => {
             int childCount = 0;
@@ -188,8 +154,6 @@ public class CoverageFileParseUtilTests {
 
         XmlReader reader = XmlReader.Create(new StringReader(xml), XmlReaderSettings);
 
-        reader.Read();
-
         reader.TryEnterElement("element", () => {
             int childCount = 0;
 
@@ -220,8 +184,6 @@ public class CoverageFileParseUtilTests {
 
         XmlReader reader = XmlReader.Create(new StringReader(xml), XmlReaderSettings);
 
-        reader.Read();
-
         reader.TryEnterElement("element", () => {
             bool enteredChildA = reader.TryEnterElement("child-a", () => {
 
@@ -249,8 +211,6 @@ public class CoverageFileParseUtilTests {
 
         XmlReader reader = XmlReader.Create(new StringReader(xml), XmlReaderSettings);
         IXmlLineInfo lineInfo = reader as IXmlLineInfo ?? throw new Exception("This reader does not support line info");
-
-        reader.Read();
 
         reader.TryEnterElement("element", () => {
             int childCount = 0;

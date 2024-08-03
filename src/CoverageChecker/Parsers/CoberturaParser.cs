@@ -6,8 +6,6 @@ namespace CoverageChecker.Parsers;
 
 internal class CoberturaParser(Coverage coverage) : BaseParser {
     protected override void LoadCoverage(XmlReader reader) {
-        reader.Read();
-
         reader.TryEnterElement("coverage", () => {
             reader.TryEnterElement("packages", () => {
                 reader.ParseElements("package", () => {
