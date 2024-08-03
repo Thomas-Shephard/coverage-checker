@@ -15,12 +15,9 @@ internal static class CoverageFileParseUtils {
             if (!isEmptyElement) {
                 reader.Read();
                 action();
-
-                if (reader.ConsumeElement(depth, elementName, isEmptyElement))
-                    return true;
-            } else {
-                reader.Read();
             }
+
+            reader.ConsumeElement(depth, elementName, isEmptyElement);
 
             return !isEmptyElement;
         }
