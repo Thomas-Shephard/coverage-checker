@@ -99,7 +99,7 @@ public class CoverageFileParseUtilTests {
                     Assert.That(lineInfo.LinePosition, Is.EqualTo(6));
                 });
 
-                reader.ConsumeElement(reader.Depth, "child", reader.IsEmptyElement);
+                reader.ConsumeElement("child");
             });
 
             Assert.That(childCount, Is.EqualTo(2));
@@ -132,7 +132,7 @@ public class CoverageFileParseUtilTests {
                     Assert.That(lineInfo.LinePosition, Is.EqualTo(6));
                 });
 
-                reader.ConsumeElement(reader.Depth, "child", reader.IsEmptyElement);
+                reader.ConsumeElement("child");
             });
 
             Assert.That(childCount, Is.EqualTo(2));
@@ -166,7 +166,7 @@ public class CoverageFileParseUtilTests {
                     Assert.That(reader.GetAttribute("index"), Is.EqualTo(childCount.ToString()));
                 });
 
-                reader.ConsumeElement(reader.Depth, "child", reader.IsEmptyElement);
+                reader.ConsumeElement("child");
             });
 
             Assert.That(childCount, Is.EqualTo(4));
@@ -230,6 +230,116 @@ public class CoverageFileParseUtilTests {
             });
 
             Assert.That(childCount, Is.EqualTo(2));
+        });
+    }
+
+    [Test]
+    public void CoverageFileParseUtils_TryEnterElement_MultipleElementsFound_Success() {
+        const string xml = """
+                           <element>
+                               <child>
+                                   <grandchild/>
+                               </child>
+                           </element>
+                           """;
+
+        XmlReader reader = XmlReader.Create(new StringReader(xml), XmlReaderSettings);
+        IXmlLineInfo lineInfo = reader as IXmlLineInfo ?? throw new Exception("This reader does not support line info");
+
+        bool enteredElement = reader.TryEnterElement("element", () => {
+            Assert.Multiple(() => {
+                Assert.That(lineInfo.LineNumber, Is.EqualTo(2));
+                Assert.That(lineInfo.LinePosition, Is.EqualTo(6));
+            });
+
+            bool enteredChild = reader.TryEnterElement("child", () => {
+                Assert.Multiple(() => {
+                    Assert.That(lineInfo.LineNumber, Is.EqualTo(3));
+                    Assert.That(lineInfo.LinePosition, Is.EqualTo(10));
+                });
+
+                bool enteredGrandchild = reader.TryEnterElement("grandchild", () => { });
+                Assert.That(enteredGrandchild, Is.False);
+
+                Assert.Multiple(() => {
+                    Assert.That(lineInfo.LineNumber, Is.EqualTo(4));
+                    Assert.That(lineInfo.LinePosition, Is.EqualTo(7));
+                });
+            });
+            Assert.That(enteredChild, Is.True);
+
+            Assert.Multiple(() => {
+                Assert.That(lineInfo.LineNumber, Is.EqualTo(5));
+                Assert.That(lineInfo.LinePosition, Is.EqualTo(3));
+            });
+        });
+
+        Assert.That(enteredElement, Is.True);
+
+        Assert.Multiple(() => {
+            Assert.That(lineInfo.LineNumber, Is.EqualTo(5));
+            Assert.That(lineInfo.LinePosition, Is.EqualTo(11));
+        });
+    }
+
+    [Test]
+    public void CoverageFileParseUtils_TryEnterElement_MultipleElementsFound_Success2() {
+        const string xml = """
+                           <element>
+                               <child/>
+                           </element>
+                           """;
+
+        XmlReader reader = XmlReader.Create(new StringReader(xml), XmlReaderSettings);
+        IXmlLineInfo lineInfo = reader as IXmlLineInfo ?? throw new Exception("This reader does not support line info");
+
+        bool enteredElement = reader.TryEnterElement("element", () => {
+            Assert.Multiple(() => {
+                Assert.That(lineInfo.LineNumber, Is.EqualTo(2));
+                Assert.That(lineInfo.LinePosition, Is.EqualTo(6));
+            });
+
+            bool enteredChild = reader.TryEnterElement("child", () => { });
+            Assert.That(enteredChild, Is.False);
+
+            Assert.Multiple(() => {
+                Assert.That(lineInfo.LineNumber, Is.EqualTo(3));
+                Assert.That(lineInfo.LinePosition, Is.EqualTo(3));
+            });
+        });
+
+        Assert.That(enteredElement, Is.True);
+
+        Assert.Multiple(() => {
+            Assert.That(lineInfo.LineNumber, Is.EqualTo(3));
+            Assert.That(lineInfo.LinePosition, Is.EqualTo(11));
+        });
+    }
+
+    [Test]
+    public void CoverageFileParseUtils_ParseElements_ElementNotFound() {
+        const string xml = """
+                           <element>
+                               <child/>
+                               <unexpected/>
+                               <child/>
+                               <unexpected/>
+                               <unexpected/>
+                               <child/>
+                           </element>
+                           """;
+
+        XmlReader reader = XmlReader.Create(new StringReader(xml), XmlReaderSettings);
+
+        reader.TryEnterElement("element", () => {
+            int childCount = 0;
+
+            reader.ParseElements("child", () => {
+                childCount++;
+                reader.ConsumeElement("child");
+            });
+
+            Assert.That(childCount, Is.EqualTo(3));
         });
     }
 }

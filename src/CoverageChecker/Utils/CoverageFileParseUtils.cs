@@ -11,14 +11,12 @@ internal static class CoverageFileParseUtils {
 
         if (reader.IsStartOfElement(elementName)) {
             bool isEmptyElement = reader.IsEmptyElement;
-
             if (!isEmptyElement) {
                 reader.Read();
                 action();
             }
 
-            reader.ConsumeElement(depth, elementName, isEmptyElement);
-
+            reader.ConsumeElement(elementName, depth);
             return !isEmptyElement;
         }
 
@@ -42,20 +40,20 @@ internal static class CoverageFileParseUtils {
                     continue;
             }
 
-            if (reader.ConsumeElement(depth, elementName, reader.IsEmptyElement))
+            if (reader.ConsumeElement(elementName, depth))
                 return;
         }
     }
 
-    internal static bool ConsumeElement(this XmlReader reader, int depth, string elementName, bool isEmptyElement) {
+    internal static bool ConsumeElement(this XmlReader reader, string elementName, int? depth = null) {
+        depth ??= reader.Depth;
+
         if (reader.Depth < depth)
             return true;
-        if (reader.Depth == depth && reader.Name != elementName)
-            throw new CoverageParseException($"Expected end element '{elementName}' but found '{reader.Name}'");
 
-        if (reader.Depth == depth && reader.Name == elementName && reader.NodeType == XmlNodeType.EndElement) {
+        if (reader.Depth == depth && reader.NodeType == XmlNodeType.EndElement) {
             // No need to read to the end element if we are already at the end element
-        } else if (!isEmptyElement && reader.Depth > depth) {
+        } else if (!reader.IsEmptyElement || reader.Depth > depth) {
             while (reader.Read() && reader.Depth > depth) { }
 
             if (reader.NodeType != XmlNodeType.EndElement || reader.Name != elementName)

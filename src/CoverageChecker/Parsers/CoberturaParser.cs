@@ -77,7 +77,7 @@ internal class CoberturaParser(Coverage coverage) : BaseParser {
 
             file.AddLine(lineNumber, isCovered, branches, coveredBranches, className, methodName, methodSignature);
         } finally {
-            reader.ConsumeElement(reader.Depth, "line", reader.IsEmptyElement);
+            reader.ConsumeElement("line");
         }
     }
 
