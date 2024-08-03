@@ -6,25 +6,13 @@ namespace CoverageChecker.Parsers;
 
 internal class CoberturaParser(Coverage coverage) : BaseParser {
     protected override void LoadCoverage(XmlReader reader) {
-        reader.TryEnterElement("coverage", () => {
-            reader.TryEnterElement("packages", () => {
-                reader.ParseElements("package", () => {
-                    LoadPackageCoverage(reader);
-                });
-            });
-        });
+        reader.TryEnterElement("coverage", () => { reader.TryEnterElement("packages", () => { reader.ParseElements("package", () => { LoadPackageCoverage(reader); }); }); });
     }
 
     private void LoadPackageCoverage(XmlReader reader) {
         string packageName = reader.GetRequiredAttribute<string>("name");
 
-        reader.TryEnterElement("package", () => {
-            reader.TryEnterElement("classes", () => {
-                reader.ParseElements("class", () => {
-                    LoadClassCoverage(reader, packageName);
-                });
-            });
-        });
+        reader.TryEnterElement("package", () => { reader.TryEnterElement("classes", () => { reader.ParseElements("class", () => { LoadClassCoverage(reader, packageName); }); }); });
     }
 
     private void LoadClassCoverage(XmlReader reader, string packageName) {
@@ -34,37 +22,23 @@ internal class CoberturaParser(Coverage coverage) : BaseParser {
         reader.TryEnterElement("class", () => {
             FileCoverage file = coverage.GetOrCreateFile(filePath, packageName);
 
-            reader.TryEnterElement("methods", () => {
-                reader.ParseElements("method", () => {
-                    LoadMethodCoverage(file, reader, className);
-                });
-            }, throwIfNotFound: false);
+            reader.TryEnterElement("methods", () => { reader.ParseElements("method", () => { LoadMethodCoverage(file, reader, className); }); }, throwIfNotFound: false);
 
-            reader.TryEnterElement("lines", () => {
-                reader.ParseElements("line", () => {
-                    LoadLineCoverage(file, reader, className);
-                });
-            }, throwIfNotFound: false);
+            reader.TryEnterElement("lines", () => { reader.ParseElements("line", () => { LoadLineCoverage(file, reader, className); }); }, throwIfNotFound: false);
         });
     }
 
     private static void LoadMethodCoverage(FileCoverage file, XmlReader reader, string className) {
         string methodName = reader.GetRequiredAttribute<string>("name");
-        string? methodSignature = reader.GetAttribute("signature");
+        reader.TryGetAttribute("signature", out string? methodSignature);
 
-        reader.TryEnterElement("method", () => {
-            reader.TryEnterElement("lines", () => {
-                reader.ParseElements("line", () => {
-                    LoadLineCoverage(file, reader, className, methodName, methodSignature);
-                });
-            });
-        });
+        reader.TryEnterElement("method", () => { reader.TryEnterElement("lines", () => { reader.ParseElements("line", () => { LoadLineCoverage(file, reader, className, methodName, methodSignature); }); }); });
     }
 
     private static void LoadLineCoverage(FileCoverage file, XmlReader reader, string className, string? methodName = null, string? methodSignature = null) {
         int lineNumber = reader.GetRequiredAttribute<int>("number");
         bool isCovered = reader.GetRequiredAttribute<int>("hits") > 0;
-        bool hasBranchCoverage = reader.GetOptionalAttribute<bool>("branch") ?? false;
+        reader.TryGetAttribute("branch", out bool hasBranchCoverage);
 
         try {
             if (!hasBranchCoverage) {
@@ -73,6 +47,7 @@ internal class CoberturaParser(Coverage coverage) : BaseParser {
             }
 
             string conditionCoverage = reader.GetRequiredAttribute<string>("condition-coverage");
+
             (int branches, int coveredBranches) = ParseConditionCoverage(conditionCoverage);
 
             file.AddLine(lineNumber, isCovered, branches, coveredBranches, className, methodName, methodSignature);

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Xml;
 
 namespace CoverageChecker.Utils;
@@ -64,27 +65,25 @@ internal static class CoverageFileParseUtils {
         return false;
     }
 
-    internal static T GetRequiredAttribute<T>(this XmlReader reader, string attributeName) where T : IParsable<T> {
+    internal static bool TryGetAttribute<T>(this XmlReader reader, string attributeName, [NotNullWhen(true)] out T? value) where T : IParsable<T> {
         string? attributeValue = reader.GetAttribute(attributeName);
+
+        if (attributeValue is null) {
+            value = default;
+            return false;
+        }
 
         if (!T.TryParse(attributeValue, null, out T? parsedValue))
             throw new CoverageParseException($"Failed to parse attribute '{attributeName}' on node '{reader.Name}'");
 
-        if (parsedValue is null)
-            throw new CoverageParseException($"Attribute '{attributeName}' not found on node '{reader.Name}'");
-
-        return parsedValue;
+        value = parsedValue;
+        return true;
     }
 
-    internal static T? GetOptionalAttribute<T>(this XmlReader reader, string attributeName) where T : struct, IParsable<T> {
-        string? attributeValue = reader.GetAttribute(attributeName);
+    internal static T GetRequiredAttribute<T>(this XmlReader reader, string attributeName) where T : IParsable<T> {
+        if (!reader.TryGetAttribute(attributeName, out T? value))
+            throw new CoverageParseException($"Attribute '{attributeName}' not found on element '{reader.Name}'");
 
-        if (attributeValue is null)
-            return null;
-
-        if (!T.TryParse(attributeValue, null, out T parsedValue))
-            throw new CoverageParseException($"Failed to parse attribute '{attributeName}' on node '{reader.Name}'");
-
-        return parsedValue;
+        return value;
     }
 }

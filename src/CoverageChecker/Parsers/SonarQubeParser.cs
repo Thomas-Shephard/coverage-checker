@@ -36,8 +36,13 @@ internal class SonarQubeParser(Coverage coverage) : BaseParser {
         int lineNumber = reader.GetRequiredAttribute<int>("lineNumber");
         bool isCovered = reader.GetRequiredAttribute<bool>("covered");
 
-        int? branches = reader.GetOptionalAttribute<int>("branchesToCover");
-        int? coveredBranches = reader.GetOptionalAttribute<int>("coveredBranches");
+        int? branches = null;
+        if (reader.TryGetAttribute("branchesToCover", out int tempBranches))
+            branches = tempBranches;
+
+        int? coveredBranches = null;
+        if (reader.TryGetAttribute("coveredBranches", out int tempCoveredBranches))
+            coveredBranches = tempCoveredBranches;
 
         reader.ConsumeElement("lineToCover");
 

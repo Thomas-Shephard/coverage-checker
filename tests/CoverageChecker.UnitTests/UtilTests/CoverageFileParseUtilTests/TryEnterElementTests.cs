@@ -1,9 +1,9 @@
 using System.Xml;
 using CoverageChecker.Utils;
 
-namespace CoverageChecker.UnitTests.UtilTests;
+namespace CoverageChecker.UnitTests.UtilTests.CoverageFileParseUtilTests;
 
-public class CoverageFileParseUtilTests {
+public class TryEnterElementTests {
     private static readonly XmlReaderSettings XmlReaderSettings = new() {
         Async = true,
         IgnoreWhitespace = true
@@ -74,106 +74,6 @@ public class CoverageFileParseUtilTests {
     }
 
     [Test]
-    public void CoverageFileParseUtils_ParseElements_ElementFound() {
-        const string xml = """
-                           <element>
-                               <child index="1"/>
-                               <child index="2"/>
-                           </element>
-                           """;
-
-        XmlReader reader = XmlReader.Create(new StringReader(xml), XmlReaderSettings);
-        IXmlLineInfo lineInfo = reader as IXmlLineInfo ?? throw new Exception("This reader does not support line info");
-
-        reader.TryEnterElement("element", () => {
-            int childCount = 0;
-
-            reader.ParseElements("child", () => {
-                childCount++;
-
-                Assert.Multiple(() => {
-                    Assert.That(reader.NodeType, Is.EqualTo(XmlNodeType.Element));
-                    Assert.That(reader.Name, Is.EqualTo("child"));
-                    Assert.That(reader.GetAttribute("index"), Is.EqualTo(childCount.ToString()));
-                    Assert.That(lineInfo.LineNumber, Is.EqualTo(childCount + 1));
-                    Assert.That(lineInfo.LinePosition, Is.EqualTo(6));
-                });
-
-                reader.ConsumeElement("child");
-            });
-
-            Assert.That(childCount, Is.EqualTo(2));
-        });
-    }
-
-    [Test]
-    public void CoverageFileParseUtils_ParseElements_ParseMissingChild_ElementFound() {
-        const string xml = """
-                           <element>
-                               <child index="1"/>
-                               <child index="2"/>
-                           </element>
-                           """;
-
-        XmlReader reader = XmlReader.Create(new StringReader(xml), XmlReaderSettings);
-        IXmlLineInfo lineInfo = reader as IXmlLineInfo ?? throw new Exception("This reader does not support line info");
-
-        reader.TryEnterElement("element", () => {
-            int childCount = 0;
-
-            reader.ParseElements("child", () => {
-                childCount++;
-
-                Assert.Multiple(() => {
-                    Assert.That(reader.NodeType, Is.EqualTo(XmlNodeType.Element));
-                    Assert.That(reader.Name, Is.EqualTo("child"));
-                    Assert.That(reader.GetAttribute("index"), Is.EqualTo(childCount.ToString()));
-                    Assert.That(lineInfo.LineNumber, Is.EqualTo(childCount + 1));
-                    Assert.That(lineInfo.LinePosition, Is.EqualTo(6));
-                });
-
-                reader.ConsumeElement("child");
-            });
-
-            Assert.That(childCount, Is.EqualTo(2));
-        });
-    }
-
-    [Test]
-    public void CoverageFileParseUtils_ParseElements2_ElementsFound() {
-        const string xml = """
-                           <element>
-                               <child index="1"/>
-                               <child index="2"></child>
-                               <child index="3">
-                                   <grandchild/>
-                               </child>
-                               <child index="4"/>
-                           </element>
-                           """;
-
-        XmlReader reader = XmlReader.Create(new StringReader(xml), XmlReaderSettings);
-
-        reader.TryEnterElement("element", () => {
-            int childCount = 0;
-
-            reader.ParseElements("child", () => {
-                childCount++;
-
-                Assert.Multiple(() => {
-                    Assert.That(reader.NodeType, Is.EqualTo(XmlNodeType.Element));
-                    Assert.That(reader.Name, Is.EqualTo("child"));
-                    Assert.That(reader.GetAttribute("index"), Is.EqualTo(childCount.ToString()));
-                });
-
-                reader.ConsumeElement("child");
-            });
-
-            Assert.That(childCount, Is.EqualTo(4));
-        });
-    }
-
-    [Test]
     public void CoverageFileParseUtils_TryEnterElement_MultipleElementsFound() {
         const string xml = """
                            <element>
@@ -200,38 +100,6 @@ public class CoverageFileParseUtilTests {
         });
     }
 
-    [Test]
-    public void CoverageFileParseUtils_TryEnterParsedElement() {
-        const string xml = """
-                           <element>
-                               <child index="1"/>
-                               <child index="2"/>
-                           </element>
-                           """;
-
-        XmlReader reader = XmlReader.Create(new StringReader(xml), XmlReaderSettings);
-        IXmlLineInfo lineInfo = reader as IXmlLineInfo ?? throw new Exception("This reader does not support line info");
-
-        reader.TryEnterElement("element", () => {
-            int childCount = 0;
-
-            reader.ParseElements("child", () => {
-                childCount++;
-
-                Assert.Multiple(() => {
-                    Assert.That(reader.NodeType, Is.EqualTo(XmlNodeType.Element));
-                    Assert.That(reader.Name, Is.EqualTo("child"));
-                    Assert.That(reader.GetAttribute("index"), Is.EqualTo(childCount.ToString()));
-                    Assert.That(lineInfo.LineNumber, Is.EqualTo(childCount + 1));
-                    Assert.That(lineInfo.LinePosition, Is.EqualTo(6));
-                });
-
-                reader.TryEnterElement("child", () => { Assert.Fail("Should not enter child"); });
-            });
-
-            Assert.That(childCount, Is.EqualTo(2));
-        });
-    }
 
     [Test]
     public void CoverageFileParseUtils_TryEnterElement_MultipleElementsFound_Success() {
@@ -317,29 +185,36 @@ public class CoverageFileParseUtilTests {
     }
 
     [Test]
-    public void CoverageFileParseUtils_ParseElements_ElementNotFound() {
+    public void CoverageFileParseUtils_TryEnterParsedElement() {
         const string xml = """
                            <element>
-                               <child/>
-                               <unexpected/>
-                               <child/>
-                               <unexpected/>
-                               <unexpected/>
-                               <child/>
+                               <child index="1"/>
+                               <child index="2"/>
                            </element>
                            """;
 
         XmlReader reader = XmlReader.Create(new StringReader(xml), XmlReaderSettings);
+        IXmlLineInfo lineInfo = reader as IXmlLineInfo ?? throw new Exception("This reader does not support line info");
 
         reader.TryEnterElement("element", () => {
             int childCount = 0;
 
             reader.ParseElements("child", () => {
                 childCount++;
-                reader.ConsumeElement("child");
+
+                Assert.Multiple(() => {
+                    Assert.That(reader.NodeType, Is.EqualTo(XmlNodeType.Element));
+                    Assert.That(reader.Name, Is.EqualTo("child"));
+                    Assert.That(reader.GetAttribute("index"), Is.EqualTo(childCount.ToString()));
+                    Assert.That(lineInfo.LineNumber, Is.EqualTo(childCount + 1));
+                    Assert.That(lineInfo.LinePosition, Is.EqualTo(6));
+                });
+
+                reader.TryEnterElement("child", () => { Assert.Fail("Should not enter child"); });
             });
 
-            Assert.That(childCount, Is.EqualTo(3));
+            Assert.That(childCount, Is.EqualTo(2));
         });
     }
+
 }
