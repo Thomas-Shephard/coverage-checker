@@ -88,6 +88,22 @@ public class CoverageAnalyserSonarQubeTests {
     }
 
     [Test]
+    public void CoverageAnalyser_AnalyseSonarQubeCoverage_InvalidFileSetup1_ThrowsCoverageParseException() {
+        CoverageAnalyser coverageAnalyser = new(CoverageFormat.SonarQube, _directory, "InvalidFileSetup1.xml");
+
+        Exception e = Assert.Throws<CoverageParseException>(() => coverageAnalyser.AnalyseCoverage());
+        Assert.That(e.Message, Is.EqualTo("Element 'coverage' not found"));
+    }
+
+    [Test]
+    public void CoverageAnalyser_AnalyseSonarQubeCoverage_InvalidFileSetup2_ThrowsCoverageParseException() {
+        CoverageAnalyser coverageAnalyser = new(CoverageFormat.SonarQube, _directory, "InvalidFileSetup2.xml");
+
+        Exception e = Assert.Throws<CoverageParseException>(() => coverageAnalyser.AnalyseCoverage());
+        Assert.That(e.Message, Is.EqualTo("Element 'coverage' not found"));
+    }
+
+    [Test]
     public void CoverageAnalyser_AnalyseSonarQubeCoverage_InvalidFile_ThrowsCoverageParseException() {
         CoverageAnalyser coverageAnalyser = new(CoverageFormat.SonarQube, _directory, "InvalidFile.xml");
 

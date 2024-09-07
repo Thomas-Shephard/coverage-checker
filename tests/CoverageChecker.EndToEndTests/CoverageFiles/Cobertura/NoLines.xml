@@ -1,4 +1,7 @@
 ﻿<coverage>
+    <sources>
+        <source>FilePath</source>
+    </sources>
     <packages>
         <package name="package-1">
             <classes>
