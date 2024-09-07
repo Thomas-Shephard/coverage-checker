@@ -112,6 +112,22 @@ public class CoverageAnalyserCoberturaTests {
     }
 
     [Test]
+    public void CoverageAnalyser_AnalyseCoberturaCoverage_InvalidFileSetup1_ThrowsCoverageParseException() {
+        CoverageAnalyser coverageAnalyser = new(CoverageFormat.Cobertura, _directory, "InvalidFileSetup1.xml");
+
+        Exception e = Assert.Throws<CoverageParseException>(() => coverageAnalyser.AnalyseCoverage());
+        Assert.That(e.Message, Is.EqualTo("Element 'coverage' not found"));
+    }
+
+    [Test]
+    public void CoverageAnalyser_AnalyseCoberturaCoverage_InvalidFileSetup2_ThrowsCoverageParseException() {
+        CoverageAnalyser coverageAnalyser = new(CoverageFormat.Cobertura, _directory, "InvalidFileSetup2.xml");
+
+        Exception e = Assert.Throws<CoverageParseException>(() => coverageAnalyser.AnalyseCoverage());
+        Assert.That(e.Message, Is.EqualTo("Element 'coverage' not found"));
+    }
+
+    [Test]
     public void CoverageAnalyser_AnalyseCoberturaCoverage_InvalidFile_ThrowsCoverageParseException() {
         CoverageAnalyser coverageAnalyser = new(CoverageFormat.Cobertura, _directory, "InvalidFile.xml");
 

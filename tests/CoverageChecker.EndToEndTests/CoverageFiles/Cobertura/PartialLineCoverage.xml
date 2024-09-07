@@ -1,4 +1,8 @@
-﻿<coverage>
+﻿<?xml version="1.0" encoding="utf-8"?>
+<coverage>
+    <sources>
+        <source>FilePath</source>
+    </sources>
     <packages>
         <package name="package-1">
             <classes>
