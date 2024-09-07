@@ -1,15 +1,25 @@
-using System.Xml.Linq;
+using System.Xml;
 
 namespace CoverageChecker.Parsers;
 
 internal abstract class BaseParser {
+    internal static readonly XmlReaderSettings XmlReaderSettings = new() {
+        IgnoreComments = true,
+        IgnoreWhitespace = true
+    };
+
     internal void ParseCoverageFromFilePath(string filePath) {
         try {
-            LoadCoverage(XDocument.Load(filePath));
+            using XmlReader reader = XmlReader.Create(filePath, XmlReaderSettings);
+            ParseCoverageFromXmlReader(reader);
         } catch (Exception e) when (e is not CoverageException) {
             throw new CoverageParseException("Failed to load coverage file");
         }
     }
 
-    protected abstract void LoadCoverage(XDocument coverageDocument);
+    internal void ParseCoverageFromXmlReader(XmlReader reader) {
+        LoadCoverage(reader);
+    }
+
+    protected abstract void LoadCoverage(XmlReader reader);
 }

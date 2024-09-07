@@ -92,7 +92,7 @@ public class CoverageAnalyserSonarQubeTests {
         CoverageAnalyser coverageAnalyser = new(CoverageFormat.SonarQube, _directory, "InvalidFileSetup1.xml");
 
         Exception e = Assert.Throws<CoverageParseException>(() => coverageAnalyser.AnalyseCoverage());
-        Assert.That(e.Message, Is.EqualTo("Element 'coverage' not found"));
+        Assert.That(e.Message, Is.EqualTo("Expected coverage to be the root element"));
     }
 
     [Test]
@@ -100,7 +100,7 @@ public class CoverageAnalyserSonarQubeTests {
         CoverageAnalyser coverageAnalyser = new(CoverageFormat.SonarQube, _directory, "InvalidFileSetup2.xml");
 
         Exception e = Assert.Throws<CoverageParseException>(() => coverageAnalyser.AnalyseCoverage());
-        Assert.That(e.Message, Is.EqualTo("Element 'coverage' not found"));
+        Assert.That(e.Message, Is.EqualTo("Expected coverage to be the root element"));
     }
 
     [Test]

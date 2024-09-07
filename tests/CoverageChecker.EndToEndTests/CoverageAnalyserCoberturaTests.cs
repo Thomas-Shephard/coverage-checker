@@ -116,7 +116,7 @@ public class CoverageAnalyserCoberturaTests {
         CoverageAnalyser coverageAnalyser = new(CoverageFormat.Cobertura, _directory, "InvalidFileSetup1.xml");
 
         Exception e = Assert.Throws<CoverageParseException>(() => coverageAnalyser.AnalyseCoverage());
-        Assert.That(e.Message, Is.EqualTo("Element 'coverage' not found"));
+        Assert.That(e.Message, Is.EqualTo("Expected coverage to be the root element"));
     }
 
     [Test]
@@ -124,7 +124,7 @@ public class CoverageAnalyserCoberturaTests {
         CoverageAnalyser coverageAnalyser = new(CoverageFormat.Cobertura, _directory, "InvalidFileSetup2.xml");
 
         Exception e = Assert.Throws<CoverageParseException>(() => coverageAnalyser.AnalyseCoverage());
-        Assert.That(e.Message, Is.EqualTo("Element 'coverage' not found"));
+        Assert.That(e.Message, Is.EqualTo("Expected coverage to be the root element"));
     }
 
     [Test]

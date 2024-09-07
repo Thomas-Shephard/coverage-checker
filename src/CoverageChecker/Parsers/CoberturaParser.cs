@@ -1,70 +1,92 @@
-﻿using System.Xml.Linq;
+﻿using System.Xml;
 using CoverageChecker.Results;
 using CoverageChecker.Utils;
 
 namespace CoverageChecker.Parsers;
 
 internal class CoberturaParser(Coverage coverage) : BaseParser {
-    protected override void LoadCoverage(XDocument coverageDocument) {
-        XElement coverageElement = coverageDocument.GetRequiredElement("coverage");
+    protected override void LoadCoverage(XmlReader reader) {
+        if (!reader.ReadToFollowing("coverage") || reader.Depth != 0)
+            throw new CoverageParseException("Expected coverage to be the root element");
 
-        XElement packagesElement = coverageElement.GetRequiredElement("packages");
-        foreach (XElement packageElement in packagesElement.Elements("package")) {
-            LoadPackageCoverage(packageElement);
-        }
+        reader.TryEnterElement("coverage", () => {
+            // If the file contains a sources element, ignore it
+            if (reader.Name == "sources")
+                reader.ConsumeElement("sources");
+
+            reader.TryEnterElement("packages", () => {
+                reader.ParseElements("package", () => {
+                    LoadPackageCoverage(reader);
+                });
+            });
+        });
     }
 
-    private void LoadPackageCoverage(XElement packageElement) {
-        string packageName = packageElement.GetRequiredAttribute("name").Value;
+    private void LoadPackageCoverage(XmlReader reader) {
+        string packageName = reader.GetRequiredAttribute<string>("name");
 
-        XElement classesElement = packageElement.GetRequiredElement("classes");
-        foreach (XElement classElement in classesElement.Elements("class")) {
-            LoadClassCoverage(classElement, packageName);
-        }
+        reader.TryEnterElement("package", () => {
+            reader.TryEnterElement("classes", () => {
+                reader.ParseElements("class", () => {
+                    LoadClassCoverage(reader, packageName);
+                });
+            });
+        });
     }
 
-    private void LoadClassCoverage(XElement classElement, string packageName) {
-        string filePath = classElement.GetRequiredAttribute("filename").Value;
-        string className = classElement.GetRequiredAttribute("name").Value;
+    private void LoadClassCoverage(XmlReader reader, string packageName) {
+        string filePath = reader.GetRequiredAttribute<string>("filename");
+        string className = reader.GetRequiredAttribute<string>("name");
 
-        FileCoverage file = coverage.GetOrCreateFile(filePath, packageName);
+        reader.TryEnterElement("class", () => {
+            FileCoverage file = coverage.GetOrCreateFile(filePath, packageName);
 
-        XElement methodsElement = classElement.GetRequiredElement("methods");
-        foreach (XElement methodElement in methodsElement.Elements("method")) {
-            LoadMethodCoverage(file, methodElement, className);
-        }
+            reader.TryEnterElement("methods", () => {
+                reader.ParseElements("method", () => {
+                    LoadMethodCoverage(file, reader, className);
+                });
+            }, throwIfNotFound: false);
 
-        XElement linesElement = classElement.GetRequiredElement("lines");
-        foreach (XElement lineElement in linesElement.Elements("line")) {
-            LoadLineCoverage(file, lineElement, className);
-        }
+            reader.TryEnterElement("lines", () => {
+                reader.ParseElements("line", () => {
+                    LoadLineCoverage(file, reader, className);
+                });
+            }, throwIfNotFound: false);
+        });
     }
 
-    private static void LoadMethodCoverage(FileCoverage file, XElement methodElement, string className) {
-        string methodName = methodElement.GetRequiredAttribute("name").Value;
-        string? methodSignature = methodElement.Attribute("signature")?.Value;
+    private static void LoadMethodCoverage(FileCoverage file, XmlReader reader, string className) {
+        string methodName = reader.GetRequiredAttribute<string>("name");
+        reader.TryGetAttribute("signature", out string? methodSignature);
 
-        XElement linesElement = methodElement.GetRequiredElement("lines");
-        foreach (XElement lineElement in linesElement.Elements("line")) {
-            LoadLineCoverage(file, lineElement, className, methodName, methodSignature);
-        }
+        reader.TryEnterElement("method", () => {
+            reader.TryEnterElement("lines", () => {
+                reader.ParseElements("line", () => {
+                    LoadLineCoverage(file, reader, className, methodName, methodSignature);
+                });
+            });
+        });
     }
 
-    private static void LoadLineCoverage(FileCoverage file, XElement lineElement, string className, string? methodName = null, string? methodSignature = null) {
-        int lineNumber = lineElement.ParseRequiredAttribute<int>("number");
-        bool isCovered = lineElement.ParseRequiredAttribute<int>("hits") > 0;
-        bool hasBranches = lineElement.ParseOptionalAttribute<bool>("branch") ?? false;
+    private static void LoadLineCoverage(FileCoverage file, XmlReader reader, string className, string? methodName = null, string? methodSignature = null) {
+        int lineNumber = reader.GetRequiredAttribute<int>("number");
+        bool isCovered = reader.GetRequiredAttribute<int>("hits") > 0;
+        reader.TryGetAttribute("branch", out bool hasBranchCoverage);
 
-        if (!hasBranches) {
-            file.AddLine(lineNumber, isCovered, className: className, methodName: methodName, methodSignature: methodSignature);
-            return;
+        try {
+            if (!hasBranchCoverage) {
+                file.AddLine(lineNumber, isCovered, className: className, methodName: methodName, methodSignature: methodSignature);
+                return;
+            }
+
+            string conditionCoverage = reader.GetRequiredAttribute<string>("condition-coverage");
+
+            (int branches, int coveredBranches) = ParseConditionCoverage(conditionCoverage);
+
+            file.AddLine(lineNumber, isCovered, branches, coveredBranches, className, methodName, methodSignature);
+        } finally {
+            reader.ConsumeElement("line");
         }
-
-        // Select the condition-coverage attribute
-        string conditionCoverage = lineElement.GetRequiredAttribute("condition-coverage").Value;
-        (int branches, int coveredBranches) = ParseConditionCoverage(conditionCoverage);
-
-        file.AddLine(lineNumber, isCovered, branches, coveredBranches, className, methodName, methodSignature);
     }
 
     private static (int branches, int coveredBranches) ParseConditionCoverage(string conditionCoverage) {
