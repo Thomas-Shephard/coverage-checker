@@ -17,31 +17,14 @@ public class FileCoverage(string path, string? packageName = null) {
     }
 
     internal void AddLine(int lineNumber, bool isCovered, int? branches = null, int? coveredBranches = null, string? className = null, string? methodName = null, string? methodSignature = null) {
-        LineCoverage line = new(lineNumber, isCovered, branches, coveredBranches, className, methodName, methodSignature);
-
         LineCoverage? existingLine = GetLine(lineNumber);
+        LineCoverage newLine = new(lineNumber, isCovered, branches, coveredBranches, className, methodName, methodSignature);
 
         if (existingLine is not null) {
-            // If the lines are the same (excluding method name and signature), there is no need to update it
-            if (existingLine.EquivalentTo(line)) {
-                return;
-            }
-
-            // If the lines are not substantively the same, throw an exception
-            if (existingLine.Branches != line.Branches || existingLine.ClassName != line.ClassName) {
-                throw new CoverageCalculationException("Line already exists in the file");
-            }
-
-            // Update the existing line with the new coverage information
-            existingLine.IsCovered = existingLine.IsCovered || line.IsCovered;
-            if (existingLine.Branches is not null) {
-                existingLine.CoveredBranches = Math.Max(existingLine.CoveredBranches ?? 0, line.CoveredBranches ?? 0);
-            }
-
-            return;
+            existingLine.MergeWith(newLine);
+        } else {
+            _lines.Add(newLine);
         }
-
-        _lines.Add(line);
     }
 
     public double CalculateFileCoverage(CoverageType coverageType = CoverageType.Line) {

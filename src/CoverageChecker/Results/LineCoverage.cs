@@ -4,9 +4,9 @@ namespace CoverageChecker.Results;
 
 public class LineCoverage {
     public int LineNumber { get; }
-    public bool IsCovered { get; internal set; }
-    public int? Branches { get; }
-    public int? CoveredBranches { get; internal set; }
+    public bool IsCovered { get; private set; }
+    public int? Branches { get; private set; }
+    public int? CoveredBranches { get; private set; }
     public string? ClassName { get; }
     public string? MethodName { get; }
     public string? MethodSignature { get; }
@@ -40,15 +40,41 @@ public class LineCoverage {
         return lines.CalculateCoverage(coverageType);
     }
 
-    internal bool EquivalentTo(LineCoverage? other) {
-        // Checks if the lines are the same (excluding method name and signature)
-        if (ReferenceEquals(null, other)) return false;
-        if (ReferenceEquals(this, other)) return true;
+    internal void MergeWith(LineCoverage other) {
+        if (!MergeRequired(other))
+            return;
 
-        return LineNumber == other.LineNumber &&
-               IsCovered == other.IsCovered &&
-               Branches == other.Branches &&
-               CoveredBranches == other.CoveredBranches &&
-               ClassName == other.ClassName;
+        IsCovered = IsCovered || other.IsCovered;
+        Branches ??= other.Branches;
+
+        if (Branches is not null) {
+            CoveredBranches = Math.Max(CoveredBranches ?? 0, other.CoveredBranches ?? 0);
+        }
+    }
+
+    private bool MergeRequired(LineCoverage other) {
+        if (ReferenceEquals(this, other)) return false;
+
+        // The line numbers and class names should always be the same
+        if (LineNumber != other.LineNumber)
+            throw new CoverageParseException("Cannot merge lines due to a line number mismatch");
+        if (ClassName != other.ClassName)
+            throw new CoverageParseException("Cannot merge lines due to a class name mismatch");
+
+        // If the updateable information is the same, no merge is required
+        if (IsCovered == other.IsCovered && Branches == other.Branches && CoveredBranches == other.CoveredBranches)
+            return false;
+
+        // If the branches are the same, no additional checks are required and a merge can be performed
+        // Otherwise, branches can only be updated from null when the line was previously not covered but now is
+        if (Branches == other.Branches || Branches is null && !IsCovered && other.IsCovered)
+            return true;
+
+        // If the other branches is null and was not covered and the line was previously not covered, this is valid but
+        // no update is required because it could only decrease code coverage
+        if (other.Branches is null && !other.IsCovered && IsCovered)
+            return false;
+
+        throw new CoverageParseException("Cannot merge lines due to a branches mismatch");
     }
 }
