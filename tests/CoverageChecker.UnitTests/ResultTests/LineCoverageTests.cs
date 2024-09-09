@@ -81,32 +81,123 @@ public class LineCoverageTests {
     }
 
     [Test]
-    public void LineCoverage_EquivalentTo_SameObject_ReturnsTrue() {
-        LineCoverage lineCoverage = new(1, false);
-
-        Assert.That(lineCoverage.EquivalentTo(lineCoverage), Is.True);
-    }
-
-    [Test]
-    public void LineCoverage_EquivalentTo_EqualObjects_ReturnsTrue() {
-        LineCoverage lineCoverage1 = new(2, false);
-        LineCoverage lineCoverage2 = new(2, false);
-
-        Assert.That(lineCoverage1.EquivalentTo(lineCoverage2), Is.True);
-    }
-
-    [Test]
-    public void LineCoverage_EquivalentTo_Null_ReturnsFalse() {
+    public void LineCoverage_MergeWith_SameObject_DoesntUpdate() {
         LineCoverage lineCoverage = new(1, true);
+        LineCoverage expectedLineCoverage = new(1, true);
 
-        Assert.That(lineCoverage.EquivalentTo(null), Is.False);
+        lineCoverage.MergeWith(lineCoverage);
+
+        Assert.That(lineCoverage, Is.EqualTo(expectedLineCoverage).Using(new LineCoverageComparer()));
     }
 
     [Test]
-    public void LineCoverage_EquivalentTo_DifferentObjects_ReturnsFalse() {
-        LineCoverage lineCoverage1 = new(1, true);
-        LineCoverage lineCoverage2 = new(2, false);
+    public void LineCoverage_MergeWith_DifferentIsCovered_DoesUpdate() {
+        LineCoverage firstLineCoverage = new(1, false);
+        LineCoverage secondLineCoverage = new(1, true);
+        LineCoverage expectedLineCoverage = new(1, true);
 
-        Assert.That(lineCoverage1.EquivalentTo(lineCoverage2), Is.False);
+        firstLineCoverage.MergeWith(secondLineCoverage);
+
+        Assert.That(firstLineCoverage, Is.EqualTo(expectedLineCoverage).Using(new LineCoverageComparer()));
+    }
+
+    [Test]
+    public void LineCoverage_MergeWith_DifferentIsCovered_DoesntUpdate() {
+        LineCoverage firstLineCoverage = new(1, true);
+        LineCoverage secondLineCoverage = new(1, false);
+        LineCoverage expectedLineCoverage = new(1, true);
+
+        firstLineCoverage.MergeWith(secondLineCoverage);
+
+        Assert.That(firstLineCoverage, Is.EqualTo(expectedLineCoverage).Using(new LineCoverageComparer()));
+    }
+
+    [Test]
+    public void LineCoverage_MergeWith_DifferentCoveredBranches_DoesUpdate() {
+        LineCoverage firstLineCoverage = new(1, true, branches: 2, coveredBranches: 1);
+        LineCoverage secondLineCoverage = new(1, true, branches: 2, coveredBranches: 2);
+        LineCoverage expectedLineCoverage = new(1, true,  branches: 2, coveredBranches: 2);
+
+        firstLineCoverage.MergeWith(secondLineCoverage);
+
+        Assert.That(firstLineCoverage, Is.EqualTo(expectedLineCoverage).Using(new LineCoverageComparer()));
+    }
+
+    [Test]
+    public void LineCoverage_MergeWith_DifferentCoveredBranches_DoesntUpdate() {
+        LineCoverage firstLineCoverage = new(1, true, branches: 2, coveredBranches: 1);
+        LineCoverage secondLineCoverage = new(1, true, branches: 2, coveredBranches: 0);
+        LineCoverage expectedLineCoverage = new(1, true,  branches: 2, coveredBranches: 1);
+
+        firstLineCoverage.MergeWith(secondLineCoverage);
+
+        Assert.That(firstLineCoverage, Is.EqualTo(expectedLineCoverage).Using(new LineCoverageComparer()));
+    }
+
+    [Test]
+    public void LineCoverage_MergeWith_DifferentBranches_DoesUpdate() {
+        LineCoverage firstLineCoverage = new(1, false, branches: null, coveredBranches: null);
+        LineCoverage secondLineCoverage = new(1, true, branches: 2, coveredBranches: 2);
+        LineCoverage expectedLineCoverage = new(1, true,  branches: 2, coveredBranches: 2);
+
+        firstLineCoverage.MergeWith(secondLineCoverage);
+
+        Assert.That(firstLineCoverage, Is.EqualTo(expectedLineCoverage).Using(new LineCoverageComparer()));
+    }
+
+    [Test]
+    public void LineCoverage_MergeWith_DifferentBranches_DoesntUpdate() {
+        LineCoverage firstLineCoverage = new(1, true, branches: 2, coveredBranches: 1);
+        LineCoverage secondLineCoverage = new(1, false, branches: null, coveredBranches: null);
+        LineCoverage expectedLineCoverage = new(1, true,  branches: 2, coveredBranches: 1);
+
+        firstLineCoverage.MergeWith(secondLineCoverage);
+
+        Assert.That(firstLineCoverage, Is.EqualTo(expectedLineCoverage).Using(new LineCoverageComparer()));
+    }
+
+    [Test]
+    public void LineCoverage_MergeWith_DifferentLineNumbers_ThrowsCoverageParseException() {
+        LineCoverage firstLineCoverage = new(1, true);
+        LineCoverage secondLineCoverage = new(2, true);
+
+        Exception e = Assert.Throws<CoverageParseException>(() => firstLineCoverage.MergeWith(secondLineCoverage));
+        Assert.That(e.Message, Is.EqualTo("Cannot merge lines due to a line number mismatch"));
+    }
+
+    [Test]
+    public void LineCoverage_MergeWith_DifferentClassNames_ThrowsCoverageParseException() {
+        LineCoverage firstLineCoverage = new(1, true, className: "ClassName1");
+        LineCoverage secondLineCoverage = new(1, true, className: "ClassName2");
+
+        Exception e = Assert.Throws<CoverageParseException>(() => firstLineCoverage.MergeWith(secondLineCoverage));
+        Assert.That(e.Message, Is.EqualTo("Cannot merge lines due to a class name mismatch"));
+    }
+
+    [Test]
+    public void LineCoverage_MergeWith_InvalidDifferentBranches1_ThrowsCoverageParseException([Values] bool firstIsCovered, [Values] bool secondIsCovered) {
+        LineCoverage firstLineCoverage = new(1, firstIsCovered, branches: 2, coveredBranches: 0);
+        LineCoverage secondLineCoverage = new(1, secondIsCovered, branches: 4, coveredBranches: 0);
+
+        Exception e = Assert.Throws<CoverageParseException>(() => firstLineCoverage.MergeWith(secondLineCoverage));
+        Assert.That(e.Message, Is.EqualTo("Cannot merge lines due to a branches mismatch"));
+    }
+
+    [Test]
+    public void LineCoverage_MergeWith_InvalidDifferentBranches2_ThrowsCoverageParseException([Values] bool firstIsCovered) {
+        LineCoverage firstLineCoverage = new(1, firstIsCovered, branches: 2, coveredBranches: 0);
+        LineCoverage secondLineCoverage = new(1, true, branches: null, coveredBranches: null);
+
+        Exception e = Assert.Throws<CoverageParseException>(() => firstLineCoverage.MergeWith(secondLineCoverage));
+        Assert.That(e.Message, Is.EqualTo("Cannot merge lines due to a branches mismatch"));
+    }
+
+    [Test]
+    public void LineCoverage_MergeWith_InvalidDifferentBranches3_ThrowsCoverageParseException([Values] bool secondIsCovered) {
+        LineCoverage firstLineCoverage = new(1, true, branches: null, coveredBranches: null);
+        LineCoverage secondLineCoverage = new(1, secondIsCovered, branches: 4, coveredBranches: 0);
+
+        Exception e = Assert.Throws<CoverageParseException>(() => firstLineCoverage.MergeWith(secondLineCoverage));
+        Assert.That(e.Message, Is.EqualTo("Cannot merge lines due to a branches mismatch"));
     }
 }

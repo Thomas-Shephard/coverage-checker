@@ -110,8 +110,8 @@ public class FileCoverageTests {
 
         fileCoverage.AddLine(1, true, 1, 0);
 
-        Exception e = Assert.Throws<CoverageCalculationException>(() => fileCoverage.AddLine(1, false, 2, 1));
-        Assert.That(e.Message, Is.EqualTo("Line already exists in the file"));
+        Exception e = Assert.Throws<CoverageParseException>(() => fileCoverage.AddLine(1, false, 2, 1));
+        Assert.That(e.Message, Is.EqualTo("Cannot merge lines due to a branches mismatch"));
     }
 
     [Test]
