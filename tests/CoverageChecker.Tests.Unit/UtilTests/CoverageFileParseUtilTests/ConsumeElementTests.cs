@@ -1,7 +1,7 @@
 using System.Xml;
 using CoverageChecker.Utils;
 
-namespace CoverageChecker.UnitTests.UtilTests.CoverageFileParseUtilTests;
+namespace CoverageChecker.Tests.Unit.UtilTests.CoverageFileParseUtilTests;
 
 public class ConsumeElementTests {
     [Test]

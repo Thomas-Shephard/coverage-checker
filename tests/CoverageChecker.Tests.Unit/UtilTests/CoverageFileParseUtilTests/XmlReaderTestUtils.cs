@@ -1,7 +1,7 @@
 using System.Xml;
 using CoverageChecker.Parsers;
 
-namespace CoverageChecker.UnitTests.UtilTests.CoverageFileParseUtilTests;
+namespace CoverageChecker.Tests.Unit.UtilTests.CoverageFileParseUtilTests;
 
 internal static class XmlReaderTestUtils {
     internal const string AttributeName = "attribute";
