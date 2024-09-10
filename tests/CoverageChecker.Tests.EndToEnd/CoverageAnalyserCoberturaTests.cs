@@ -1,6 +1,6 @@
 ﻿using CoverageChecker.Results;
 
-namespace CoverageChecker.EndToEndTests;
+namespace CoverageChecker.Tests.EndToEnd;
 
 public class CoverageAnalyserCoberturaTests {
     private readonly string _directory = Path.Combine(TestContext.CurrentContext.TestDirectory, "CoverageFiles", "Cobertura");

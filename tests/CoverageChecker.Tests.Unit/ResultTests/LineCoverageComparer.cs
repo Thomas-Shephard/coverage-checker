@@ -1,6 +1,6 @@
 using CoverageChecker.Results;
 
-namespace CoverageChecker.UnitTests.ResultTests;
+namespace CoverageChecker.Tests.Unit.ResultTests;
 
 public class LineCoverageComparer : IEqualityComparer<LineCoverage> {
     public bool Equals(LineCoverage? x, LineCoverage? y) {

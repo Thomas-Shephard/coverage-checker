@@ -1,4 +1,4 @@
-namespace CoverageChecker.EndToEndTests;
+namespace CoverageChecker.Tests.EndToEnd;
 
 public class CoverageAnalyserInvalidTests {
     [Test]
