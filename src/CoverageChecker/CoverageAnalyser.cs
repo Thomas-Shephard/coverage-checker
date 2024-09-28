@@ -22,7 +22,7 @@ public class CoverageAnalyser(CoverageFormat coverageFormat, string directory, I
         };
 
         foreach (string filePath in filePaths) {
-            parser.ParseCoverageFromFilePath(filePath);
+            parser.ParseCoverage(filePath);
         }
 
         return coverage;

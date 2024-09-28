@@ -8,17 +8,17 @@ internal abstract class BaseParser {
         IgnoreWhitespace = true
     };
 
-    internal void ParseCoverageFromFilePath(string filePath) {
+    internal void ParseCoverage(string filePath) {
+        using XmlReader reader = XmlReader.Create(filePath, XmlReaderSettings);
+        ParseCoverage(reader);
+    }
+
+    private void ParseCoverage(XmlReader reader) {
         try {
-            using XmlReader reader = XmlReader.Create(filePath, XmlReaderSettings);
-            ParseCoverageFromXmlReader(reader);
+            LoadCoverage(reader);
         } catch (Exception exception) when (exception is not CoverageException) {
             throw new CoverageParseException("Failed to load coverage file", exception);
         }
-    }
-
-    internal void ParseCoverageFromXmlReader(XmlReader reader) {
-        LoadCoverage(reader);
     }
 
     protected abstract void LoadCoverage(XmlReader reader);
