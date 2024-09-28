@@ -88,7 +88,7 @@ jobs:
       - name: Build and push to Docker registry
         uses: docker/build-push-action@v6
         with:
-          file: GitHubAction.Dockerfile
+          file: src/CoverageChecker.GitHubAction/Dockerfile
           push: true
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
