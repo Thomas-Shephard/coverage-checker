@@ -5,8 +5,22 @@ namespace CoverageChecker.GitHubAction;
 public class CoverageAnalyzer(ActionInputs options) {
     internal void AnalyzeAsync() {
         CoverageFormat coverageFormat = GetCoverageFormat();
-        CoverageAnalyser coverageAnalyser = new(coverageFormat, options.Directory, options.GlobPatterns, options.FailIfNoFilesFound);
-        Coverage coverage = coverageAnalyser.AnalyseCoverage();
+        CoverageAnalyser coverageAnalyser = new(coverageFormat, options.Directory, options.GlobPatterns);
+        Coverage coverage;
+
+        try {
+            coverage = coverageAnalyser.AnalyseCoverage();
+        } catch (NoCoverageFilesFoundException) {
+            if (options.FailIfNoFilesFound) {
+                OutputError("Coverage files not found", "No coverage files found.");
+                Environment.Exit(1);
+            } else {
+                Console.WriteLine("No coverage files found.");
+            }
+
+            return;
+        }
+
 
         CheckLineCoverage(coverage, out double calculatedLineCoverage);
         CheckBranchCoverage(coverage, out double calculatedBranchCoverage);
