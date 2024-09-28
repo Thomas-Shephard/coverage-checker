@@ -36,7 +36,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           COVERAGE_FILE: 'coverage.xml'
         run: |
-          dotnet-sonarscanner begin /k:"${{ vars.SONAR_PROJECT_KEY }}" /o:"${{ vars.SONAR_ORGANIZATION }}" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="${{ vars.SONAR_HOST_URL }}" /d:sonar.cs.vscoveragexml.reportsPaths="${{ env.COVERAGE_FILE }}"
+          dotnet-sonarscanner begin /k:"${{ vars.SONAR_PROJECT_KEY }}" /o:"${{ vars.SONAR_ORGANIZATION }}" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="${{ vars.SONAR_HOST_URL }}" /d:sonar.cs.vscoveragexml.reportsPaths="${{ env.COVERAGE_FILE }}" /d:sonar.scanner.scanAll="true"
           dotnet build
           dotnet-coverage collect "dotnet test" -f xml -o "${{ env.COVERAGE_FILE }}"
           dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
