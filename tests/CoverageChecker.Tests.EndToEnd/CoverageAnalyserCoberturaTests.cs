@@ -131,7 +131,6 @@ public class CoverageAnalyserCoberturaTests {
     public void CoverageAnalyser_AnalyseCoberturaCoverage_InvalidFile_ThrowsCoverageParseException() {
         CoverageAnalyser coverageAnalyser = new(CoverageFormat.Cobertura, _directory, "InvalidFile.xml");
 
-        Exception e = Assert.Throws<CoverageParseException>(() => coverageAnalyser.AnalyseCoverage());
-        Assert.That(e.Message, Is.EqualTo("No coverage files found"));
+        Assert.Throws<NoCoverageFilesFoundException>(() => coverageAnalyser.AnalyseCoverage());
     }
 }

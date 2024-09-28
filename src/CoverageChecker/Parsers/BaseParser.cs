@@ -12,8 +12,8 @@ internal abstract class BaseParser {
         try {
             using XmlReader reader = XmlReader.Create(filePath, XmlReaderSettings);
             ParseCoverageFromXmlReader(reader);
-        } catch (Exception e) when (e is not CoverageException) {
-            throw new CoverageParseException("Failed to load coverage file");
+        } catch (Exception exception) when (exception is not CoverageException) {
+            throw new CoverageParseException("Failed to load coverage file", exception);
         }
     }
 

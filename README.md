@@ -85,9 +85,8 @@ using CoverageChecker.Results;
 const CoverageFormat coverageFormat = CoverageFormat.Cobertura;
 const string directory = @"file-directory";
 const string globPattern = "*.xml";
-const bool failIfNoFilesFound = false;
 
-CoverageAnalyser analyser = new(coverageFormat, directory, globPattern, failIfNoFilesFound);
+CoverageAnalyser analyser = new(coverageFormat, directory, globPattern);
 Coverage coverage = analyser.AnalyseCoverage();
 
 if (coverage.Files.Count is 0) {
