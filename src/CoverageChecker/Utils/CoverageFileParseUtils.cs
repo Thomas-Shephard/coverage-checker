@@ -20,7 +20,9 @@ internal static class CoverageFileParseUtils {
         //   2. A closing element
         // Then the reader should continue reading until the end of the element to be consumed
         if (!startedWithEmptyElement && !startedWithEndElement) {
-            while (reader.Read() && reader.Depth > depth) { }
+            while (reader.Read() && reader.Depth > depth) {
+                // Continue reading until the element has been consumed
+            }
         }
 
         // The reader should now be at an EndElement or empty element for the provided input element details
