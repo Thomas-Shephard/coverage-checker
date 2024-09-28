@@ -12,7 +12,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 				ProjectSection(SolutionItems) = preProject
 								.gitignore = .gitignore
 								action.yml = action.yml
-								GitHubAction.Dockerfile = GitHubAction.Dockerfile
 				EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoverageChecker.Tests.EndToEnd", "tests\CoverageChecker.Tests.EndToEnd\CoverageChecker.Tests.EndToEnd.csproj", "{BD44F4C5-7FD8-46DC-9AFC-C899BFFA6386}"
