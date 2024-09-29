@@ -20,7 +20,7 @@ The action supports the following coverage file formats:
   id: check-coverage
   uses: Thomas-Shephard/coverage-checker@v0.2.0
   with:
-    format: 'cobertura'
+    format: 'Cobertura'
     directory: 'coverage'
     glob: '**/coverage.cobertura.xml'
     line-threshold: 80
@@ -31,7 +31,7 @@ The action supports the following coverage file formats:
 ### Inputs
 | Name                      | Description                                                        | Required | Default               |
 |---------------------------|--------------------------------------------------------------------|----------|-----------------------|
-| `format`                  | The format of the coverage file. Options: `sonarqube`, `cobertura` | Yes      |                       |
+| `format`                  | The format of the coverage file. Options: `SonarQube`, `Cobertura` | Yes      |                       |
 | `directory`               | The directory containing the coverage file(s).                     | No       | The current directory |
 | `glob-pattern`            | The glob pattern to match the coverage file(s).                    | Yes      |                       |
 | `line-threshold`          | The line coverage threshold.                                       | No       | 80                    |
