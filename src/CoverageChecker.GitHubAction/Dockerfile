@@ -21,15 +21,8 @@ LABEL com.github.actions.description="Checks the code coverage of a project"
 
 FROM mcr.microsoft.com/dotnet/runtime:${DOTNET_VERSION} AS runtime
 
-ARG APP_USER=coverage-checker-user
-
 # Copy the published application to the runtime image
-WORKDIR /app
 COPY --from=build /app/out .
 
-# Change to APP_USER
-RUN useradd -r ${APP_USER}
-USER ${APP_USER}
-
 # Run the GitHubAction on entry
-ENTRYPOINT ["dotnet", "CoverageChecker.GitHubAction.dll"]
+ENTRYPOINT ["dotnet", "/CoverageChecker.GitHubAction.dll"]
