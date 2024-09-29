@@ -40,7 +40,10 @@ jobs:
           branch-threshold: 100
   publish-nuget-package:
     if: startsWith(github.ref, 'refs/tags/v')
-    name: Publish NuGet Package
+    strategy:
+      matrix:
+        PROJECT_NAME: [ "CoverageChecker", "CoverageChecker.CommandLine" ]
+    name: Publish ${{ matrix.PROJECT_NAME }} NuGet Package
     needs: build-and-test
     runs-on: ubuntu-latest
     steps:
@@ -55,7 +58,7 @@ jobs:
       - name: Add GitHub source
         run: dotnet nuget add source "https://nuget.pkg.github.com/Thomas-Shephard/index.json" --name "github.com" --username "Thomas-Shephard" --password ${{ secrets.PUBLISH_TO_GITHUB_TOKEN }} --store-password-in-clear-text
       - name: Pack project
-        run: dotnet pack src/CoverageChecker /p:PackageVersion=${GITHUB_REF_NAME#v} --configuration Release
+        run: dotnet pack src/${{ matrix.PROJECT_NAME }} /p:PackageVersion=${GITHUB_REF_NAME#v} --configuration Release
       - name: Push to sources
         run: |
           dotnet nuget push **/*.nupkg --source "github.com"
