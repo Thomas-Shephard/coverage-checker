@@ -4,7 +4,7 @@ namespace CoverageChecker.GitHubAction;
 
 public class ActionInputs {
     [Option('f', "format", Required = true, HelpText = "The format of the coverage files (Supported formats: Cobertura and SonarQube)")]
-    public string Format { get; set; } = string.Empty;
+    public CoverageFormat CoverageFormat { get; set; }
 
     [Option('g', "glob-patterns", Required = false, HelpText = "The glob pattern to search for coverage files")]
     public IEnumerable<string> GlobPatterns { get; set; } = ["*.xml"];
