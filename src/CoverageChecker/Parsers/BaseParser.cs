@@ -5,7 +5,8 @@ namespace CoverageChecker.Parsers;
 internal abstract class BaseParser {
     internal static readonly XmlReaderSettings XmlReaderSettings = new() {
         IgnoreComments = true,
-        IgnoreWhitespace = true
+        IgnoreWhitespace = true,
+        DtdProcessing = DtdProcessing.Ignore
     };
 
     internal void ParseCoverage(string filePath) {
