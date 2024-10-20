@@ -14,12 +14,7 @@ public class CoverageAnalyser(CoverageFormat coverageFormat, string directory, I
             throw new NoCoverageFilesFoundException();
 
         Coverage coverage = new();
-
-        BaseParser parser = coverageFormat switch {
-            CoverageFormat.Cobertura => new CoberturaParser(coverage),
-            CoverageFormat.SonarQube => new SonarQubeParser(coverage),
-            _                        => throw new ArgumentOutOfRangeException(nameof(coverageFormat), coverageFormat, "Unknown coverage format")
-        };
+        BaseParser parser = ParserFactory.CreateParser(coverageFormat, coverage);
 
         foreach (string filePath in filePaths) {
             parser.ParseCoverage(filePath);
