@@ -2,13 +2,17 @@ using CoverageChecker.Utils;
 
 namespace CoverageChecker.Results;
 
-public class Coverage() {
+public class Coverage {
+    public IReadOnlyList<FileCoverage> Files => _files.AsReadOnly();
+    private readonly List<FileCoverage> _files = [];
+
+    internal Coverage() {
+
+    }
+
     internal Coverage(IEnumerable<FileCoverage> files) : this() {
         _files = files.ToList();
     }
-
-    public IReadOnlyList<FileCoverage> Files => _files.AsReadOnly();
-    private readonly List<FileCoverage> _files = [];
 
     public FileCoverage? GetFile(string path, string? packageName = null) {
         return Files.FirstOrDefault(file => file.Path == path && file.PackageName == packageName);
