@@ -18,7 +18,7 @@ public class FileCoverage {
     }
 
     internal void AddLine(int lineNumber, bool isCovered, int? branches = null, int? coveredBranches = null, string? className = null, string? methodName = null, string? methodSignature = null) {
-        LineCoverage? existingLine = Lines.FirstOrDefault(line => line.LineNumber == lineNumber);
+        LineCoverage? existingLine = _lines.Find(line => line.LineNumber == lineNumber);
         LineCoverage newLine = new(lineNumber, isCovered, branches, coveredBranches, className, methodName, methodSignature);
 
         if (existingLine is not null) {
@@ -29,12 +29,12 @@ public class FileCoverage {
     }
 
     public double CalculateFileCoverage(CoverageType coverageType = CoverageType.Line) {
-        return Lines.CalculateCoverage(coverageType);
+        return _lines.CalculateCoverage(coverageType);
     }
 
     public double CalculateClassCoverage(string className, CoverageType coverageType = CoverageType.Line) {
-        LineCoverage[] filteredLines = Lines.Where(line => line.ClassName == className)
-                                            .ToArray();
+        LineCoverage[] filteredLines = _lines.Where(line => line.ClassName == className)
+                                             .ToArray();
 
         if (filteredLines.Length is 0)
             throw new CoverageCalculationException("No lines found for the specified class name");
@@ -43,13 +43,13 @@ public class FileCoverage {
     }
 
     public double CalculateMethodCoverage(string methodName, string? methodSignature = null, CoverageType coverageType = CoverageType.Line) {
-        LineCoverage[] filteredLines = Lines.Where(line => {
-                                                // If the method signature is null, only the method name is checked
-                                                if (methodSignature is null)
-                                                    return line.MethodName == methodName;
-                                                return line.MethodName == methodName && line.MethodSignature == methodSignature;
-                                            })
-                                            .ToArray();
+        LineCoverage[] filteredLines = _lines.Where(line => {
+                                                 // If the method signature is null, only the method name is checked
+                                                 if (methodSignature is null)
+                                                     return line.MethodName == methodName;
+                                                 return line.MethodName == methodName && line.MethodSignature == methodSignature;
+                                             })
+                                             .ToArray();
 
         if (filteredLines.Length is 0)
             throw new CoverageCalculationException("No lines found for the specified method");
