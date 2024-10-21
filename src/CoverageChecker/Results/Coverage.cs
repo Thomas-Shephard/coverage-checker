@@ -14,12 +14,8 @@ public class Coverage {
         _files = files.ToList();
     }
 
-    public FileCoverage? GetFile(string path, string? packageName = null) {
-        return Files.FirstOrDefault(file => file.Path == path && file.PackageName == packageName);
-    }
-
     internal FileCoverage GetOrCreateFile(string filePath, string? packageName = null) {
-        FileCoverage? file = GetFile(filePath, packageName);
+        FileCoverage? file = Files.FirstOrDefault(file => file.Path == filePath && file.PackageName == packageName);
 
         if (file is not null) return file;
 

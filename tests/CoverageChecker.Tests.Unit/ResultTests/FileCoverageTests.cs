@@ -28,39 +28,23 @@ public class FileCoverageTests {
     }
 
     [Test]
-    public void FileCoverage_GetLine_ReturnsLineIfExists() {
-        LineCoverage[] lines = [
-            new LineCoverage(1, true, 1, 0),
-            new LineCoverage(2, false, 6, 2),
-            new LineCoverage(3, true, 4, 3)
-        ];
-
-        FileCoverage fileCoverage = new(lines, CoverageTestData.FilePath);
-
-        Assert.Multiple(() => {
-            Assert.That(fileCoverage.GetLine(1), Is.EqualTo(lines[0]));
-            Assert.That(fileCoverage.GetLine(2), Is.EqualTo(lines[1]));
-            Assert.That(fileCoverage.GetLine(3), Is.EqualTo(lines[2]));
-            Assert.That(fileCoverage.GetLine(4), Is.Null);
-            Assert.That(fileCoverage.Path, Is.EqualTo(CoverageTestData.FilePath));
-            Assert.That(fileCoverage.PackageName, Is.Null);
-        });
-    }
-
-    [Test]
     public void FileCoverage_AddLine_LineExactlySame_DoesntUpdateLine() {
         FileCoverage fileCoverage = new(CoverageTestData.FilePath);
 
         fileCoverage.AddLine(1, true);
+
+        LineCoverage retrievedLine = fileCoverage.Lines.Single(line => line.LineNumber == 1);
         Assert.Multiple(() => {
-            Assert.That(fileCoverage.GetLine(1)?.IsCovered, Is.True);
-            Assert.That(fileCoverage.GetLine(1)?.CoveredBranches, Is.Null);
+            Assert.That(retrievedLine.IsCovered, Is.True);
+            Assert.That(retrievedLine.CoveredBranches, Is.Null);
         });
 
         Assert.DoesNotThrow(() => fileCoverage.AddLine(1, true));
+
+        retrievedLine = fileCoverage.Lines.Single(line => line.LineNumber == 1);
         Assert.Multiple(() => {
-            Assert.That(fileCoverage.GetLine(1)?.IsCovered, Is.True);
-            Assert.That(fileCoverage.GetLine(1)?.CoveredBranches, Is.Null);
+            Assert.That(retrievedLine.IsCovered, Is.True);
+            Assert.That(retrievedLine.CoveredBranches, Is.Null);
         });
     }
 
@@ -69,21 +53,27 @@ public class FileCoverageTests {
         FileCoverage fileCoverage = new(CoverageTestData.FilePath);
 
         fileCoverage.AddLine(1, true, 1, 0);
+
+        LineCoverage retrievedLine = fileCoverage.Lines.Single(line => line.LineNumber == 1);
         Assert.Multiple(() => {
-            Assert.That(fileCoverage.GetLine(1)?.IsCovered, Is.True);
-            Assert.That(fileCoverage.GetLine(1)?.CoveredBranches, Is.EqualTo(0));
+            Assert.That(retrievedLine.IsCovered, Is.True);
+            Assert.That(retrievedLine.CoveredBranches, Is.EqualTo(0));
         });
 
         Assert.DoesNotThrow(() => fileCoverage.AddLine(1, true, 1, 1));
+
+        retrievedLine = fileCoverage.Lines.Single(line => line.LineNumber == 1);
         Assert.Multiple(() => {
-            Assert.That(fileCoverage.GetLine(1)?.IsCovered, Is.True);
-            Assert.That(fileCoverage.GetLine(1)?.CoveredBranches, Is.EqualTo(1));
+            Assert.That(retrievedLine.IsCovered, Is.True);
+            Assert.That(retrievedLine.CoveredBranches, Is.EqualTo(1));
         });
 
         Assert.DoesNotThrow(() => fileCoverage.AddLine(1, false, 1, 0));
+
+        retrievedLine = fileCoverage.Lines.Single(line => line.LineNumber == 1);
         Assert.Multiple(() => {
-            Assert.That(fileCoverage.GetLine(1)?.IsCovered, Is.True);
-            Assert.That(fileCoverage.GetLine(1)?.CoveredBranches, Is.EqualTo(1));
+            Assert.That(retrievedLine.IsCovered, Is.True);
+            Assert.That(retrievedLine.CoveredBranches, Is.EqualTo(1));
         });
     }
 
@@ -92,15 +82,19 @@ public class FileCoverageTests {
         FileCoverage fileCoverage = new(CoverageTestData.FilePath);
 
         fileCoverage.AddLine(2, false);
+
+        LineCoverage retrievedLine = fileCoverage.Lines.Single(line => line.LineNumber == 2);
         Assert.Multiple(() => {
-            Assert.That(fileCoverage.GetLine(2)?.IsCovered, Is.False);
-            Assert.That(fileCoverage.GetLine(2)?.CoveredBranches, Is.Null);
+            Assert.That(retrievedLine.IsCovered, Is.False);
+            Assert.That(retrievedLine.CoveredBranches, Is.Null);
         });
 
         Assert.DoesNotThrow(() => fileCoverage.AddLine(2, true));
+
+        retrievedLine = fileCoverage.Lines.Single(line => line.LineNumber == 2);
         Assert.Multiple(() => {
-            Assert.That(fileCoverage.GetLine(2)?.IsCovered, Is.True);
-            Assert.That(fileCoverage.GetLine(2)?.CoveredBranches, Is.Null);
+            Assert.That(retrievedLine.IsCovered, Is.True);
+            Assert.That(retrievedLine.CoveredBranches, Is.Null);
         });
     }
 
