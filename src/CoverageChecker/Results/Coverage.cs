@@ -15,7 +15,7 @@ public class Coverage {
     }
 
     internal FileCoverage GetOrCreateFile(string filePath, string? packageName = null) {
-        FileCoverage? file = Files.FirstOrDefault(file => file.Path == filePath && file.PackageName == packageName);
+        FileCoverage? file = _files.Find(file => file.Path == filePath && file.PackageName == packageName);
 
         if (file is not null) return file;
 
@@ -26,12 +26,12 @@ public class Coverage {
     }
 
     public double CalculateOverallCoverage(CoverageType coverageType = CoverageType.Line) {
-        return Files.CalculateCoverage(coverageType);
+        return _files.CalculateCoverage(coverageType);
     }
 
     public double CalculatePackageCoverage(string packageName, CoverageType coverageType = CoverageType.Line) {
-        FileCoverage[] filteredFiles = Files.Where(file => file.PackageName == packageName)
-                                            .ToArray();
+        FileCoverage[] filteredFiles = _files.Where(file => file.PackageName == packageName)
+                                             .ToArray();
 
         if (filteredFiles.Length is 0)
             throw new CoverageCalculationException("No files found for the specified package name");
