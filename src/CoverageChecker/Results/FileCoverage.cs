@@ -17,12 +17,8 @@ public class FileCoverage {
         _lines = lines.ToList();
     }
 
-    public LineCoverage? GetLine(int lineNumber) {
-        return Lines.FirstOrDefault(line => line.LineNumber == lineNumber);
-    }
-
     internal void AddLine(int lineNumber, bool isCovered, int? branches = null, int? coveredBranches = null, string? className = null, string? methodName = null, string? methodSignature = null) {
-        LineCoverage? existingLine = GetLine(lineNumber);
+        LineCoverage? existingLine = Lines.FirstOrDefault(line => line.LineNumber == lineNumber);
         LineCoverage newLine = new(lineNumber, isCovered, branches, coveredBranches, className, methodName, methodSignature);
 
         if (existingLine is not null) {

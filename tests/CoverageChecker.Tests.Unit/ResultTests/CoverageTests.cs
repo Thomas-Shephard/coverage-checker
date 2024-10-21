@@ -41,11 +41,8 @@ public class CoverageTests {
         coverageFile2.AddLine(3, false, 4, 3);
 
         Assert.Multiple(() => {
-            Assert.That(coverage.GetFile($"{CoverageTestData.FilePath}-1"), Is.EqualTo(coverageFile1));
             Assert.That(coverage.GetOrCreateFile($"{CoverageTestData.FilePath}-1"), Is.EqualTo(coverageFile1));
-            Assert.That(coverage.GetFile($"{CoverageTestData.FilePath}-2"), Is.EqualTo(coverageFile2));
             Assert.That(coverage.GetOrCreateFile($"{CoverageTestData.FilePath}-2"), Is.EqualTo(coverageFile2));
-            Assert.That(coverage.GetFile($"{CoverageTestData.FilePath}-3"), Is.Null);
             Assert.That(coverage.GetOrCreateFile($"{CoverageTestData.FilePath}-3").Lines, Is.Empty);
         });
     }
