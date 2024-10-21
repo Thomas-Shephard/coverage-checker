@@ -2,15 +2,20 @@ using CoverageChecker.Utils;
 
 namespace CoverageChecker.Results;
 
-public class FileCoverage(string path, string? packageName = null) {
+public class FileCoverage {
+    public string Path { get; }
+    public string? PackageName { get; }
+    public IReadOnlyList<LineCoverage> Lines => _lines.AsReadOnly();
+    private readonly List<LineCoverage> _lines = [];
+
+    internal FileCoverage(string path, string? packageName = null) {
+        Path = path;
+        PackageName = packageName;
+    }
+
     internal FileCoverage(IEnumerable<LineCoverage> lines, string path, string? packageName = null) : this(path, packageName) {
         _lines = lines.ToList();
     }
-
-    public string Path { get; } = path;
-    public string? PackageName { get; } = packageName;
-    public IReadOnlyList<LineCoverage> Lines => _lines.AsReadOnly();
-    private readonly List<LineCoverage> _lines = [];
 
     public LineCoverage? GetLine(int lineNumber) {
         return Lines.FirstOrDefault(line => line.LineNumber == lineNumber);

@@ -11,7 +11,7 @@ public class LineCoverage {
     public string? MethodName { get; }
     public string? MethodSignature { get; }
 
-    public LineCoverage(int lineNumber, bool isCovered, int? branches = null, int? coveredBranches = null, string? className = null, string? methodName = null, string? methodSignature = null) {
+    internal LineCoverage(int lineNumber, bool isCovered, int? branches = null, int? coveredBranches = null, string? className = null, string? methodName = null, string? methodSignature = null) {
         // Either both branches and coveredBranches are null, or both are not null
         if ((branches is null && coveredBranches is not null) || (branches is not null && coveredBranches is null))
             throw new ArgumentException("The branch coverage information is invalid, either both branches and covered branches are null, or both are not null");
