@@ -34,9 +34,9 @@ public class ActionInputs {
         }
     }
 
-    [Option('e', "fail-if-below-threshold", Required = false, HelpText = "Fail the action if the coverage is below the required threshold")]
-    public bool FailIfBelowThreshold { get; set; }
+    [Option('e', "fail-if-below-threshold", Required = false, Default = true, HelpText = "Fail the action if the coverage is below the required threshold")]
+    public bool? FailIfBelowThreshold { get; set; } = true;
 
-    [Option('n', "fail-if-no-files-found", Required = false, HelpText = "Fail the action if no coverage files are found")]
-    public bool FailIfNoFilesFound { get; set; } = true;
+    [Option('n', "fail-if-no-files-found", Required = false, Default = true, HelpText = "Fail the action if no coverage files are found")]
+    public bool? FailIfNoFilesFound { get; set; } = true;
 }

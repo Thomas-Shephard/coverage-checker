@@ -10,7 +10,7 @@ public class CoverageAnalyzer(ActionInputs options) {
         try {
             coverage = coverageAnalyser.AnalyseCoverage();
         } catch (NoCoverageFilesFoundException) {
-            if (options.FailIfNoFilesFound) {
+            if (options.FailIfNoFilesFound.GetValueOrDefault(true)) {
                 OutputError("Coverage files not found", "No coverage files found.");
                 Environment.Exit(1);
             } else {
@@ -62,7 +62,7 @@ public class CoverageAnalyzer(ActionInputs options) {
     }
 
     private void OutputInsufficientCoverage(string title, string message) {
-        if (options.FailIfBelowThreshold) {
+        if (options.FailIfBelowThreshold.GetValueOrDefault(true)) {
             OutputError(title, message);
             Environment.Exit(1);
         } else {
