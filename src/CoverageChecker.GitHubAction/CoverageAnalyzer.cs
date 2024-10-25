@@ -14,7 +14,7 @@ public class CoverageAnalyzer(ActionInputs options) {
                 OutputError("Coverage files not found", "No coverage files found.");
                 Environment.Exit(1);
             } else {
-                Console.WriteLine("No coverage files found.");
+                OutputWarning("Coverage files not found", "No coverage files found.");
             }
 
             return;
