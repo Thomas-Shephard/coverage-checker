@@ -1,3 +1,5 @@
+using Microsoft.Extensions.FileSystemGlobbing;
+
 namespace CoverageChecker.Tests.Unit;
 
 public class CoverageAnalyserTests {
@@ -12,6 +14,14 @@ public class CoverageAnalyserTests {
     [Test]
     public void CoverageAnalyserConstructor_ValidGlobPatterns_DoesNotThrow() {
         Assert.DoesNotThrow(() => _ = new CoverageAnalyser(ValidCoverageFormat, ValidDirectory, ["file1.xml", "file2.xml"]));
+    }
+
+    [Test]
+    public void CoverageAnalyserConstructor_ValidMatcher_DoesNotThrow() {
+        Matcher matcher = new();
+        matcher.AddInclude("*.xml");
+
+        Assert.DoesNotThrow(() => _ = new CoverageAnalyser(ValidCoverageFormat, ValidDirectory, matcher));
     }
 
     [Test]
