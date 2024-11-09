@@ -5,7 +5,6 @@ using Moq;
 namespace CoverageChecker.Tests.Unit.UtilTests;
 
 public class GlobUtilTests {
-    [TestCase]
     [TestCase("*")]
     [TestCase("**/*.cs")]
     [TestCase("!**/obj/**", "!**/obj/**", "**/*.cs", "!**/bin/**")]
@@ -31,11 +30,9 @@ public class GlobUtilTests {
     }
 
     [Test]
-    public void GlobUtils_AddGlobPatterns_EmptyPatterns_DoesNotAddPatterns() {
-        Mock<Matcher> matcher = new();
-        matcher.Object.AddGlobPatterns([]);
-
-        matcher.Verify(m => m.AddInclude(It.IsAny<string>()), Times.Never);
-        matcher.Verify(m => m.AddExclude(It.IsAny<string>()), Times.Never);
+    public void GlobUtils_AddGlobPatterns_EmptyPatterns_ThrowsException() {
+        Matcher matcher = new();
+        Exception e = Assert.Throws<ArgumentException>(() => matcher.AddGlobPatterns([]));
+        Assert.That(e.Message, Does.StartWith("At least one glob pattern must be provided"));
     }
 }
