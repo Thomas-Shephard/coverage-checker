@@ -1,16 +1,15 @@
 # Coverage Checker Library
 
-The Coverage Checker Library is a .NET library for extracting code coverage metrics from various code coverage formats.
-It is used by the [Coverage Checker GitHub Action](../CoverageChecker.GitHubAction) and
-the [Coverage Checker Command Line Tool](../CoverageChecker.CommandLine).
+The Coverage Checker library is a .NET library for extracting code coverage metrics from various code coverage formats.
+It is intended to be used as a development dependency if you need to extract code coverage metrics as part of a .NET
+project.
 
-It can also be used as a development dependency if you need to extract code coverage metrics as part of a .NET project.
-
-For general information about the coverage checker project, see the main [README file](../../README.md).
+For general information about the Coverage Checker project, see the repository's
+main [README file](https://github.com/Thomas-Shephard/coverage-checker/blob/main/README.md).
 
 ## Installation
 
-To use the coverage checker library in your .NET project, add
+To use the Coverage Checker library in your .NET project, add
 the [CoverageChecker NuGet package](https://www.nuget.org/packages/CoverageChecker) to your project:
 
 ```

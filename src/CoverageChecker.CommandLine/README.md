@@ -1,14 +1,14 @@
 # Coverage Checker Command Line Tool
 
-The Coverage Checker Command Line Tool is a .NET tool for extracting code coverage metrics from various code coverage
+The Coverage Checker command line tool is a .NET tool for extracting code coverage metrics from various code coverage
 formats.
 
-For general information about the coverage checker project, see the
-main [README file](../../README.md).
+For general information about the Coverage Checker project, see the repository's
+main [README file](https://github.com/Thomas-Shephard/coverage-checker/blob/main/README.md).
 
 ## Installation
 
-To install the coverage checker command line, install
+To install the Coverage Checker command line tool, install
 the [CoverageChecker.CommandLine NuGet package](https://www.nuget.org/packages/CoverageChecker.CommandLine):
 
 ```

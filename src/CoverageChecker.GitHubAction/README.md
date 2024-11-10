@@ -1,14 +1,15 @@
 # Coverage Checker GitHub Action
 
-The Coverage Checker GitHub Action is a .NET based GitHub Action for extracting code coverage metrics and ensuring that
+The Coverage Checker GitHub action is a .NET based GitHub action for extracting code coverage metrics and ensuring that
 they meet a specified threshold.
 
-For general information about the coverage checker project, see the main [README file](../../README.md).
+For general information about the Coverage Checker project, see the repository's
+main [README file](https://github.com/Thomas-Shephard/coverage-checker/blob/main/README.md).
 
 ## Usage
 
-The code coverage must already have been generated and saved in a file. The action will then parse the coverage file and
-check the coverage. If desired, the action will fail if the coverage is below the specified threshold.
+The code coverage must already have been generated and saved in a file. This action will then parse the coverage file
+and check the coverage. If desired, this action will fail if the coverage is below the specified threshold.
 
 ```yaml
 - name: Check coverage
