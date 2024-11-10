@@ -8,22 +8,11 @@
 
     <PropertyGroup>
         <PackageId>CoverageChecker</PackageId>
-        <Authors>Thomas Shephard</Authors>
         <Description>Code coverage checker</Description>
-        <PackageReadmeFile>README.md</PackageReadmeFile>
-        <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <PackageLicenceFile>LICENCE</PackageLicenceFile>
-        <RepositoryUrl>https://github.com/Thomas-Shephard/coverage-checker.git</RepositoryUrl>
-        <RepositoryType>git</RepositoryType>
     </PropertyGroup>
 
     <ItemGroup>
         <InternalsVisibleTo Include="CoverageChecker.Tests.Unit"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <None Include="..\..\README.md" Pack="true" PackagePath="/"/>
-        <None Include="..\..\LICENSE" Pack="true" PackagePath="/"/>
     </ItemGroup>
 
     <ItemGroup>
