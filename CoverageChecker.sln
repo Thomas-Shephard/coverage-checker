@@ -10,6 +10,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoverageChecker.Tests.Unit"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{4D8E225F-73A7-46FE-9D94-6C2496BF45E6}"
 				ProjectSection(SolutionItems) = preProject
+				                .editorconfig = .editorconfig
 								.gitignore = .gitignore
 								action.yml = action.yml
 				EndProjectSection
