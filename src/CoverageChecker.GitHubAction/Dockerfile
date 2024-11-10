@@ -4,10 +4,10 @@ FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_VERSION} AS build
 
 # Copy the source code to /app
 WORKDIR /app
-COPY src ./
+COPY . ./
 
 # Run dotnet publish to produce the executable
-RUN dotnet publish CoverageChecker.GitHubAction/CoverageChecker.GitHubAction.csproj \
+RUN dotnet publish src/CoverageChecker.GitHubAction/CoverageChecker.GitHubAction.csproj \
     --configuration  Release \
     --output out \
     --self-contained false
