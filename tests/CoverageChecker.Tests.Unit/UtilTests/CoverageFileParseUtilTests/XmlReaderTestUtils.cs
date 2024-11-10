@@ -15,7 +15,7 @@ internal static class XmlReaderTestUtils
 
     internal static XmlReader CreateXmlReader(string xml)
     {
-        return XmlReader.Create(new StringReader(xml), BaseParser.XmlReaderSettings);
+        return XmlReader.Create(new StringReader(xml), ParserBase.XmlReaderSettings);
     }
 
     internal static IXmlLineInfo GetXmlLineInfo(XmlReader reader)

@@ -56,7 +56,7 @@ public class CoverageAnalyser
             throw new NoCoverageFilesFoundException();
 
         Coverage coverage = new();
-        BaseParser parser = ParserFactory.CreateParser(_coverageFormat, coverage);
+        ParserBase parser = ParserFactory.CreateParser(_coverageFormat, coverage);
 
         foreach (string filePath in filePaths)
         {

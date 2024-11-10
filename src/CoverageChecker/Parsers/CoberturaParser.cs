@@ -4,7 +4,7 @@ using CoverageChecker.Utils;
 
 namespace CoverageChecker.Parsers;
 
-internal class CoberturaParser(Coverage coverage) : BaseParser
+internal class CoberturaParser(Coverage coverage) : ParserBase
 {
     protected override void LoadCoverage(XmlReader reader)
     {

@@ -4,7 +4,7 @@ namespace CoverageChecker.Parsers;
 
 internal static class ParserFactory
 {
-    internal static BaseParser CreateParser(CoverageFormat coverageFormat, Coverage coverage)
+    internal static ParserBase CreateParser(CoverageFormat coverageFormat, Coverage coverage)
     {
         return coverageFormat switch
         {

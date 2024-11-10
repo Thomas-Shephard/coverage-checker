@@ -2,7 +2,7 @@ using System.Xml;
 
 namespace CoverageChecker.Parsers;
 
-internal abstract class BaseParser
+internal abstract class ParserBase
 {
     internal static readonly XmlReaderSettings XmlReaderSettings = new()
     {
