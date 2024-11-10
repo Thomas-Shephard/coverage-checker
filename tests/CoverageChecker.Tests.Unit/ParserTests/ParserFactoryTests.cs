@@ -8,7 +8,7 @@ public class ParserFactoryTests
     [Test]
     public void ParserFactory_CoberturaCoverageFormat_ReturnsCoberturaParser()
     {
-        BaseParser parser = ParserFactory.CreateParser(CoverageFormat.Cobertura, new Coverage());
+        ParserBase parser = ParserFactory.CreateParser(CoverageFormat.Cobertura, new Coverage());
 
         Assert.That(parser, Is.InstanceOf<CoberturaParser>());
     }
@@ -16,7 +16,7 @@ public class ParserFactoryTests
     [Test]
     public void ParserFactory_SonarQubeCoverageFormat_ReturnsSonarQubeParser()
     {
-        BaseParser parser = ParserFactory.CreateParser(CoverageFormat.SonarQube, new Coverage());
+        ParserBase parser = ParserFactory.CreateParser(CoverageFormat.SonarQube, new Coverage());
 
         Assert.That(parser, Is.InstanceOf<SonarQubeParser>());
     }
