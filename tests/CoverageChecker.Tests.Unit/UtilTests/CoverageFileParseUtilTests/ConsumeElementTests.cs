@@ -3,14 +3,16 @@ using CoverageChecker.Utils;
 
 namespace CoverageChecker.Tests.Unit.UtilTests.CoverageFileParseUtilTests;
 
-public class ConsumeElementTests {
+public class ConsumeElementTests
+{
     [Test]
-    public void CoverageFileParseUtils_ConsumeElement_ElementFound_ConsumesElement() {
+    public void CoverageFileParseUtils_ConsumeElement_ElementFound_ConsumesElement()
+    {
         const string xml = $"""
-                           <{XmlReaderTestUtils.ElementName}>
-                               <{XmlReaderTestUtils.ChildElementName}/>
-                           </{XmlReaderTestUtils.ElementName}>
-                           """;
+                            <{XmlReaderTestUtils.ElementName}>
+                                <{XmlReaderTestUtils.ChildElementName}/>
+                            </{XmlReaderTestUtils.ElementName}>
+                            """;
 
         XmlReader reader = XmlReaderTestUtils.CreateXmlReader(xml);
         IXmlLineInfo lineInfo = XmlReaderTestUtils.GetXmlLineInfo(reader);
@@ -23,7 +25,8 @@ public class ConsumeElementTests {
     }
 
     [Test]
-    public void CoverageFileParseUtils_ConsumeElement_EmptyElementFound_ConsumesElement() {
+    public void CoverageFileParseUtils_ConsumeElement_EmptyElementFound_ConsumesElement()
+    {
         const string xml = $"<{XmlReaderTestUtils.ElementName}/>";
 
         XmlReader reader = XmlReaderTestUtils.CreateXmlReader(xml);
@@ -37,7 +40,8 @@ public class ConsumeElementTests {
     }
 
     [Test]
-    public void CoverageFileParseUtils_ConsumeElement_StartOfNestedElement_ConsumesElement() {
+    public void CoverageFileParseUtils_ConsumeElement_StartOfNestedElement_ConsumesElement()
+    {
         const string xml = $"""
                             <{XmlReaderTestUtils.ElementName}>
                                 <{XmlReaderTestUtils.ChildElementName}></{XmlReaderTestUtils.ChildElementName}>
@@ -55,7 +59,8 @@ public class ConsumeElementTests {
     }
 
     [Test]
-    public void CoverageFileParseUtils_ConsumeElement_InsideOfNestedElement1_ConsumesElement() {
+    public void CoverageFileParseUtils_ConsumeElement_InsideOfNestedElement1_ConsumesElement()
+    {
         const string xml = $"""
                             <{XmlReaderTestUtils.ElementName}>
                                 <{XmlReaderTestUtils.ChildElementName}>
@@ -75,7 +80,8 @@ public class ConsumeElementTests {
     }
 
     [Test]
-    public void CoverageFileParseUtils_ConsumeElement_InsideOfNestedElement2_ConsumesElement() {
+    public void CoverageFileParseUtils_ConsumeElement_InsideOfNestedElement2_ConsumesElement()
+    {
         const string xml = $"""
                             <{XmlReaderTestUtils.ElementName}>
                                 <{XmlReaderTestUtils.ChildElementName}>
@@ -97,7 +103,8 @@ public class ConsumeElementTests {
     }
 
     [Test]
-    public void CoverageFileParseUtils_ConsumeElement_InsideOfNestedElement3_ConsumesElement() {
+    public void CoverageFileParseUtils_ConsumeElement_InsideOfNestedElement3_ConsumesElement()
+    {
         const string xml = $"""
                             <{XmlReaderTestUtils.ElementName}>
                                 <{XmlReaderTestUtils.ChildElementName}>
@@ -120,7 +127,8 @@ public class ConsumeElementTests {
     }
 
     [Test]
-    public void CoverageFileParseUtils_ConsumeElement_InsideOfNestedElement4_ConsumesElement() {
+    public void CoverageFileParseUtils_ConsumeElement_InsideOfNestedElement4_ConsumesElement()
+    {
         const string xml = $"""
                             <{XmlReaderTestUtils.ElementName}>
                                 <{XmlReaderTestUtils.ChildElementName}>
@@ -144,7 +152,8 @@ public class ConsumeElementTests {
     }
 
     [Test]
-    public void CoverageFileParseUtils_ConsumeElement_InsideOfNestedElement5_ConsumesElement() {
+    public void CoverageFileParseUtils_ConsumeElement_InsideOfNestedElement5_ConsumesElement()
+    {
         const string xml = $"""
                             <{XmlReaderTestUtils.ElementName}>
                                 <{XmlReaderTestUtils.ChildElementName}/>
@@ -163,7 +172,8 @@ public class ConsumeElementTests {
     }
 
     [Test]
-    public void CoverageFileParseUtils_ConsumeElement_EndOfNestedElement_ConsumesElement() {
+    public void CoverageFileParseUtils_ConsumeElement_EndOfNestedElement_ConsumesElement()
+    {
         const string xml = $"""
                             <{XmlReaderTestUtils.ElementName}>
                                 <{XmlReaderTestUtils.ChildElementName}></{XmlReaderTestUtils.ChildElementName}>
@@ -181,7 +191,8 @@ public class ConsumeElementTests {
     }
 
     [Test]
-    public void CoverageFileParseUtils_ConsumeElement_EmptyNestedElement_ConsumesElement() {
+    public void CoverageFileParseUtils_ConsumeElement_EmptyNestedElement_ConsumesElement()
+    {
         const string xml = $"""
                             <{XmlReaderTestUtils.ElementName}>
                                 <{XmlReaderTestUtils.ChildElementName}/>
@@ -199,7 +210,8 @@ public class ConsumeElementTests {
     }
 
     [Test]
-    public void CoverageFileParseUtils_ConsumeElement_ElementNotFound_ThrowsCoverageParseException() {
+    public void CoverageFileParseUtils_ConsumeElement_ElementNotFound_ThrowsCoverageParseException()
+    {
         const string xml = $"""
                             <{XmlReaderTestUtils.ElementName}>
                                 <{XmlReaderTestUtils.ChildElementName}/>
@@ -215,7 +227,8 @@ public class ConsumeElementTests {
     }
 
     [Test]
-    public void CoverageFileParseUtils_ConsumeElement_EmptyElementNotFound_ThrowsCoverageParseException() {
+    public void CoverageFileParseUtils_ConsumeElement_EmptyElementNotFound_ThrowsCoverageParseException()
+    {
         const string xml = $"<{XmlReaderTestUtils.ElementName}/>";
 
         XmlReader reader = XmlReaderTestUtils.CreateXmlReader(xml);
@@ -227,7 +240,8 @@ public class ConsumeElementTests {
     }
 
     [Test]
-    public void CoverageFileParseUtils_ConsumeElement_DepthAlreadyEscaped_ThrowsCoverageParseException() {
+    public void CoverageFileParseUtils_ConsumeElement_DepthAlreadyEscaped_ThrowsCoverageParseException()
+    {
         const string xml = $"""
                             <{XmlReaderTestUtils.ElementName}>
                                 <{XmlReaderTestUtils.ChildElementName}>
@@ -245,7 +259,8 @@ public class ConsumeElementTests {
     }
 
     [Test]
-    public void CoverageFileParseUtils_ConsumeElement_ElementNotEntered_ThrowsCoverageParseException() {
+    public void CoverageFileParseUtils_ConsumeElement_ElementNotEntered_ThrowsCoverageParseException()
+    {
         const string xml = $"""
                             <{XmlReaderTestUtils.ElementName}>
                                 <{XmlReaderTestUtils.ChildElementName}/>
@@ -259,7 +274,8 @@ public class ConsumeElementTests {
     }
 
     [Test]
-    public void CoverageFileParseUtils_ConsumeElement_EmptyElementNotEntered_ThrowsCoverageParseException() {
+    public void CoverageFileParseUtils_ConsumeElement_EmptyElementNotEntered_ThrowsCoverageParseException()
+    {
         const string xml = $"<{XmlReaderTestUtils.ElementName}/>";
 
         XmlReader reader = XmlReaderTestUtils.CreateXmlReader(xml);

@@ -3,9 +3,11 @@ using CoverageChecker.Utils;
 
 namespace CoverageChecker.Tests.Unit.UtilTests.CoverageFileParseUtilTests;
 
-public class ParseElementsTests {
+public class ParseElementsTests
+{
     [Test]
-    public void CoverageFileParseUtils_ParseElements_EmptyElementsFound_ParsesElements() {
+    public void CoverageFileParseUtils_ParseElements_EmptyElementsFound_ParsesElements()
+    {
         const string xml = $"""
                             <{XmlReaderTestUtils.ElementName}>
                                 <{XmlReaderTestUtils.ChildElementName} index="1"/>
@@ -20,7 +22,8 @@ public class ParseElementsTests {
 
         int childCount = 0;
 
-        reader.ParseElements(XmlReaderTestUtils.ChildElementName, () => {
+        reader.ParseElements(XmlReaderTestUtils.ChildElementName, () =>
+        {
             childCount++;
 
             Assert.That(reader.GetAttribute("index"), Is.EqualTo(childCount.ToString()));
@@ -32,7 +35,8 @@ public class ParseElementsTests {
     }
 
     [Test]
-    public void CoverageFileParseUtils_ParseElements_ElementsFound1_ParsesElements() {
+    public void CoverageFileParseUtils_ParseElements_ElementsFound1_ParsesElements()
+    {
         const string xml = $"""
                             <{XmlReaderTestUtils.ElementName}>
                                 <{XmlReaderTestUtils.ChildElementName} index="1"></{XmlReaderTestUtils.ChildElementName}>
@@ -47,7 +51,8 @@ public class ParseElementsTests {
 
         int childCount = 0;
 
-        reader.ParseElements(XmlReaderTestUtils.ChildElementName, () => {
+        reader.ParseElements(XmlReaderTestUtils.ChildElementName, () =>
+        {
             childCount++;
 
             Assert.That(reader.GetAttribute("index"), Is.EqualTo(childCount.ToString()));
@@ -59,7 +64,8 @@ public class ParseElementsTests {
     }
 
     [Test]
-    public void CoverageFileParseUtils_ParseElements_ElementsFound2_ParsesElements() {
+    public void CoverageFileParseUtils_ParseElements_ElementsFound2_ParsesElements()
+    {
         const string xml = $"""
                             <{XmlReaderTestUtils.ElementName}>
                                 <{XmlReaderTestUtils.ChildElementName} index="1"/>
@@ -82,7 +88,8 @@ public class ParseElementsTests {
 
         int childCount = 0;
 
-        reader.ParseElements(XmlReaderTestUtils.ChildElementName, () => {
+        reader.ParseElements(XmlReaderTestUtils.ChildElementName, () =>
+        {
             childCount++;
 
             Assert.That(reader.GetAttribute("index"), Is.EqualTo(childCount.ToString()));
@@ -94,7 +101,8 @@ public class ParseElementsTests {
     }
 
     [Test]
-    public void CoverageFileParseUtils_ParseElements_UnexpectedElementsFound1_ParsesElements() {
+    public void CoverageFileParseUtils_ParseElements_UnexpectedElementsFound1_ParsesElements()
+    {
         const string xml = $"""
                             <{XmlReaderTestUtils.ElementName}>
                                 <{XmlReaderTestUtils.ChildElementName} index="1"></{XmlReaderTestUtils.ChildElementName}>
@@ -109,7 +117,8 @@ public class ParseElementsTests {
 
         int childCount = 0;
 
-        reader.ParseElements(XmlReaderTestUtils.ChildElementName, () => {
+        reader.ParseElements(XmlReaderTestUtils.ChildElementName, () =>
+        {
             childCount++;
 
             Assert.That(reader.GetAttribute("index"), Is.EqualTo(childCount.ToString()));
@@ -121,7 +130,8 @@ public class ParseElementsTests {
     }
 
     [Test]
-    public void CoverageFileParseUtils_ParseElements_UnexpectedElementsFound2_ParsesElements() {
+    public void CoverageFileParseUtils_ParseElements_UnexpectedElementsFound2_ParsesElements()
+    {
         const string xml = $"""
                             <{XmlReaderTestUtils.ElementName}>
                                 <{XmlReaderTestUtils.UnknownElementName}></{XmlReaderTestUtils.UnknownElementName}>
@@ -133,13 +143,15 @@ public class ParseElementsTests {
 
         reader.MoveTo(XmlReaderTestUtils.UnknownElementName, XmlNodeType.Element);
 
-        reader.ParseElements(XmlReaderTestUtils.ChildElementName, () => {
+        reader.ParseElements(XmlReaderTestUtils.ChildElementName, () =>
+        {
             Assert.Fail("Incorrect element has been parsed");
         });
     }
 
     [Test]
-    public void CoverageFileParseUtils_ParseElements_StartsAtUnexpectedElementType_ThrowsCoverageParseException() {
+    public void CoverageFileParseUtils_ParseElements_StartsAtUnexpectedElementType_ThrowsCoverageParseException()
+    {
         const string xml = $"""
                             <{XmlReaderTestUtils.ElementName}>
                                 <{XmlReaderTestUtils.ChildElementName} index="1"></{XmlReaderTestUtils.ChildElementName}>

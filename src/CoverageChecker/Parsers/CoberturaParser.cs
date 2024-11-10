@@ -4,77 +4,99 @@ using CoverageChecker.Utils;
 
 namespace CoverageChecker.Parsers;
 
-internal class CoberturaParser(Coverage coverage) : BaseParser {
-    protected override void LoadCoverage(XmlReader reader) {
+internal class CoberturaParser(Coverage coverage) : BaseParser
+{
+    protected override void LoadCoverage(XmlReader reader)
+    {
         if (!reader.ReadToFollowing("coverage") || reader.Depth != 0)
             throw new CoverageParseException("Expected coverage to be the root element");
 
-        reader.TryEnterElement("coverage", () => {
+        reader.TryEnterElement("coverage", () =>
+        {
             // If the file contains a sources element, ignore it
             if (reader.Name == "sources")
                 reader.ConsumeElement("sources");
 
-            reader.TryEnterElement("packages", () => {
-                reader.ParseElements("package", () => {
+            reader.TryEnterElement("packages", () =>
+            {
+                reader.ParseElements("package", () =>
+                {
                     LoadPackageCoverage(reader);
                 });
             });
         });
     }
 
-    private void LoadPackageCoverage(XmlReader reader) {
+    private void LoadPackageCoverage(XmlReader reader)
+    {
         string packageName = reader.GetRequiredAttribute<string>("name");
 
-        reader.TryEnterElement("package", () => {
-            reader.TryEnterElement("classes", () => {
-                reader.ParseElements("class", () => {
+        reader.TryEnterElement("package", () =>
+        {
+            reader.TryEnterElement("classes", () =>
+            {
+                reader.ParseElements("class", () =>
+                {
                     LoadClassCoverage(reader, packageName);
                 });
             });
         });
     }
 
-    private void LoadClassCoverage(XmlReader reader, string packageName) {
+    private void LoadClassCoverage(XmlReader reader, string packageName)
+    {
         string filePath = reader.GetRequiredAttribute<string>("filename");
         string className = reader.GetRequiredAttribute<string>("name");
 
-        reader.TryEnterElement("class", () => {
+        reader.TryEnterElement("class", () =>
+        {
             FileCoverage file = coverage.GetOrCreateFile(filePath, packageName);
 
-            reader.TryEnterElement("methods", () => {
-                reader.ParseElements("method", () => {
+            reader.TryEnterElement("methods", () =>
+            {
+                reader.ParseElements("method", () =>
+                {
                     LoadMethodCoverage(file, reader, className);
                 });
-            }, throwIfNotFound: false);
+            }, false);
 
-            reader.TryEnterElement("lines", () => {
-                reader.ParseElements("line", () => {
+            reader.TryEnterElement("lines", () =>
+            {
+                reader.ParseElements("line", () =>
+                {
                     LoadLineCoverage(file, reader, className);
                 });
-            }, throwIfNotFound: false);
+            }, false);
         });
     }
 
-    private static void LoadMethodCoverage(FileCoverage file, XmlReader reader, string className) {
+    private static void LoadMethodCoverage(FileCoverage file, XmlReader reader, string className)
+    {
         string methodName = reader.GetRequiredAttribute<string>("name");
         reader.TryGetAttribute("signature", out string? methodSignature);
 
-        reader.TryEnterElement("method", () => {
-            reader.TryEnterElement("lines", () => {
-                reader.ParseElements("line", () => {
+        reader.TryEnterElement("method", () =>
+        {
+            reader.TryEnterElement("lines", () =>
+            {
+                reader.ParseElements("line", () =>
+                {
                     LoadLineCoverage(file, reader, className, methodName, methodSignature);
                 });
             });
         });
     }
 
-    private static void LoadLineCoverage(FileCoverage file, XmlReader reader, string className, string? methodName = null, string? methodSignature = null) {
+    private static void LoadLineCoverage(FileCoverage file, XmlReader reader, string className, string? methodName = null, string? methodSignature = null)
+    {
         int lineNumber = reader.GetRequiredAttribute<int>("number");
         bool isCovered = reader.GetRequiredAttribute<int>("hits") > 0;
         reader.TryGetAttribute("branch", out bool hasBranchCoverage);
 
-        try {
-            if (!hasBranchCoverage) {
+        try
+        {
+            if (!hasBranchCoverage)
+            {
                 file.AddLine(lineNumber, isCovered, className: className, methodName: methodName, methodSignature: methodSignature);
                 return;
             }
@@ -84,33 +106,41 @@ internal class CoberturaParser(Coverage coverage) : BaseParser {
             (int branches, int coveredBranches) = ParseConditionCoverage(conditionCoverage);
 
             file.AddLine(lineNumber, isCovered, branches, coveredBranches, className, methodName, methodSignature);
-        } finally {
+        }
+        finally
+        {
             reader.ConsumeElement("line");
         }
     }
 
-    private static (int branches, int coveredBranches) ParseConditionCoverage(string conditionCoverage) {
+    private static (int branches, int coveredBranches) ParseConditionCoverage(string conditionCoverage)
+    {
         const string conditionCoverageInvalidMessage = "Attribute 'condition-coverage' on element 'line' is not in the correct format";
         // The condition-coverage attribute is formatted as "x% (y/z)"
         // x is the percentage of branches covered, y is the number of covered branches, and z is the number of branches
 
         string[] conditionCoverageValues;
 
-        try {
+        try
+        {
             // Retrieve the number of covered branches and the number of branches from the condition-coverage attribute
             conditionCoverageValues = conditionCoverage.Split(" ")[1].TrimStart('(').TrimEnd(')').Split('/');
-        } catch (IndexOutOfRangeException) {
+        }
+        catch (IndexOutOfRangeException)
+        {
             throw new CoverageParseException(conditionCoverageInvalidMessage);
         }
 
         // Ensure that only 2 values were found (number of covered branches and number of branches)
-        if (conditionCoverageValues.Length != 2) {
+        if (conditionCoverageValues.Length != 2)
+        {
             throw new CoverageParseException(conditionCoverageInvalidMessage);
         }
 
         // Ensure that the number of covered branches and the number of branches are integers
         if (!int.TryParse(conditionCoverageValues[0], out int coveredBranches) ||
-            !int.TryParse(conditionCoverageValues[1], out int branches)) {
+            !int.TryParse(conditionCoverageValues[1], out int branches))
+        {
             throw new CoverageParseException(conditionCoverageInvalidMessage);
         }
 

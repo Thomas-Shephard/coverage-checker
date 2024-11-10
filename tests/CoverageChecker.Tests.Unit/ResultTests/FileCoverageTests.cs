@@ -2,13 +2,16 @@ using CoverageChecker.Results;
 
 namespace CoverageChecker.Tests.Unit.ResultTests;
 
-public class FileCoverageTests {
+public class FileCoverageTests
+{
     [Test]
-    public void FileCoverage_ConstructorWithLines_ReturnsObject() {
-        LineCoverage[] lines = [
-            new LineCoverage(1, true, 1, 0),
-            new LineCoverage(2, false, 6, 2),
-            new LineCoverage(3, true, 4, 3)
+    public void FileCoverage_ConstructorWithLines_ReturnsObject()
+    {
+        LineCoverage[] lines =
+        [
+            new(1, true, 1, 0),
+            new(2, false, 6, 2),
+            new(3, true, 4, 3)
         ];
         FileCoverage fileCoverage = new(lines, CoverageTestData.FilePath);
 
@@ -16,11 +19,13 @@ public class FileCoverageTests {
     }
 
     [Test]
-    public void FileCoverage_ConstructorWithEmptyLines_ReturnsObject() {
+    public void FileCoverage_ConstructorWithEmptyLines_ReturnsObject()
+    {
         LineCoverage[] lines = [];
         FileCoverage fileCoverage = new(lines, CoverageTestData.FilePath, CoverageTestData.PackageName);
 
-        Assert.Multiple(() => {
+        Assert.Multiple(() =>
+        {
             Assert.That(fileCoverage.Lines, Is.EqualTo(lines));
             Assert.That(fileCoverage.Path, Is.EqualTo(CoverageTestData.FilePath));
             Assert.That(fileCoverage.PackageName, Is.EqualTo(CoverageTestData.PackageName));
@@ -28,13 +33,15 @@ public class FileCoverageTests {
     }
 
     [Test]
-    public void FileCoverage_AddLine_LineExactlySame_DoesntUpdateLine() {
+    public void FileCoverage_AddLine_LineExactlySame_DoesntUpdateLine()
+    {
         FileCoverage fileCoverage = new(CoverageTestData.FilePath);
 
         fileCoverage.AddLine(1, true);
 
         LineCoverage retrievedLine = fileCoverage.Lines.Single(line => line.LineNumber == 1);
-        Assert.Multiple(() => {
+        Assert.Multiple(() =>
+        {
             Assert.That(retrievedLine.IsCovered, Is.True);
             Assert.That(retrievedLine.CoveredBranches, Is.Null);
         });
@@ -42,20 +49,23 @@ public class FileCoverageTests {
         Assert.DoesNotThrow(() => fileCoverage.AddLine(1, true));
 
         retrievedLine = fileCoverage.Lines.Single(line => line.LineNumber == 1);
-        Assert.Multiple(() => {
+        Assert.Multiple(() =>
+        {
             Assert.That(retrievedLine.IsCovered, Is.True);
             Assert.That(retrievedLine.CoveredBranches, Is.Null);
         });
     }
 
     [Test]
-    public void FileCoverage_AddLine_LineSubstantivelySame1_UpdatesLine() {
+    public void FileCoverage_AddLine_LineSubstantivelySame1_UpdatesLine()
+    {
         FileCoverage fileCoverage = new(CoverageTestData.FilePath);
 
         fileCoverage.AddLine(1, true, 1, 0);
 
         LineCoverage retrievedLine = fileCoverage.Lines.Single(line => line.LineNumber == 1);
-        Assert.Multiple(() => {
+        Assert.Multiple(() =>
+        {
             Assert.That(retrievedLine.IsCovered, Is.True);
             Assert.That(retrievedLine.CoveredBranches, Is.EqualTo(0));
         });
@@ -63,7 +73,8 @@ public class FileCoverageTests {
         Assert.DoesNotThrow(() => fileCoverage.AddLine(1, true, 1, 1));
 
         retrievedLine = fileCoverage.Lines.Single(line => line.LineNumber == 1);
-        Assert.Multiple(() => {
+        Assert.Multiple(() =>
+        {
             Assert.That(retrievedLine.IsCovered, Is.True);
             Assert.That(retrievedLine.CoveredBranches, Is.EqualTo(1));
         });
@@ -71,20 +82,23 @@ public class FileCoverageTests {
         Assert.DoesNotThrow(() => fileCoverage.AddLine(1, false, 1, 0));
 
         retrievedLine = fileCoverage.Lines.Single(line => line.LineNumber == 1);
-        Assert.Multiple(() => {
+        Assert.Multiple(() =>
+        {
             Assert.That(retrievedLine.IsCovered, Is.True);
             Assert.That(retrievedLine.CoveredBranches, Is.EqualTo(1));
         });
     }
 
     [Test]
-    public void FileCoverage_AddLine_LineSubstantivelySame2_UpdatesLine() {
+    public void FileCoverage_AddLine_LineSubstantivelySame2_UpdatesLine()
+    {
         FileCoverage fileCoverage = new(CoverageTestData.FilePath);
 
         fileCoverage.AddLine(2, false);
 
         LineCoverage retrievedLine = fileCoverage.Lines.Single(line => line.LineNumber == 2);
-        Assert.Multiple(() => {
+        Assert.Multiple(() =>
+        {
             Assert.That(retrievedLine.IsCovered, Is.False);
             Assert.That(retrievedLine.CoveredBranches, Is.Null);
         });
@@ -92,14 +106,16 @@ public class FileCoverageTests {
         Assert.DoesNotThrow(() => fileCoverage.AddLine(2, true));
 
         retrievedLine = fileCoverage.Lines.Single(line => line.LineNumber == 2);
-        Assert.Multiple(() => {
+        Assert.Multiple(() =>
+        {
             Assert.That(retrievedLine.IsCovered, Is.True);
             Assert.That(retrievedLine.CoveredBranches, Is.Null);
         });
     }
 
     [Test]
-    public void FileCoverage_AddLine_LineNotSubstantivelySame_ThrowsException() {
+    public void FileCoverage_AddLine_LineNotSubstantivelySame_ThrowsException()
+    {
         FileCoverage fileCoverage = new(CoverageTestData.FilePath);
 
         fileCoverage.AddLine(1, true, 1, 0);
@@ -109,7 +125,8 @@ public class FileCoverageTests {
     }
 
     [Test]
-    public void FileCoverage_CalculateFileCoverage_LineCoverage_ReturnsCoverage() {
+    public void FileCoverage_CalculateFileCoverage_LineCoverage_ReturnsCoverage()
+    {
         FileCoverage fileCoverage = new(CoverageTestData.Lines3Of5Covered, CoverageTestData.FilePath);
 
         double coverage = fileCoverage.CalculateFileCoverage();
@@ -118,7 +135,8 @@ public class FileCoverageTests {
     }
 
     [Test]
-    public void FileCoverage_CalculateFileCoverage_BranchCoverage_ReturnsCoverage() {
+    public void FileCoverage_CalculateFileCoverage_BranchCoverage_ReturnsCoverage()
+    {
         FileCoverage fileCoverage = new(CoverageTestData.Lines2Of3CoveredWith3Of4Branches, CoverageTestData.FilePath);
 
         double coverage = fileCoverage.CalculateFileCoverage(CoverageType.Branch);
@@ -127,7 +145,8 @@ public class FileCoverageTests {
     }
 
     [Test]
-    public void FileCoverage_CalculateClassCoverage_LineCoverage_ReturnsCoverage() {
+    public void FileCoverage_CalculateClassCoverage_LineCoverage_ReturnsCoverage()
+    {
         FileCoverage fileCoverage = new([
             new LineCoverage(1, true, className: $"{CoverageTestData.ClassName}-1"),
             new LineCoverage(2, false, className: $"{CoverageTestData.ClassName}-2"),
@@ -140,7 +159,8 @@ public class FileCoverageTests {
     }
 
     [Test]
-    public void FileCoverage_CalculateClassCoverage_BranchCoverage_ReturnsCoverage() {
+    public void FileCoverage_CalculateClassCoverage_BranchCoverage_ReturnsCoverage()
+    {
         FileCoverage fileCoverage = new([
             new LineCoverage(1, true, 1, 0, $"{CoverageTestData.ClassName}-1"),
             new LineCoverage(2, false, 6, 2, $"{CoverageTestData.ClassName}-2"),
@@ -153,7 +173,8 @@ public class FileCoverageTests {
     }
 
     [Test]
-    public void FileCoverage_CalculateClassCoverage_UnknownClass_ThrowsException() {
+    public void FileCoverage_CalculateClassCoverage_UnknownClass_ThrowsException()
+    {
         FileCoverage fileCoverage = new([
             new LineCoverage(1, true, className: $"{CoverageTestData.ClassName}-1"),
             new LineCoverage(2, false, className: $"{CoverageTestData.ClassName}-2"),
@@ -165,7 +186,8 @@ public class FileCoverageTests {
     }
 
     [Test]
-    public void FileCoverage_CalculateMethodCoverage_LineCoverage_ReturnsCoverage() {
+    public void FileCoverage_CalculateMethodCoverage_LineCoverage_ReturnsCoverage()
+    {
         FileCoverage fileCoverage = new([
             new LineCoverage(1, true, methodName: $"{CoverageTestData.MethodName}-1"),
             new LineCoverage(2, false, methodName: $"{CoverageTestData.MethodName}-2"),
@@ -178,7 +200,8 @@ public class FileCoverageTests {
     }
 
     [Test]
-    public void FileCoverage_CalculateMethodCoverage_BranchCoverage_ReturnsCoverage() {
+    public void FileCoverage_CalculateMethodCoverage_BranchCoverage_ReturnsCoverage()
+    {
         FileCoverage fileCoverage = new([
             new LineCoverage(1, true, 1, 0, methodName: $"{CoverageTestData.MethodName}-1"),
             new LineCoverage(2, false, 6, 2, methodName: $"{CoverageTestData.MethodName}-2", methodSignature: $"{CoverageTestData.MethodSignature}-1"),
@@ -191,7 +214,8 @@ public class FileCoverageTests {
     }
 
     [Test]
-    public void FileCoverage_CalculateMethodCoverage_UnknownMethod_ThrowsException() {
+    public void FileCoverage_CalculateMethodCoverage_UnknownMethod_ThrowsException()
+    {
         FileCoverage fileCoverage = new([
             new LineCoverage(1, true, methodName: $"{CoverageTestData.MethodName}-1"),
             new LineCoverage(2, false, methodName: $"{CoverageTestData.MethodName}-2"),

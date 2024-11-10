@@ -3,9 +3,11 @@ using CoverageChecker.Utils;
 
 namespace CoverageChecker.Tests.Unit.UtilTests.CoverageFileParseUtilTests;
 
-public class TryGetAttributeTests {
+public class TryGetAttributeTests
+{
     [Test]
-    public void CoverageFileParseUtils_TryGetAttribute_StringAttributeFound_ReturnsValue() {
+    public void CoverageFileParseUtils_TryGetAttribute_StringAttributeFound_ReturnsValue()
+    {
         const string attributeValue = "value";
         const string xml = $"""<{XmlReaderTestUtils.ElementName} {XmlReaderTestUtils.AttributeName}="{attributeValue}"/>""";
 
@@ -15,14 +17,16 @@ public class TryGetAttributeTests {
 
         bool attributeFound = reader.TryGetAttribute(XmlReaderTestUtils.AttributeName, out string? attribute);
 
-        Assert.Multiple(() => {
+        Assert.Multiple(() =>
+        {
             Assert.That(attributeFound, Is.True);
             Assert.That(attribute, Is.EqualTo(attributeValue));
         });
     }
 
     [Test]
-    public void CoverageFileParseUtils_TryGetAttribute_StringAttributeNotFound_ReturnsDefault() {
+    public void CoverageFileParseUtils_TryGetAttribute_StringAttributeNotFound_ReturnsDefault()
+    {
         const string xml = $"<{XmlReaderTestUtils.ElementName}/>";
 
         XmlReader reader = XmlReaderTestUtils.CreateXmlReader(xml);
@@ -31,14 +35,16 @@ public class TryGetAttributeTests {
 
         bool attributeFound = reader.TryGetAttribute(XmlReaderTestUtils.AttributeName, out string? attribute);
 
-        Assert.Multiple(() => {
+        Assert.Multiple(() =>
+        {
             Assert.That(attributeFound, Is.False);
             Assert.That(attribute, Is.Default);
         });
     }
 
     [Test]
-    public void CoverageFileParseUtils_TryGetAttribute_IntAttributeFound_ReturnsValue() {
+    public void CoverageFileParseUtils_TryGetAttribute_IntAttributeFound_ReturnsValue()
+    {
         const string attributeValue = "42";
         const string xml = $"""<{XmlReaderTestUtils.ElementName} {XmlReaderTestUtils.AttributeName}="{attributeValue}"/>""";
 
@@ -48,14 +54,16 @@ public class TryGetAttributeTests {
 
         bool attributeFound = reader.TryGetAttribute(XmlReaderTestUtils.AttributeName, out int attribute);
 
-        Assert.Multiple(() => {
+        Assert.Multiple(() =>
+        {
             Assert.That(attributeFound, Is.True);
             Assert.That(attribute, Is.EqualTo(int.Parse(attributeValue)));
         });
     }
 
     [Test]
-    public void CoverageFileParseUtils_TryGetAttribute_IntAttributeNotFound_ReturnsDefault() {
+    public void CoverageFileParseUtils_TryGetAttribute_IntAttributeNotFound_ReturnsDefault()
+    {
         const string xml = $"<{XmlReaderTestUtils.ElementName}/>";
 
         XmlReader reader = XmlReaderTestUtils.CreateXmlReader(xml);
@@ -64,14 +72,16 @@ public class TryGetAttributeTests {
 
         bool attributeFound = reader.TryGetAttribute(XmlReaderTestUtils.AttributeName, out int attribute);
 
-        Assert.Multiple(() => {
+        Assert.Multiple(() =>
+        {
             Assert.That(attributeFound, Is.False);
             Assert.That(attribute, Is.Default);
         });
     }
 
     [Test]
-    public void CoverageFileParseUtils_TryGetAttribute_IntAttributeFoundButInvalid_ThrowsException() {
+    public void CoverageFileParseUtils_TryGetAttribute_IntAttributeFoundButInvalid_ThrowsException()
+    {
         const string attributeValue = "not-a-number";
         const string xml = $"""<{XmlReaderTestUtils.ElementName} {XmlReaderTestUtils.AttributeName}="{attributeValue}"/>""";
 

@@ -8,7 +8,8 @@ Allows for the checking of code coverage using the provided GitHub action or NuG
 
 ### Usage
 
-The code coverage must already have been generated and saved in a file. The action will then parse the coverage file and check the coverage. If desired, the action will fail if the coverage is below the specified threshold.
+The code coverage must already have been generated and saved in a file. The action will then parse the coverage file and
+check the coverage. If desired, the action will fail if the coverage is below the specified threshold.
 
 The action supports the following coverage file formats:
 
@@ -29,6 +30,7 @@ The action supports the following coverage file formats:
 ```
 
 ### Inputs
+
 | Name                      | Description                                                        | Required | Default               |
 |---------------------------|--------------------------------------------------------------------|----------|-----------------------|
 | `format`                  | The format of the coverage file. Options: `SonarQube`, `Cobertura` | Yes      |                       |
@@ -40,6 +42,7 @@ The action supports the following coverage file formats:
 | `fail-if-no-files-found`  | Whether to fail the action if no coverage files are found.         | No       | true                  |
 
 ### Outputs
+
 | Name              | Description                         |
 |-------------------|-------------------------------------|
 | `line-coverage`   | The line coverage of the project.   |
@@ -69,12 +72,15 @@ dotnet add package CoverageChecker
 #### Supported Coverage Formats
 
 The following coverage formats are supported:
- * [Cobertura](https://github.com/cobertura/web/blob/master/htdocs/xml/coverage-04.dtd) - `CoverageFormat.Cobertura`
- * [SonarQube](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/test-coverage/generic-test-data/) - `CoverageFormat.SonarQube`
+
+* [Cobertura](https://github.com/cobertura/web/blob/master/htdocs/xml/coverage-04.dtd) - `CoverageFormat.Cobertura`
+* [SonarQube](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/test-coverage/generic-test-data/) -
+  `CoverageFormat.SonarQube`
 
 #### Coverage Analysis
 
-The coverage analyser can be used to check the coverage of a project; both line and branch coverage are supported. Coverage can be calculated based on package, file, class, method, line, etc.
+The coverage analyser can be used to check the coverage of a project; both line and branch coverage are supported.
+Coverage can be calculated based on package, file, class, method, line, etc.
 
 ##### Code Example
 
