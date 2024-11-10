@@ -3,9 +3,11 @@ using CoverageChecker.Utils;
 
 namespace CoverageChecker.Tests.Unit.UtilTests.CoverageFileParseUtilTests;
 
-public class TryEnterElementTests {
+public class TryEnterElementTests
+{
     [Test]
-    public void CoverageFileParseUtils_TryEnterElement_ElementFound_EntersElement() {
+    public void CoverageFileParseUtils_TryEnterElement_ElementFound_EntersElement()
+    {
         const string xml = $"""
                             <{XmlReaderTestUtils.ElementName}>
                                 <{XmlReaderTestUtils.ChildElementName}/>
@@ -17,7 +19,8 @@ public class TryEnterElementTests {
 
         reader.MoveTo(XmlReaderTestUtils.ElementName, XmlNodeType.Element);
 
-        bool enteredElement = reader.TryEnterElement(XmlReaderTestUtils.ElementName, () => {
+        bool enteredElement = reader.TryEnterElement(XmlReaderTestUtils.ElementName, () =>
+        {
             lineInfo.CheckPosition(2, 6);
         });
 
@@ -26,7 +29,8 @@ public class TryEnterElementTests {
     }
 
     [Test]
-    public void CoverageFileParseUtils_TryEnterElement_NestedElementFound_EntersElement() {
+    public void CoverageFileParseUtils_TryEnterElement_NestedElementFound_EntersElement()
+    {
         const string xml = $"""
                             <{XmlReaderTestUtils.ElementName}>
                                 <{XmlReaderTestUtils.ChildElementName}>
@@ -40,10 +44,12 @@ public class TryEnterElementTests {
 
         reader.MoveTo(XmlReaderTestUtils.ElementName, XmlNodeType.Element);
 
-        bool enteredElement = reader.TryEnterElement(XmlReaderTestUtils.ElementName, () => {
+        bool enteredElement = reader.TryEnterElement(XmlReaderTestUtils.ElementName, () =>
+        {
             lineInfo.CheckPosition(2, 6);
 
-            bool enteredChildElement = reader.TryEnterElement(XmlReaderTestUtils.ChildElementName, () => {
+            bool enteredChildElement = reader.TryEnterElement(XmlReaderTestUtils.ChildElementName, () =>
+            {
                 lineInfo.CheckPosition(3, 10);
             });
 
@@ -56,7 +62,8 @@ public class TryEnterElementTests {
     }
 
     [Test]
-    public void CoverageFileParseUtils_TryEnterElement_EmptyElementFound1_EntersElement() {
+    public void CoverageFileParseUtils_TryEnterElement_EmptyElementFound1_EntersElement()
+    {
         const string xml = $"<{XmlReaderTestUtils.ElementName}/>";
 
         XmlReader reader = XmlReaderTestUtils.CreateXmlReader(xml);
@@ -64,7 +71,8 @@ public class TryEnterElementTests {
 
         reader.MoveTo(XmlReaderTestUtils.ElementName, XmlNodeType.Element);
 
-        bool enteredElement = reader.TryEnterElement(XmlReaderTestUtils.ElementName, () => {
+        bool enteredElement = reader.TryEnterElement(XmlReaderTestUtils.ElementName, () =>
+        {
             Assert.Fail("Empty element should not execute action");
         });
 
@@ -73,7 +81,8 @@ public class TryEnterElementTests {
     }
 
     [Test]
-    public void CoverageFileParseUtils_TryEnterElement_EmptyElementFound2_EntersElement() {
+    public void CoverageFileParseUtils_TryEnterElement_EmptyElementFound2_EntersElement()
+    {
         const string xml = $"<{XmlReaderTestUtils.ElementName}></{XmlReaderTestUtils.ElementName}>";
 
         XmlReader reader = XmlReaderTestUtils.CreateXmlReader(xml);
@@ -81,7 +90,8 @@ public class TryEnterElementTests {
 
         reader.MoveTo(XmlReaderTestUtils.ElementName, XmlNodeType.Element);
 
-        bool enteredElement = reader.TryEnterElement(XmlReaderTestUtils.ElementName, () => {
+        bool enteredElement = reader.TryEnterElement(XmlReaderTestUtils.ElementName, () =>
+        {
             Assert.Fail("Empty element should not execute action");
         });
 
@@ -90,15 +100,18 @@ public class TryEnterElementTests {
     }
 
     [Test]
-    public void CoverageFileParseUtils_TryEnterElement_UnknownElementName_ThrowsCoverageParseException() {
+    public void CoverageFileParseUtils_TryEnterElement_UnknownElementName_ThrowsCoverageParseException()
+    {
         const string xml = $"<{XmlReaderTestUtils.ElementName}/>";
 
         XmlReader reader = XmlReaderTestUtils.CreateXmlReader(xml);
 
         reader.MoveTo(XmlReaderTestUtils.ElementName, XmlNodeType.Element);
 
-        Exception e = Assert.Throws<CoverageParseException>(() => {
-            reader.TryEnterElement(XmlReaderTestUtils.UnknownElementName, () => {
+        Exception e = Assert.Throws<CoverageParseException>(() =>
+        {
+            reader.TryEnterElement(XmlReaderTestUtils.UnknownElementName, () =>
+            {
                 Assert.Fail("Unknown element name should not execute action");
             });
         });
@@ -107,15 +120,18 @@ public class TryEnterElementTests {
     }
 
     [Test]
-    public void CoverageFileParseUtils_TryEnterElement_ElementEndType_ThrowsCoverageParseException() {
+    public void CoverageFileParseUtils_TryEnterElement_ElementEndType_ThrowsCoverageParseException()
+    {
         const string xml = $"<{XmlReaderTestUtils.ElementName}></{XmlReaderTestUtils.ElementName}>";
 
         XmlReader reader = XmlReaderTestUtils.CreateXmlReader(xml);
 
         reader.MoveTo(XmlReaderTestUtils.ElementName, XmlNodeType.EndElement);
 
-        Exception e = Assert.Throws<CoverageParseException>(() => {
-            reader.TryEnterElement(XmlReaderTestUtils.ElementName, () => {
+        Exception e = Assert.Throws<CoverageParseException>(() =>
+        {
+            reader.TryEnterElement(XmlReaderTestUtils.ElementName, () =>
+            {
                 Assert.Fail("Element end type should not execute action");
             });
         });
@@ -124,7 +140,8 @@ public class TryEnterElementTests {
     }
 
     [Test]
-    public void CoverageFileParseUtils_TryEnterElement_UnknownElementName_ReturnsFalse() {
+    public void CoverageFileParseUtils_TryEnterElement_UnknownElementName_ReturnsFalse()
+    {
         const string xml = $"<{XmlReaderTestUtils.ElementName}/>";
 
         XmlReader reader = XmlReaderTestUtils.CreateXmlReader(xml);
@@ -132,7 +149,8 @@ public class TryEnterElementTests {
 
         reader.MoveTo(XmlReaderTestUtils.ElementName, XmlNodeType.Element);
 
-        bool entersElement = reader.TryEnterElement(XmlReaderTestUtils.UnknownElementName, () => {
+        bool entersElement = reader.TryEnterElement(XmlReaderTestUtils.UnknownElementName, () =>
+        {
             Assert.Fail("Unknown element name should not execute action");
         }, false);
 
@@ -141,7 +159,8 @@ public class TryEnterElementTests {
     }
 
     [Test]
-    public void CoverageFileParseUtils_TryEnterElement_ElementEndType_ReturnsFalse() {
+    public void CoverageFileParseUtils_TryEnterElement_ElementEndType_ReturnsFalse()
+    {
         const string xml = $"<{XmlReaderTestUtils.ElementName}></{XmlReaderTestUtils.ElementName}>";
 
         XmlReader reader = XmlReaderTestUtils.CreateXmlReader(xml);
@@ -149,7 +168,8 @@ public class TryEnterElementTests {
 
         reader.MoveTo(XmlReaderTestUtils.ElementName, XmlNodeType.EndElement);
 
-        bool entersElement = reader.TryEnterElement(XmlReaderTestUtils.ElementName, () => {
+        bool entersElement = reader.TryEnterElement(XmlReaderTestUtils.ElementName, () =>
+        {
             Assert.Fail("Element end type should not execute action");
         }, false);
 

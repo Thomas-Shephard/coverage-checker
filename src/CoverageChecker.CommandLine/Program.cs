@@ -12,16 +12,22 @@ parserResult.WithParsed(Run)
 
 return;
 
-static void Run(CommandLineOptions options) {
+static void Run(CommandLineOptions options)
+{
     CoverageAnalyser coverageAnalyser = new(options.CoverageFormat, options.Directory, options.GlobPatterns);
     Coverage coverage;
 
-    try {
+    try
+    {
         coverage = coverageAnalyser.AnalyseCoverage();
-    } catch (NoCoverageFilesFoundException) {
+    }
+    catch (NoCoverageFilesFoundException)
+    {
         Console.WriteLine("No coverage files found.");
         return;
-    } catch (CoverageParseException exception) {
+    }
+    catch (CoverageParseException exception)
+    {
         Console.WriteLine("Error parsing coverage files.");
         Console.WriteLine(exception);
         return;
@@ -32,8 +38,10 @@ static void Run(CommandLineOptions options) {
     Console.WriteLine($"Overall branch coverage: {coverage.CalculateOverallCoverage(CoverageType.Branch):P2}.");
 }
 
-static void DisplayHelp<T>(ParserResult<T> result) {
-    HelpText? helpText = HelpText.AutoBuild(result, helpText => {
+static void DisplayHelp<T>(ParserResult<T> result)
+{
+    HelpText? helpText = HelpText.AutoBuild(result, helpText =>
+    {
         helpText.AddEnumValuesToHelpText = true;
         return helpText;
     }, e => e);

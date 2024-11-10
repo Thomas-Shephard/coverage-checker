@@ -2,12 +2,15 @@ using CoverageChecker.Results;
 
 namespace CoverageChecker.Tests.Unit.ResultTests;
 
-public class CoverageTests {
+public class CoverageTests
+{
     [Test]
-    public void Coverage_ConstructorWithFiles_ReturnsObject() {
-        FileCoverage[] files = [
-            new FileCoverage(CoverageTestData.Lines3Of5Covered, $"{CoverageTestData.FilePath}-1"),
-            new FileCoverage(CoverageTestData.Lines4Of4Covered, $"{CoverageTestData.FilePath}-2")
+    public void Coverage_ConstructorWithFiles_ReturnsObject()
+    {
+        FileCoverage[] files =
+        [
+            new(CoverageTestData.Lines3Of5Covered, $"{CoverageTestData.FilePath}-1"),
+            new(CoverageTestData.Lines4Of4Covered, $"{CoverageTestData.FilePath}-2")
         ];
 
         Coverage coverage = new(files);
@@ -16,7 +19,8 @@ public class CoverageTests {
     }
 
     [Test]
-    public void Coverage_ConstructorWithEmptyFiles_ReturnsObject() {
+    public void Coverage_ConstructorWithEmptyFiles_ReturnsObject()
+    {
         FileCoverage[] files = [];
 
         Coverage coverage = new(files);
@@ -25,7 +29,8 @@ public class CoverageTests {
     }
 
     [Test]
-    public void Coverage_GetOrCreateFile_ReturnsFileIfExists() {
+    public void Coverage_GetOrCreateFile_ReturnsFileIfExists()
+    {
         Coverage coverage = new();
 
         FileCoverage coverageFile1 = coverage.GetOrCreateFile($"{CoverageTestData.FilePath}-1");
@@ -40,7 +45,8 @@ public class CoverageTests {
         coverageFile2.AddLine(2, true, 3, 2);
         coverageFile2.AddLine(3, false, 4, 3);
 
-        Assert.Multiple(() => {
+        Assert.Multiple(() =>
+        {
             Assert.That(coverage.GetOrCreateFile($"{CoverageTestData.FilePath}-1"), Is.EqualTo(coverageFile1));
             Assert.That(coverage.GetOrCreateFile($"{CoverageTestData.FilePath}-2"), Is.EqualTo(coverageFile2));
             Assert.That(coverage.GetOrCreateFile($"{CoverageTestData.FilePath}-3").Lines, Is.Empty);
@@ -48,10 +54,12 @@ public class CoverageTests {
     }
 
     [Test]
-    public void Coverage_CalculateOverallCoverage_LineCoverage_ReturnsCoverage() {
-        FileCoverage[] files = [
-            new FileCoverage(CoverageTestData.Lines3Of5Covered, $"{CoverageTestData.FilePath}-1"),
-            new FileCoverage(CoverageTestData.Lines4Of4Covered, $"{CoverageTestData.FilePath}-2")
+    public void Coverage_CalculateOverallCoverage_LineCoverage_ReturnsCoverage()
+    {
+        FileCoverage[] files =
+        [
+            new(CoverageTestData.Lines3Of5Covered, $"{CoverageTestData.FilePath}-1"),
+            new(CoverageTestData.Lines4Of4Covered, $"{CoverageTestData.FilePath}-2")
         ];
 
         Coverage coverage = new(files);
@@ -62,10 +70,12 @@ public class CoverageTests {
     }
 
     [Test]
-    public void Coverage_CalculateOverallCoverage_BranchCoverage_ReturnsCoverage() {
-        FileCoverage[] files = [
-            new FileCoverage(CoverageTestData.Lines1Of1CoveredWith0Of4Branches, $"{CoverageTestData.FilePath}-1"),
-            new FileCoverage(CoverageTestData.Lines3Of3CoveredWith2Of2Branches, $"{CoverageTestData.FilePath}-2")
+    public void Coverage_CalculateOverallCoverage_BranchCoverage_ReturnsCoverage()
+    {
+        FileCoverage[] files =
+        [
+            new(CoverageTestData.Lines1Of1CoveredWith0Of4Branches, $"{CoverageTestData.FilePath}-1"),
+            new(CoverageTestData.Lines3Of3CoveredWith2Of2Branches, $"{CoverageTestData.FilePath}-2")
         ];
 
         Coverage coverage = new(files);
@@ -76,11 +86,13 @@ public class CoverageTests {
     }
 
     [Test]
-    public void Coverage_CalculatePackageCoverage_LineCoverage_ReturnsCoverage() {
-        FileCoverage[] files = [
-            new FileCoverage(CoverageTestData.Lines3Of5Covered, $"{CoverageTestData.FilePath}-1", $"{CoverageTestData.PackageName}-1"),
-            new FileCoverage(CoverageTestData.Lines0Of3Covered, $"{CoverageTestData.FilePath}-2", $"{CoverageTestData.PackageName}-1"),
-            new FileCoverage(CoverageTestData.Lines4Of4Covered, $"{CoverageTestData.FilePath}-3", $"{CoverageTestData.PackageName}-2")
+    public void Coverage_CalculatePackageCoverage_LineCoverage_ReturnsCoverage()
+    {
+        FileCoverage[] files =
+        [
+            new(CoverageTestData.Lines3Of5Covered, $"{CoverageTestData.FilePath}-1", $"{CoverageTestData.PackageName}-1"),
+            new(CoverageTestData.Lines0Of3Covered, $"{CoverageTestData.FilePath}-2", $"{CoverageTestData.PackageName}-1"),
+            new(CoverageTestData.Lines4Of4Covered, $"{CoverageTestData.FilePath}-3", $"{CoverageTestData.PackageName}-2")
         ];
 
         Coverage coverage = new(files);
@@ -91,11 +103,13 @@ public class CoverageTests {
     }
 
     [Test]
-    public void Coverage_CalculatePackageCoverage_BranchCoverage_ReturnsCoverage() {
-        FileCoverage[] files = [
-            new FileCoverage(CoverageTestData.Lines3Of3CoveredWith2Of2Branches, $"{CoverageTestData.FilePath}-1", $"{CoverageTestData.PackageName}-1"),
-            new FileCoverage(CoverageTestData.Lines3Of5Covered, $"{CoverageTestData.FilePath}-2", $"{CoverageTestData.PackageName}-2"),
-            new FileCoverage(CoverageTestData.Lines2Of3CoveredWith3Of4Branches, $"{CoverageTestData.FilePath}-3", $"{CoverageTestData.PackageName}-2")
+    public void Coverage_CalculatePackageCoverage_BranchCoverage_ReturnsCoverage()
+    {
+        FileCoverage[] files =
+        [
+            new(CoverageTestData.Lines3Of3CoveredWith2Of2Branches, $"{CoverageTestData.FilePath}-1", $"{CoverageTestData.PackageName}-1"),
+            new(CoverageTestData.Lines3Of5Covered, $"{CoverageTestData.FilePath}-2", $"{CoverageTestData.PackageName}-2"),
+            new(CoverageTestData.Lines2Of3CoveredWith3Of4Branches, $"{CoverageTestData.FilePath}-3", $"{CoverageTestData.PackageName}-2")
         ];
 
         Coverage coverage = new(files);
@@ -106,11 +120,13 @@ public class CoverageTests {
     }
 
     [Test]
-    public void Coverage_CalculatePackageCoverage_UnknownPackage_ThrowsException() {
-        FileCoverage[] files = [
-            new FileCoverage(CoverageTestData.Lines3Of5Covered, $"{CoverageTestData.FilePath}-1", $"{CoverageTestData.PackageName}-1"),
-            new FileCoverage(CoverageTestData.LinesEmpty, $"{CoverageTestData.FilePath}-2", $"{CoverageTestData.PackageName}-2"),
-            new FileCoverage(CoverageTestData.Lines0Of3Covered, $"{CoverageTestData.FilePath}-3", $"{CoverageTestData.PackageName}-2")
+    public void Coverage_CalculatePackageCoverage_UnknownPackage_ThrowsException()
+    {
+        FileCoverage[] files =
+        [
+            new(CoverageTestData.Lines3Of5Covered, $"{CoverageTestData.FilePath}-1", $"{CoverageTestData.PackageName}-1"),
+            new(CoverageTestData.LinesEmpty, $"{CoverageTestData.FilePath}-2", $"{CoverageTestData.PackageName}-2"),
+            new(CoverageTestData.Lines0Of3Covered, $"{CoverageTestData.FilePath}-3", $"{CoverageTestData.PackageName}-2")
         ];
 
         Coverage coverage = new(files);

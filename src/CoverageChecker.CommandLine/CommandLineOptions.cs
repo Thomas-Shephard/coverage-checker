@@ -2,7 +2,8 @@ using CommandLine;
 
 namespace CoverageChecker.CommandLine;
 
-public class CommandLineOptions {
+public class CommandLineOptions
+{
     [Option('f', "format", Required = true, HelpText = "Format of coverage files.")]
     public CoverageFormat CoverageFormat { get; init; }
 

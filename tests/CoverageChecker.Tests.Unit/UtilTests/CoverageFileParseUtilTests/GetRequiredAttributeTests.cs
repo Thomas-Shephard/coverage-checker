@@ -3,9 +3,11 @@ using CoverageChecker.Utils;
 
 namespace CoverageChecker.Tests.Unit.UtilTests.CoverageFileParseUtilTests;
 
-public class GetRequiredAttributeTests {
+public class GetRequiredAttributeTests
+{
     [Test]
-    public void CoverageFileParseUtils_GetRequiredAttribute_StringAttributeFound_ReturnsValue() {
+    public void CoverageFileParseUtils_GetRequiredAttribute_StringAttributeFound_ReturnsValue()
+    {
         const string attributeValue = "attributeValue";
         const string xml = $"""<{XmlReaderTestUtils.ElementName} {XmlReaderTestUtils.AttributeName}="{attributeValue}"/>""";
 
@@ -19,7 +21,8 @@ public class GetRequiredAttributeTests {
     }
 
     [Test]
-    public void CoverageFileParseUtils_GetRequiredAttribute_StringAttributeNotFound_ThrowsCoverageParseException() {
+    public void CoverageFileParseUtils_GetRequiredAttribute_StringAttributeNotFound_ThrowsCoverageParseException()
+    {
         const string xml = $"<{XmlReaderTestUtils.ElementName}/>";
 
         XmlReader reader = XmlReaderTestUtils.CreateXmlReader(xml);

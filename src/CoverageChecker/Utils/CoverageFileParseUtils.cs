@@ -3,8 +3,10 @@ using System.Xml;
 
 namespace CoverageChecker.Utils;
 
-internal static class CoverageFileParseUtils {
-    internal static void ConsumeElement(this XmlReader reader, string elementName, int? depth = null) {
+internal static class CoverageFileParseUtils
+{
+    internal static void ConsumeElement(this XmlReader reader, string elementName, int? depth = null)
+    {
         depth ??= reader.Depth;
 
         if (reader.Depth < depth)
@@ -19,8 +21,10 @@ internal static class CoverageFileParseUtils {
         //   1. An empty element
         //   2. A closing element
         // Then the reader should continue reading until the end of the element to be consumed
-        if (!startedWithEmptyElement && !startedWithEndElement) {
-            while (reader.Read() && reader.Depth > depth) {
+        if (!startedWithEmptyElement && !startedWithEndElement)
+        {
+            while (reader.Read() && reader.Depth > depth)
+            {
                 // Continue reading until the element has been consumed
             }
         }
@@ -40,19 +44,23 @@ internal static class CoverageFileParseUtils {
         reader.Read();
     }
 
-    internal static bool TryEnterElement(this XmlReader reader, string elementName, Action action, bool throwIfNotFound = true) {
+    internal static bool TryEnterElement(this XmlReader reader, string elementName, Action action, bool throwIfNotFound = true)
+    {
         int depth = reader.Depth;
 
         // Check that an element with the provided name is the next element to be read
-        if (reader.NodeType == XmlNodeType.Element && reader.Name == elementName) {
+        if (reader.NodeType == XmlNodeType.Element && reader.Name == elementName)
+        {
             bool enteredElement = false;
 
             // If the element is not empty, read past the start of the element
-            if (!reader.IsEmptyElement) {
+            if (!reader.IsEmptyElement)
+            {
                 reader.Read();
 
                 // If the element has contents (i.e. not immediately the closing element) execute the action
-                if (reader.Depth != depth || reader.NodeType != XmlNodeType.EndElement) {
+                if (reader.Depth != depth || reader.NodeType != XmlNodeType.EndElement)
+                {
                     enteredElement = true;
                     action();
                 }
@@ -69,15 +77,18 @@ internal static class CoverageFileParseUtils {
         return false;
     }
 
-    internal static void ParseElements(this XmlReader reader, string elementName, Action action) {
+    internal static void ParseElements(this XmlReader reader, string elementName, Action action)
+    {
         int depth = reader.Depth;
 
         if (reader.NodeType != XmlNodeType.Element)
             throw new CoverageParseException($"Expected to find start element but found '{reader.Name}' of type '{reader.NodeType}'");
 
-        while (depth == reader.Depth) {
+        while (depth == reader.Depth)
+        {
             // If the element name does not match or this is not the start of an element consume the current element
-            if (!(reader.NodeType == XmlNodeType.Element && reader.Name == elementName)) {
+            if (!(reader.NodeType == XmlNodeType.Element && reader.Name == elementName))
+            {
                 reader.ConsumeElement(reader.Name);
                 continue;
             }
@@ -87,10 +98,12 @@ internal static class CoverageFileParseUtils {
         }
     }
 
-    internal static bool TryGetAttribute<T>(this XmlReader reader, string attributeName, [NotNullWhen(true)] out T? value) where T : IParsable<T> {
+    internal static bool TryGetAttribute<T>(this XmlReader reader, string attributeName, [NotNullWhen(true)] out T? value) where T : IParsable<T>
+    {
         string? attributeValue = reader.GetAttribute(attributeName);
 
-        if (attributeValue is null) {
+        if (attributeValue is null)
+        {
             value = default;
             return false;
         }
@@ -102,7 +115,8 @@ internal static class CoverageFileParseUtils {
         return true;
     }
 
-    internal static T GetRequiredAttribute<T>(this XmlReader reader, string attributeName) where T : IParsable<T> {
+    internal static T GetRequiredAttribute<T>(this XmlReader reader, string attributeName) where T : IParsable<T>
+    {
         if (!reader.TryGetAttribute(attributeName, out T? value))
             throw new CoverageParseException($"Attribute '{attributeName}' not found on element '{reader.Name}'");
 

@@ -4,8 +4,10 @@ using CoverageChecker.Utils;
 
 namespace CoverageChecker.Parsers;
 
-internal class SonarQubeParser(Coverage coverage) : BaseParser {
-    protected override void LoadCoverage(XmlReader reader) {
+internal class SonarQubeParser(Coverage coverage) : BaseParser
+{
+    protected override void LoadCoverage(XmlReader reader)
+    {
         if (!reader.ReadToFollowing("coverage") || reader.Depth != 0)
             throw new CoverageParseException("Expected coverage to be the root element");
 
@@ -14,26 +16,32 @@ internal class SonarQubeParser(Coverage coverage) : BaseParser {
         if (version is not "1")
             throw new CoverageParseException("Attribute 'version' on element 'coverage' must be '1'");
 
-        reader.TryEnterElement("coverage", () => {
-            reader.ParseElements("file", () => {
+        reader.TryEnterElement("coverage", () =>
+        {
+            reader.ParseElements("file", () =>
+            {
                 LoadFileCoverage(reader);
             });
         });
     }
 
-    private void LoadFileCoverage(XmlReader reader) {
+    private void LoadFileCoverage(XmlReader reader)
+    {
         string filePath = reader.GetRequiredAttribute<string>("path");
 
         FileCoverage file = coverage.GetOrCreateFile(filePath);
 
-        reader.TryEnterElement("file", () => {
-            reader.ParseElements("lineToCover", () => {
+        reader.TryEnterElement("file", () =>
+        {
+            reader.ParseElements("lineToCover", () =>
+            {
                 LoadLineCoverage(file, reader);
             });
         });
     }
 
-    private static void LoadLineCoverage(FileCoverage file, XmlReader reader) {
+    private static void LoadLineCoverage(FileCoverage file, XmlReader reader)
+    {
         int lineNumber = reader.GetRequiredAttribute<int>("lineNumber");
         bool isCovered = reader.GetRequiredAttribute<bool>("covered");
 

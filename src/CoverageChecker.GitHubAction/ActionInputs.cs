@@ -2,7 +2,8 @@ using CommandLine;
 
 namespace CoverageChecker.GitHubAction;
 
-public class ActionInputs {
+public class ActionInputs
+{
     [Option('f', "format", Required = true, HelpText = "The format of the coverage files (Supported formats: Cobertura and SonarQube)")]
     public CoverageFormat CoverageFormat { get; set; }
 
@@ -12,23 +13,25 @@ public class ActionInputs {
     [Option('d', "directory", Required = true, HelpText = "The directory where the coverage files are located")]
     public string Directory { get; set; } = Environment.CurrentDirectory;
 
-    private double _lineCoverageThreshold = double.NaN;
     [Option('l', "line-threshold", Required = false, HelpText = "The line coverage percentage required")]
-    public double LineCoverageThreshold {
+    public double LineCoverageThreshold
+    {
         get => _lineCoverageThreshold;
         // Divide by 100 to convert the percentage to a decimal
-        set {
+        set
+        {
             if (value is < 0 or > 100) throw new ArgumentOutOfRangeException(nameof(value), "The value must be between 0 and 100");
             _lineCoverageThreshold = value / 100;
         }
     }
 
-    private double _branchCoverageThreshold = double.NaN;
     [Option('b', "branch-threshold", Required = false, HelpText = "The branch coverage percentage required")]
-    public double BranchCoverageThreshold {
+    public double BranchCoverageThreshold
+    {
         get => _branchCoverageThreshold;
         // Divide by 100 to convert the percentage to a decimal
-        set {
+        set
+        {
             if (value is < 0 or > 100) throw new ArgumentOutOfRangeException(nameof(value), "The value must be between 0 and 100");
             _branchCoverageThreshold = value / 100;
         }
@@ -39,4 +42,8 @@ public class ActionInputs {
 
     [Option('n', "fail-if-no-files-found", Required = false, Default = true, HelpText = "Fail the action if no coverage files are found")]
     public bool? FailIfNoFilesFound { get; set; } = true;
+
+    private double _branchCoverageThreshold = double.NaN;
+
+    private double _lineCoverageThreshold = double.NaN;
 }

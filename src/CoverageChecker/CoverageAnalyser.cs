@@ -8,7 +8,8 @@ namespace CoverageChecker;
 /// <summary>
 /// Analyses coverage information
 /// </summary>
-public class CoverageAnalyser {
+public class CoverageAnalyser
+{
     private readonly CoverageFormat _coverageFormat;
     private readonly string _directory;
     private readonly Matcher _matcher;
@@ -35,7 +36,8 @@ public class CoverageAnalyser {
     /// <param name="coverageFormat">The format of the coverage file.</param>
     /// <param name="directory">The directory to search for coverage files within.</param>
     /// <param name="matcher">The matcher to use to search for coverage files.</param>
-    public CoverageAnalyser(CoverageFormat coverageFormat, string directory, Matcher matcher) {
+    public CoverageAnalyser(CoverageFormat coverageFormat, string directory, Matcher matcher)
+    {
         _coverageFormat = coverageFormat;
         _directory = directory;
         _matcher = matcher;
@@ -46,7 +48,8 @@ public class CoverageAnalyser {
     /// </summary>
     /// <returns>The coverage information.</returns>
     /// <exception cref="NoCoverageFilesFoundException">Thrown when no coverage files are found.</exception>
-    public Coverage AnalyseCoverage() {
+    public Coverage AnalyseCoverage()
+    {
         string[] filePaths = _matcher.GetResultsInFullPath(_directory).ToArray();
 
         if (filePaths.Length is 0)
@@ -55,7 +58,8 @@ public class CoverageAnalyser {
         Coverage coverage = new();
         BaseParser parser = ParserFactory.CreateParser(_coverageFormat, coverage);
 
-        foreach (string filePath in filePaths) {
+        foreach (string filePath in filePaths)
+        {
             parser.ParseCoverage(filePath);
         }
 
