@@ -8,7 +8,8 @@ on:
     branches: [main]
 
 env:
-  DOTNET_VERSION: 9.x
+  DOTNET_VERSION: "9.0"
+  BUILD_VERSION: "${{ startsWith(github.ref, 'refs/tags/v') && '${GITHUB_REF_NAME#v}' || '$(date +%Y.%m.%d).${GITHUB_RUN_NUMBER}' }}"
 
 jobs:
   build-and-test:
@@ -22,40 +23,41 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-      - name: Output version of .NET
-        run: dotnet --version
-      - name: Restore dependencies
-        run: dotnet restore
       - name: Build
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build --configuration Release
       - name: Test
-        id: test
         run: dotnet test --configuration Release --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
-      - name: Check code coverage
+      - name: Check Coverage
         uses: Thomas-Shephard/coverage-checker@v0.6.3
         with:
           format: 'Cobertura'
           glob-pattern: 'coverage/**/coverage.cobertura.xml'
           line-threshold: 100
           branch-threshold: 100
+      - name: Pack NuGet Packages
+        run: dotnet pack /p:PackageVersion=${{ env.BUILD_VERSION }} --configuration Release
+      - name: Upload NuGet Packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages
+          path: '**/*.nupkg'
+          if-no-files-found: error
   publish-nuget-package:
     if: startsWith(github.ref, 'refs/tags/v')
     name: Publish NuGet Packages
     needs: build-and-test
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
       - name: Setup .NET ${{ env.DOTNET_VERSION }}
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-      - name: Output version of .NET
-        run: dotnet --version
+      - name: Download NuGet packages
+        uses: actions/download-artifact@v4
+        with:
+          name: nuget-packages
       - name: Add GitHub source
         run: dotnet nuget add source "https://nuget.pkg.github.com/Thomas-Shephard/index.json" --name "github.com" --username "Thomas-Shephard" --password ${{ secrets.PUBLISH_TO_GITHUB_TOKEN }} --store-password-in-clear-text
-      - name: Pack project
-        run: dotnet pack /p:PackageVersion=${GITHUB_REF_NAME#v} --configuration Release
       - name: Push to sources
         run: |
           dotnet nuget push **/*.nupkg --source "github.com"
@@ -85,6 +87,8 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}.{{minor}}.{{patch}}
             type=semver,pattern={{version}}
+          build-args: |
+            DOTNET_VERSION=${{ env.DOTNET_VERSION }}
       - name: Build and push to Docker registry
         uses: docker/build-push-action@v6
         with:

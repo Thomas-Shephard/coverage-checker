@@ -1,6 +1,8 @@
-ARG DOTNET_VERSION=8.0
+ARG DOTNET_VERSION
 
 FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_VERSION} AS build
+
+ARG DOTNET_VERSION
 
 # Copy the source code to /app
 WORKDIR /app
@@ -9,6 +11,7 @@ COPY . ./
 # Run dotnet publish to produce the executable
 RUN dotnet publish src/CoverageChecker.GitHubAction/CoverageChecker.GitHubAction.csproj \
     --configuration  Release \
+    --framework net${DOTNET_VERSION} \
     --output out \
     --self-contained false
 
