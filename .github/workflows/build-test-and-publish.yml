@@ -94,8 +94,6 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}.{{minor}}.{{patch}}
             type=semver,pattern={{version}}
-          build-args: |
-            DOTNET_VERSION=${{ env.DOTNET_VERSION }}
       - name: Build and push to Docker registry
         uses: docker/build-push-action@v6
         with:
@@ -103,6 +101,8 @@ jobs:
           push: true
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
+          build-args: |
+            DOTNET_VERSION=${{ env.DOTNET_VERSION }}
   update-cached-container-version:
     name: Update Cached Container Version
     needs: publish-docker-container
