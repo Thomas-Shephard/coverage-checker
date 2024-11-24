@@ -28,7 +28,7 @@ jobs:
       - name: Test
         run: dotnet test --configuration Release --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
       - name: Check Coverage
-        uses: Thomas-Shephard/coverage-checker@v0.6.3
+        uses: Thomas-Shephard/coverage-checker@v0.6.4
         with:
           format: 'Cobertura'
           glob-pattern: 'coverage/**/coverage.cobertura.xml'
