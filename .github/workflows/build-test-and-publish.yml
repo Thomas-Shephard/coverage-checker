@@ -13,7 +13,6 @@ env:
 
 jobs:
   build-and-test:
-    if: github.event.head_commit.message != 'Update cached container version'
     name: Build and Test
     runs-on: ubuntu-latest
     steps:
@@ -59,59 +58,3 @@ jobs:
         run: |
           dotnet nuget push **/*.nupkg --source "github.com"
           dotnet nuget push **/*.nupkg --api-key ${{ secrets.PUBLISH_TO_NUGET_TOKEN }} --source "nuget.org"
-  publish-docker-container:
-    if: startsWith(github.ref, 'refs/tags/v')
-    name: Publish Docker Container
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    env:
-      DOCKER_REGISTRY: ghcr.io
-      DOCKER_REGISTRY_OWNER: 'Thomas-Shephard'
-    steps:
-      - name: Login to GitHub Docker Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.DOCKER_REGISTRY }}
-          username: ${{ env.DOCKER_REGISTRY_OWNER }}
-          password: ${{ secrets.PUBLISH_TO_GITHUB_TOKEN }}
-      - name: Produce Docker Metadata
-        id: metadata
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REGISTRY_OWNER }}/coverage-checker-github-action
-          tags: |
-            type=semver,pattern={{major}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}.{{minor}}.{{patch}}
-            type=semver,pattern={{version}}
-      - name: Build and Push to GitHub Docker Registry
-        uses: docker/build-push-action@v6
-        with:
-          file: src/CoverageChecker.GitHubAction/Dockerfile
-          push: true
-          tags: ${{ steps.metadata.outputs.tags }}
-          labels: ${{ steps.metadata.outputs.labels }}
-          build-args: |
-            DOTNET_VERSION=${{ env.DOTNET_VERSION }}
-  update-cached-container-version:
-    name: Update Cached Container Version
-    needs: publish-docker-container
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-        with:
-          persist-credentials: false
-      - name: Edit Cached Container Version
-        run: sed -i "s/latest/${GITHUB_REF_NAME#v}/g" action.yml
-      - name: Commit Changes
-        run: |
-          git config --local user.name "github-actions[bot]";
-          git config --local user.email "github-actions[bot]@users.noreply.github.com";
-          git commit -am "Update cached container version";
-      - name: Push Changes
-        uses: ad-m/github-push-action@v1.0.0
-        with:
-          github_token: ${{ secrets.PUSH_TO_GITHUB_TOKEN }}
-          branch: ${{ github.ref }}
-          force: true
