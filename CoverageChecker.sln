@@ -4,15 +4,12 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoverageChecker", "src\CoverageChecker\CoverageChecker.csproj", "{C86B9311-BF9D-4173-B814-D4F38ADF26E0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoverageChecker.GitHubAction", "src\CoverageChecker.GitHubAction\CoverageChecker.GitHubAction.csproj", "{32F57D39-941A-400E-B395-6AED9CB8738A}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoverageChecker.Tests.Unit", "tests\CoverageChecker.Tests.Unit\CoverageChecker.Tests.Unit.csproj", "{41DBCAB1-CCE5-47E0-A550-647546CBC424}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{4D8E225F-73A7-46FE-9D94-6C2496BF45E6}"
 				ProjectSection(SolutionItems) = preProject
 				                .editorconfig = .editorconfig
 								.gitignore = .gitignore
-								action.yml = action.yml
 				EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoverageChecker.Tests.EndToEnd", "tests\CoverageChecker.Tests.EndToEnd\CoverageChecker.Tests.EndToEnd.csproj", "{BD44F4C5-7FD8-46DC-9AFC-C899BFFA6386}"
@@ -36,10 +33,6 @@ Global
 		{41DBCAB1-CCE5-47E0-A550-647546CBC424}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{41DBCAB1-CCE5-47E0-A550-647546CBC424}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{41DBCAB1-CCE5-47E0-A550-647546CBC424}.Release|Any CPU.Build.0 = Release|Any CPU
-		{32F57D39-941A-400E-B395-6AED9CB8738A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{32F57D39-941A-400E-B395-6AED9CB8738A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{32F57D39-941A-400E-B395-6AED9CB8738A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{32F57D39-941A-400E-B395-6AED9CB8738A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{BD44F4C5-7FD8-46DC-9AFC-C899BFFA6386}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BD44F4C5-7FD8-46DC-9AFC-C899BFFA6386}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BD44F4C5-7FD8-46DC-9AFC-C899BFFA6386}.Release|Any CPU.ActiveCfg = Release|Any CPU
