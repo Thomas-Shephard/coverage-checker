@@ -1,6 +1,10 @@
 <Project>
 
     <PropertyGroup>
+        <CurrentYear>$([System.DateTime]::UtcNow.Year)</CurrentYear>
+    </PropertyGroup>
+
+    <PropertyGroup>
         <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
@@ -8,7 +12,7 @@
 
     <PropertyGroup>
         <Authors>Thomas Shephard</Authors>
-        <Copyright>Copyright (c) Thomas Shephard 2024</Copyright>
+        <Copyright>Copyright (c) Thomas Shephard $(CurrentYear)</Copyright>
         <PackageProjectUrl>https://github.com/Thomas-Shephard/coverage-checker</PackageProjectUrl>
         <RepositoryUrl>https://github.com/Thomas-Shephard/coverage-checker.git</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
