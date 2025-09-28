@@ -23,19 +23,32 @@ static void Run(CommandLineOptions options)
     }
     catch (NoCoverageFilesFoundException)
     {
-        Console.WriteLine("No coverage files found.");
+        ExitWithFailure("No coverage files found.");
         return;
     }
     catch (CoverageParseException exception)
     {
-        Console.WriteLine("Error parsing coverage files.");
-        Console.WriteLine(exception);
+        ExitWithFailure($"Error parsing coverage files.{Environment.NewLine}{exception}");
         return;
     }
 
-    Console.WriteLine($"Successfully parsed coverage information for {coverage.Files.Count} files.");
+    Console.WriteLine($"Parsed coverage information for {coverage.Files.Count} files.");
     Console.WriteLine($"Overall line coverage: {coverage.CalculateOverallCoverage():P2}.");
     Console.WriteLine($"Overall branch coverage: {coverage.CalculateOverallCoverage(CoverageType.Branch):P2}.");
+
+    if (options.LineThreshold > coverage.CalculateOverallCoverage())
+    {
+        ExitWithFailure($"Line coverage of {coverage.CalculateOverallCoverage():P2} is below the required threshold of {options.LineThreshold:P2}");
+        return;
+    }
+
+    if (options.BranchThreshold > coverage.CalculateOverallCoverage(CoverageType.Branch))
+    {
+        ExitWithFailure($"Branch coverage of {coverage.CalculateOverallCoverage(CoverageType.Branch):P2} is below the required threshold of {options.BranchThreshold:P2}");
+        return;
+    }
+
+    Console.WriteLine("The coverage threshold has been met.");
 }
 
 static void DisplayHelp<T>(ParserResult<T> result)
@@ -47,4 +60,10 @@ static void DisplayHelp<T>(ParserResult<T> result)
     }, e => e);
 
     Console.WriteLine(helpText);
+}
+
+static void ExitWithFailure(string errorMessage)
+{
+    Console.WriteLine(errorMessage);
+    Environment.Exit(1);
 }

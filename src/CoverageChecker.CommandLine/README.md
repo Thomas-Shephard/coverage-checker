@@ -19,12 +19,15 @@ dotnet tool install --global CoverageChecker.CommandLine
 
 The CoverageChecker.CommandLine tool can be invoked by running `coveragechecker` from the command line.
 
-| Option                  | Description                                                           | Required | Default               |
-|-------------------------|-----------------------------------------------------------------------|----------|-----------------------|
-| `-f`, `--format`        | The format of the coverage file(s). Options: `SonarQube`, `Cobertura` | Yes      |                       |
-| `-d`, `--directory`     | The directory to search for the coverage file(s) within.              | No       | The current directory |
-| `-g`, `--glob-patterns` | The glob pattern(s) to use to search for the coverage file(s).        | No       | `*.xml`               |
+| Option                     | Description                                                           | Required | Default               |
+|----------------------------|-----------------------------------------------------------------------|----------|-----------------------|
+| `-f`, `--format`           | The format of the coverage file(s). Options: `SonarQube`, `Cobertura` | Yes      |                       |
+| `-d`, `--directory`        | The directory to search for the coverage file(s) within.              | No       | The current directory |
+| `-g`, `--glob-patterns`    | The glob pattern(s) to use to search for the coverage file(s).        | No       | `*.xml`               |
+| `-l`, `--line-threshold`   | The line coverage threshold. Default: 80                              | No       | 80                    |
+| `-b`, `--branch-threshold` | The branch coverage threshold. Default: 80                            | No       | 80                    |
 
 ## Output
 
-The CoverageChecker Command Line tool will output both the line and branch coverage of the analyzed files. 
+The CoverageChecker Command Line tool reads the specified coverage files and outputs the line and branch coverage of the analyzed files.
+If the line or branch coverage is below the specified threshold, the tool will exit with a non-zero exit code.
