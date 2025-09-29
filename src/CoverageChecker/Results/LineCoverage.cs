@@ -5,7 +5,7 @@ namespace CoverageChecker.Results;
 /// <summary>
 /// Represents coverage information for a single line within a file.
 /// </summary>
-public class LineCoverage
+public class LineCoverage : ICoverageResult
 {
     /// <summary>
     /// The line number.
@@ -47,6 +47,8 @@ public class LineCoverage
     /// If null, the line is not part of a method or the method does not have a method signature.
     /// </summary>
     public string? MethodSignature { get; }
+
+    public IReadOnlyList<LineCoverage> Lines => [this];
 
     internal LineCoverage(int lineNumber, bool isCovered, int? branches = null, int? coveredBranches = null, string? className = null, string? methodName = null, string? methodSignature = null)
     {

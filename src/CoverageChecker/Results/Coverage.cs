@@ -5,7 +5,7 @@ namespace CoverageChecker.Results;
 /// <summary>
 /// Represents coverage information for a collection of files.
 /// </summary>
-public class Coverage
+public class Coverage : ICoverageResult
 {
     /// <summary>
     /// The files that coverage information has been obtained for.
@@ -13,6 +13,8 @@ public class Coverage
     public IReadOnlyList<FileCoverage> Files => _files.AsReadOnly();
 
     private readonly List<FileCoverage> _files = [];
+
+    public IReadOnlyList<LineCoverage> Lines => Files.SelectMany(file => file.Lines).ToList().AsReadOnly();
 
     internal Coverage() { }
 

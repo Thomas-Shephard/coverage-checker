@@ -15,7 +15,11 @@ public class CoverageTests
 
         Coverage coverage = new(files);
 
-        Assert.That(coverage.Files, Is.EqualTo(files));
+        Assert.Multiple(() =>
+        {
+            Assert.That(coverage.Files, Is.EqualTo(files));
+            Assert.That(coverage.Lines, Is.EqualTo(new List<LineCoverage>([.. files[0].Lines, .. files[1].Lines])));
+        });
     }
 
     [Test]
@@ -25,7 +29,11 @@ public class CoverageTests
 
         Coverage coverage = new(files);
 
-        Assert.That(coverage.Files, Is.EqualTo(files));
+        Assert.Multiple(() =>
+        {
+            Assert.That(coverage.Files, Is.Empty);
+            Assert.That(coverage.Lines, Is.Empty);
+        });
     }
 
     [Test]
