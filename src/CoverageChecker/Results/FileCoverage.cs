@@ -5,7 +5,7 @@ namespace CoverageChecker.Results;
 /// <summary>
 /// Represents coverage information for a single file.
 /// </summary>
-public class FileCoverage
+public class FileCoverage : ICoverageResult
 {
     /// <summary>
     /// The path of the file.
@@ -18,9 +18,6 @@ public class FileCoverage
     /// </summary>
     public string? PackageName { get; }
 
-    /// <summary>
-    /// The lines within the file.
-    /// </summary>
     public IReadOnlyList<LineCoverage> Lines => _lines.AsReadOnly();
 
     private readonly List<LineCoverage> _lines = [];

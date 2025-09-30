@@ -22,6 +22,7 @@ public class LineCoverageTests
             Assert.That(lineCoverage.ClassName, Is.EqualTo(className));
             Assert.That(lineCoverage.MethodName, Is.EqualTo(methodName));
             Assert.That(lineCoverage.MethodSignature, Is.EqualTo(methodSignature));
+            Assert.That(lineCoverage.Lines, Is.EqualTo(new List<LineCoverage>([lineCoverage])));
         });
     }
 
