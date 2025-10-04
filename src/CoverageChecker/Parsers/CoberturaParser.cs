@@ -13,21 +13,40 @@ internal class CoberturaParser(Coverage coverage) : ParserBase
 
         reader.TryEnterElement("coverage", () =>
         {
-            // If the file contains a sources element, ignore it
-            if (reader.Name == "sources")
-                reader.ConsumeElement("sources");
+            string? source = GetSource(reader);
 
             reader.TryEnterElement("packages", () =>
             {
                 reader.ParseElements("package", () =>
                 {
-                    LoadPackageCoverage(reader);
+                    LoadPackageCoverage(reader, source);
                 });
             });
         });
     }
 
-    private void LoadPackageCoverage(XmlReader reader)
+    private static string? GetSource(XmlReader reader)
+    {
+        string? source = null;
+        reader.TryEnterElement("sources", () =>
+        {
+            reader.ParseElements("source", () =>
+            {
+                if (source is null)
+                {
+                    source = reader.ReadElementContentAsString();
+                }
+                else
+                {
+                    throw new CoverageParseException("Multiple sources are not supported");
+                }
+            });
+        }, false);
+
+        return source;
+    }
+
+    private void LoadPackageCoverage(XmlReader reader, string? source)
     {
         string packageName = reader.GetRequiredAttribute<string>("name");
 
@@ -37,16 +56,21 @@ internal class CoberturaParser(Coverage coverage) : ParserBase
             {
                 reader.ParseElements("class", () =>
                 {
-                    LoadClassCoverage(reader, packageName);
+                    LoadClassCoverage(reader, packageName, source);
                 });
             });
         });
     }
 
-    private void LoadClassCoverage(XmlReader reader, string packageName)
+    private void LoadClassCoverage(XmlReader reader, string packageName, string? source)
     {
         string filePath = reader.GetRequiredAttribute<string>("filename");
         string className = reader.GetRequiredAttribute<string>("name");
+        
+        if (source is not null)
+        {
+            filePath = Path.Combine(source, filePath.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar));
+        }
 
         reader.TryEnterElement("class", () =>
         {
