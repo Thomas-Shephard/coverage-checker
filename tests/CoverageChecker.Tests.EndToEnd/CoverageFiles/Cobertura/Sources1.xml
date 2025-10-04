@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<coverage>
+    <sources>
+        <source>FilePathPart1/FilePathPart2/</source>
+    </sources>
+    <packages>
+        <package name="package-1">
+            <classes>
+                <class name="class-1" filename="file-1">
+                    <methods/>
+                    <lines>
+                        <line number="1" hits="0"/>
+                        <line number="2" hits="1"/>
+                        <line number="3" hits="1"/>
+                    </lines>
+                </class>
+            </classes>
+        </package>
+    </packages>
+</coverage>

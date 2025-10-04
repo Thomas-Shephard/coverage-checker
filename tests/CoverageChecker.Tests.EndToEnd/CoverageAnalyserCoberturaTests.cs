@@ -93,6 +93,20 @@ public class CoverageAnalyserCoberturaTests
     }
 
     [Test]
+    public void CoverageAnalyser_AnalyseCoberturaCoverage_WithSources_ReturnsCoverage()
+    {
+        Coverage coverage = new CoverageAnalyser(CoverageFormat.Cobertura, _directory, ["Sources1.xml", "Sources2.xml"]).AnalyseCoverage();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(coverage.Files, Has.Count.EqualTo(1));
+            Assert.That(coverage.Files[0].Lines, Has.Count.EqualTo(3));
+            Assert.That(coverage.CalculateOverallCoverage(), Is.EqualTo(1));
+            Assert.That(coverage.CalculateOverallCoverage(CoverageType.Branch), Is.NaN);
+        });
+    }
+
+    [Test]
     public void CoverageAnalyser_AnalyseCoberturaCoverage_InvalidBranchCoverage1_ThrowsCoverageParseException()
     {
         CoverageAnalyser coverageAnalyser = new(CoverageFormat.Cobertura, _directory, "InvalidBranchCoverage1.xml");
@@ -152,5 +166,14 @@ public class CoverageAnalyserCoberturaTests
         CoverageAnalyser coverageAnalyser = new(CoverageFormat.Cobertura, _directory, "InvalidFile.xml");
 
         Assert.Throws<NoCoverageFilesFoundException>(() => coverageAnalyser.AnalyseCoverage());
+    }
+
+    [Test]
+    public void CoverageAnalyser_AnalyseCoberturaCoverage_MultipleSources_ThrowsCoverageParseException()
+    {
+        CoverageAnalyser coverageAnalyser = new(CoverageFormat.Cobertura, _directory, "MultipleSources.xml");
+
+        Exception e = Assert.Throws<CoverageParseException>(() => coverageAnalyser.AnalyseCoverage());
+        Assert.That(e.Message, Is.EqualTo("Multiple sources are not supported"));
     }
 }
