@@ -8,13 +8,15 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoverageChecker.Tests.Unit"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{4D8E225F-73A7-46FE-9D94-6C2496BF45E6}"
 				ProjectSection(SolutionItems) = preProject
-				                .editorconfig = .editorconfig
+																				.editorconfig = .editorconfig
 								.gitignore = .gitignore
 				EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoverageChecker.Tests.EndToEnd", "tests\CoverageChecker.Tests.EndToEnd\CoverageChecker.Tests.EndToEnd.csproj", "{BD44F4C5-7FD8-46DC-9AFC-C899BFFA6386}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoverageChecker.CommandLine", "src\CoverageChecker.CommandLine\CoverageChecker.CommandLine.csproj", "{22E5968E-8C55-401E-8FDC-2E635E1B900F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoverageChecker.CommandLine.Tests.Unit", "tests\CoverageChecker.CommandLine.Tests.Unit\CoverageChecker.CommandLine.Tests.Unit.csproj", "{99B7FED4-F955-43AA-BF49-A861E3892B8E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,5 +43,9 @@ Global
 		{22E5968E-8C55-401E-8FDC-2E635E1B900F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{22E5968E-8C55-401E-8FDC-2E635E1B900F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{22E5968E-8C55-401E-8FDC-2E635E1B900F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99B7FED4-F955-43AA-BF49-A861E3892B8E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99B7FED4-F955-43AA-BF49-A861E3892B8E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99B7FED4-F955-43AA-BF49-A861E3892B8E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99B7FED4-F955-43AA-BF49-A861E3892B8E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
