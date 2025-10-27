@@ -52,7 +52,7 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSIONS }}
       - name: Download NuGet Packages
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: nuget-packages
       - name: Add GitHub NuGet Source
