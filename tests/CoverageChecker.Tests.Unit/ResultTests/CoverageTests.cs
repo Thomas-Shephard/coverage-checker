@@ -5,30 +5,6 @@ namespace CoverageChecker.Tests.Unit.ResultTests;
 public class CoverageTests
 {
     [Test]
-    public void Coverage_ConstructorWithFiles_ReturnsObject()
-    {
-        FileCoverage[] files =
-        [
-            new(CoverageTestData.Lines3Of5Covered, $"{CoverageTestData.FilePath}-1"),
-            new(CoverageTestData.Lines4Of4Covered, $"{CoverageTestData.FilePath}-2")
-        ];
-
-        Coverage coverage = new(files);
-
-        Assert.That(coverage.Files, Is.EqualTo(files));
-    }
-
-    [Test]
-    public void Coverage_ConstructorWithEmptyFiles_ReturnsObject()
-    {
-        FileCoverage[] files = [];
-
-        Coverage coverage = new(files);
-
-        Assert.That(coverage.Files, Is.EqualTo(files));
-    }
-
-    [Test]
     public void Coverage_GetOrCreateFile_ReturnsFileIfExists()
     {
         Coverage coverage = new();
@@ -56,6 +32,23 @@ public class CoverageTests
     [Test]
     public void Coverage_CalculateOverallCoverage_LineCoverage_ReturnsCoverage()
     {
+        Coverage coverage = new();
+
+        FileCoverage coverageFile1 = coverage.GetOrCreateFile($"{CoverageTestData.FilePath}-1");
+
+        coverageFile1.AddLine(1, false);
+        coverageFile1.AddLine(2, true);
+        coverageFile1.AddLine(3, true);
+        coverageFile1.AddLine(4, false);
+        coverageFile1.AddLine(5, true);
+
+        FileCoverage coverageFile2 = coverage.GetOrCreateFile($"{CoverageTestData.FilePath}-2");
+
+        coverageFile2.AddLine(1, true);
+        coverageFile2.AddLine(2, false);
+        coverageFile2.AddLine(3, true);
+
+
         FileCoverage[] files =
         [
             new(CoverageTestData.Lines3Of5Covered, $"{CoverageTestData.FilePath}-1"),

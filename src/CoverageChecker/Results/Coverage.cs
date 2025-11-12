@@ -1,11 +1,11 @@
-using CoverageChecker.Utils;
+using CoverageChecker.Services;
 
 namespace CoverageChecker.Results;
 
 /// <summary>
 /// Represents coverage information for a collection of files.
 /// </summary>
-public class Coverage
+public class Coverage : ICoverageResult
 {
     /// <summary>
     /// The files that coverage information has been obtained for.
@@ -13,12 +13,11 @@ public class Coverage
     public IReadOnlyList<FileCoverage> Files => _files.AsReadOnly();
 
     private readonly List<FileCoverage> _files = [];
+    private readonly ICoverageCalculationService _coverageCalculationService;
 
-    internal Coverage() { }
-
-    internal Coverage(IEnumerable<FileCoverage> files) : this()
+    internal Coverage(ICoverageCalculationService coverageCalculationService)
     {
-        _files = files.ToList();
+        _coverageCalculationService = coverageCalculationService;
     }
 
     internal FileCoverage GetOrCreateFile(string filePath, string? packageName = null)
@@ -27,7 +26,7 @@ public class Coverage
 
         if (file is not null) return file;
 
-        file = new FileCoverage(filePath, packageName);
+        file = new FileCoverage(_coverageCalculationService, filePath, packageName);
         _files.Add(file);
 
         return file;
@@ -40,7 +39,7 @@ public class Coverage
     /// <returns>The coverage for all files.</returns>
     public double CalculateOverallCoverage(CoverageType coverageType = CoverageType.Line)
     {
-        return _files.CalculateCoverage(coverageType);
+        return _coverageCalculationService.CalculateCoverage([this], coverageType);
     }
 
     /// <summary>
@@ -58,6 +57,11 @@ public class Coverage
         if (filteredFiles.Length is 0)
             throw new CoverageCalculationException("No files found for the specified package name");
 
-        return filteredFiles.CalculateCoverage(coverageType);
+        return _coverageCalculationService.CalculateCoverage(filteredFiles, coverageType);
+    }
+
+    public IEnumerable<LineCoverage> GetLines()
+    {
+        return _files.SelectMany(file => file.Lines);
     }
 }

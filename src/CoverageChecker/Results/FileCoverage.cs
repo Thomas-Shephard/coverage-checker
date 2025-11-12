@@ -1,3 +1,4 @@
+using CoverageChecker.Services;
 using CoverageChecker.Utils;
 
 namespace CoverageChecker.Results;
@@ -5,7 +6,7 @@ namespace CoverageChecker.Results;
 /// <summary>
 /// Represents coverage information for a single file.
 /// </summary>
-public class FileCoverage
+public class FileCoverage : ICoverageResult
 {
     /// <summary>
     /// The path of the file.
@@ -24,22 +25,19 @@ public class FileCoverage
     public IReadOnlyList<LineCoverage> Lines => _lines.AsReadOnly();
 
     private readonly List<LineCoverage> _lines = [];
+    private readonly ICoverageCalculationService _coverageCalculationService;
 
-    internal FileCoverage(string path, string? packageName = null)
+    internal FileCoverage(ICoverageCalculationService coverageCalculationService, string path, string? packageName = null)
     {
+        _coverageCalculationService = coverageCalculationService;
         Path = path;
         PackageName = packageName;
-    }
-
-    internal FileCoverage(IEnumerable<LineCoverage> lines, string path, string? packageName = null) : this(path, packageName)
-    {
-        _lines = lines.ToList();
     }
 
     internal void AddLine(int lineNumber, bool isCovered, int? branches = null, int? coveredBranches = null, string? className = null, string? methodName = null, string? methodSignature = null)
     {
         LineCoverage? existingLine = _lines.Find(line => line.LineNumber == lineNumber);
-        LineCoverage newLine = new(lineNumber, isCovered, branches, coveredBranches, className, methodName, methodSignature);
+        LineCoverage newLine = new(_coverageCalculationService, lineNumber, isCovered, branches, coveredBranches, className, methodName, methodSignature);
 
         if (existingLine is not null)
         {
@@ -58,7 +56,7 @@ public class FileCoverage
     /// <returns>The coverage for the file.</returns>
     public double CalculateFileCoverage(CoverageType coverageType = CoverageType.Line)
     {
-        return _lines.CalculateCoverage(coverageType);
+        return _coverageCalculationService.CalculateCoverage([this], coverageType);
     }
 
     /// <summary>
@@ -76,7 +74,7 @@ public class FileCoverage
         if (filteredLines.Length is 0)
             throw new CoverageCalculationException("No lines found for the specified class name");
 
-        return filteredLines.CalculateCoverage(coverageType);
+        return _coverageCalculationService.CalculateCoverage(filteredLines, coverageType);
     }
 
     /// <summary>
@@ -104,6 +102,11 @@ public class FileCoverage
         if (filteredLines.Length is 0)
             throw new CoverageCalculationException("No lines found for the specified method");
 
-        return filteredLines.CalculateCoverage(coverageType);
+        return _coverageCalculationService.CalculateCoverage(filteredLines, coverageType);
+    }
+
+    public IEnumerable<LineCoverage> GetLines()
+    {
+        return _lines;
     }
 }

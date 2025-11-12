@@ -93,6 +93,21 @@ public class CoverageAnalyserCoberturaTests
     }
 
     [Test]
+    public void CoverageAnalyser_AnalyseMultipleCoberturaCoverages_ReturnsCoverage()
+    {
+        CoverageAnalyser coverageAnalyser = new(CoverageFormat.Cobertura, _directory, ["FullLineCoverage.xml", "FullBranchCoverage.xml"]);
+
+        Coverage coverage = coverageAnalyser.AnalyseCoverage();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(coverage.Files, Has.Count.EqualTo(5));
+            Assert.That(coverage.CalculateOverallCoverage(), Is.EqualTo(1));
+            Assert.That(coverage.CalculateOverallCoverage(CoverageType.Branch), Is.EqualTo((double)11 / 12));
+        });
+    }
+
+    [Test]
     public void CoverageAnalyser_AnalyseCoberturaCoverage_InvalidBranchCoverage1_ThrowsCoverageParseException()
     {
         CoverageAnalyser coverageAnalyser = new(CoverageFormat.Cobertura, _directory, "InvalidBranchCoverage1.xml");

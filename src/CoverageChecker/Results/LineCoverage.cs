@@ -1,3 +1,4 @@
+using CoverageChecker.Services;
 using CoverageChecker.Utils;
 
 namespace CoverageChecker.Results;
@@ -5,7 +6,7 @@ namespace CoverageChecker.Results;
 /// <summary>
 /// Represents coverage information for a single line within a file.
 /// </summary>
-public class LineCoverage
+public class LineCoverage : ICoverageResult
 {
     /// <summary>
     /// The line number.
@@ -48,7 +49,9 @@ public class LineCoverage
     /// </summary>
     public string? MethodSignature { get; }
 
-    internal LineCoverage(int lineNumber, bool isCovered, int? branches = null, int? coveredBranches = null, string? className = null, string? methodName = null, string? methodSignature = null)
+    private readonly ICoverageCalculationService _coverageCalculationService;
+
+    internal LineCoverage(ICoverageCalculationService coverageCalculationService, int lineNumber, bool isCovered, int? branches = null, int? coveredBranches = null, string? className = null, string? methodName = null, string? methodSignature = null)
     {
         // Either both branches and coveredBranches are null, or both are not null
         if ((branches is null && coveredBranches is not null) || (branches is not null && coveredBranches is null))
@@ -63,6 +66,7 @@ public class LineCoverage
         if (methodSignature is not null && methodName is null)
             throw new ArgumentException("The method signature cannot be set without the method name");
 
+        _coverageCalculationService = coverageCalculationService;
         LineNumber = lineNumber;
         IsCovered = isCovered;
         Branches = branches;
@@ -81,7 +85,7 @@ public class LineCoverage
     {
         LineCoverage[] lines = [this];
 
-        return lines.CalculateCoverage(coverageType);
+        return _coverageCalculationService.CalculateCoverage(lines, coverageType);
     }
 
     internal void MergeWith(LineCoverage other)
@@ -123,5 +127,10 @@ public class LineCoverage
             return false;
 
         throw new CoverageParseException("Cannot merge lines due to a branches mismatch");
+    }
+
+    public IEnumerable<LineCoverage> GetLines()
+    {
+        return [this];
     }
 }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <coverage>
     <packages>
-        <package name="package-1">
+        <package name="fl-package-1">
             <classes>
                 <class name="class-1" filename="file-1">
                     <methods>
@@ -32,7 +32,7 @@
                 </class>
             </classes>
         </package>
-        <package name="package-2">
+        <package name="fl-package-2">
             <classes>
                 <class name="class-3" filename="file-2">
                     <methods/>
