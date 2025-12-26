@@ -36,7 +36,7 @@ jobs:
       - name: Pack NuGet Packages
         run: dotnet pack --configuration Release --no-build /p:PackageVersion=${{ env.BUILD_VERSION }}
       - name: Upload NuGet Packages
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: nuget-packages
           path: '**/*.nupkg'
@@ -52,7 +52,7 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSIONS }}
       - name: Download NuGet Packages
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: nuget-packages
       - name: Add GitHub NuGet Source
