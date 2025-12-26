@@ -6,11 +6,11 @@ internal static class GlobUtils
 {
     internal static Matcher AddGlobPatterns(this Matcher matcher, IEnumerable<string> globPatterns)
     {
-        globPatterns = globPatterns.ToArray();
+        globPatterns = globPatterns as string[] ?? globPatterns.ToArray();
 
         if (!globPatterns.Any())
         {
-            throw new ArgumentException("At least one glob pattern must be provided");
+            throw new ArgumentException("At least one glob pattern must be provided", nameof(globPatterns));
         }
 
         foreach (string pattern in globPatterns)

@@ -27,7 +27,7 @@ internal class SonarQubeParser(Coverage coverage) : ParserBase
 
     private void LoadFileCoverage(XmlReader reader)
     {
-        string filePath = reader.GetRequiredAttribute<string>("path");
+        string filePath = NormalizePath(reader.GetRequiredAttribute<string>("path"));
 
         FileCoverage file = coverage.GetOrCreateFile(filePath);
 

@@ -2,9 +2,9 @@ using CoverageChecker.Results;
 
 namespace CoverageChecker.Parsers;
 
-internal static class ParserFactory
+internal class ParserFactory : IParserFactory
 {
-    internal static ParserBase CreateParser(CoverageFormat coverageFormat, Coverage coverage)
+    public ICoverageParser CreateParser(CoverageFormat coverageFormat, Coverage coverage)
     {
         return coverageFormat switch
         {
