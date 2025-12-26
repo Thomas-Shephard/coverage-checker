@@ -2,7 +2,7 @@ using System.Xml;
 
 namespace CoverageChecker.Parsers;
 
-internal abstract class ParserBase
+internal abstract class ParserBase : ICoverageParser
 {
     internal static readonly XmlReaderSettings XmlReaderSettings = new()
     {
@@ -11,7 +11,7 @@ internal abstract class ParserBase
         DtdProcessing = DtdProcessing.Ignore
     };
 
-    internal void ParseCoverage(string filePath)
+    public void ParseCoverage(string filePath)
     {
         using XmlReader reader = XmlReader.Create(filePath, XmlReaderSettings);
         ParseCoverage(reader);
@@ -30,4 +30,9 @@ internal abstract class ParserBase
     }
 
     protected abstract void LoadCoverage(XmlReader reader);
+
+    protected static string NormalizePath(string path)
+    {
+        return path.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar);
+    }
 }

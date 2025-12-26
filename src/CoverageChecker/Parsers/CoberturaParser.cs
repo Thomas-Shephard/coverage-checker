@@ -15,6 +15,11 @@ internal class CoberturaParser(Coverage coverage) : ParserBase
         {
             string? source = GetSource(reader);
 
+            if (source is not null)
+            {
+                source = NormalizePath(source);
+            }
+
             reader.TryEnterElement("packages", () =>
             {
                 reader.ParseElements("package", () =>
@@ -64,12 +69,12 @@ internal class CoberturaParser(Coverage coverage) : ParserBase
 
     private void LoadClassCoverage(XmlReader reader, string packageName, string? source)
     {
-        string filePath = reader.GetRequiredAttribute<string>("filename");
+        string filePath = NormalizePath(reader.GetRequiredAttribute<string>("filename"));
         string className = reader.GetRequiredAttribute<string>("name");
-        
+
         if (source is not null)
         {
-            filePath = Path.Combine(source, filePath.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar));
+            filePath = Path.Combine(source, filePath);
         }
 
         reader.TryEnterElement("class", () =>
