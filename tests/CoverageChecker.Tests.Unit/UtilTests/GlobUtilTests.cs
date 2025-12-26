@@ -36,6 +36,19 @@ public class GlobUtilTests
     }
 
     [Test]
+    public void GlobUtils_AddGlobPatterns_AddsPatterns_List()
+    {
+        List<string> globPatterns = ["**/*.cs", "!**/obj/**"];
+        Mock<Matcher> matcher = new();
+        matcher.Object.AddGlobPatterns(globPatterns);
+
+        matcher.Verify(m => m.AddInclude("**/*.cs"), Times.Once);
+        matcher.Verify(m => m.AddExclude("**/obj/**"), Times.Once);
+
+        matcher.VerifyNoOtherCalls();
+    }
+
+    [Test]
     public void GlobUtils_AddGlobPatterns_EmptyPatterns_ThrowsException()
     {
         Matcher matcher = new();
