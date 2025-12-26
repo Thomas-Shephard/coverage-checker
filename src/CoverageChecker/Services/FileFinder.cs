@@ -14,6 +14,12 @@ internal class FileFinder : IFileFinder
 
     public FileFinder(IEnumerable<string> globPatterns)
     {
+        globPatterns = globPatterns as string[] ?? globPatterns.ToArray();
+        if (!globPatterns.Any())
+        {
+            throw new ArgumentException("At least one glob pattern must be provided", nameof(globPatterns));
+        }
+
         _matcher = new Matcher().AddGlobPatterns(globPatterns);
     }
 

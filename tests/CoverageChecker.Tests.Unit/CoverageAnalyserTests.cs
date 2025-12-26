@@ -32,6 +32,6 @@ public class CoverageAnalyserTests
     public void CoverageAnalyserConstructor_EmptyGlobPatterns_ThrowsException()
     {
         Exception e = Assert.Throws<ArgumentException>(() => _ = new CoverageAnalyser(ValidCoverageFormat, ValidDirectory, []));
-        Assert.That(e.Message, Is.EqualTo("At least one glob pattern must be provided"));
+        Assert.That(e.Message, Does.Contain("At least one glob pattern must be provided"));
     }
 }
