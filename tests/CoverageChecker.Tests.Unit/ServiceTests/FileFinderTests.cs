@@ -1,5 +1,6 @@
 using CoverageChecker.Services;
 using Microsoft.Extensions.FileSystemGlobbing;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CoverageChecker.Tests.Unit.ServiceTests;
 
@@ -21,6 +22,20 @@ public class FileFinderTests
         {
             Directory.Delete(_tempDirectory, true);
         }
+    }
+
+    [Test]
+    public void Constructor_WithLogger_DoesNotThrow()
+    {
+        Assert.DoesNotThrow(() => _ = new FileFinder(["**/*.xml"], NullLogger<FileFinder>.Instance));
+    }
+
+    [Test]
+    public void Constructor_WithMatcherAndLogger_DoesNotThrow()
+    {
+        Matcher matcher = new();
+        matcher.AddInclude("**/*.xml");
+        Assert.DoesNotThrow(() => _ = new FileFinder(matcher, NullLogger<FileFinder>.Instance));
     }
 
     [Test]

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.FileSystemGlobbing;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CoverageChecker.Tests.Unit;
 
@@ -26,6 +27,15 @@ public class CoverageAnalyserTests
         matcher.AddInclude("*.xml");
 
         Assert.DoesNotThrow(() => _ = new CoverageAnalyser(ValidCoverageFormat, ValidDirectory, matcher));
+    }
+
+    [Test]
+    public void CoverageAnalyserConstructor_ValidMatcherAndLogger_DoesNotThrow()
+    {
+        Matcher matcher = new();
+        matcher.AddInclude("*.xml");
+
+        Assert.DoesNotThrow(() => _ = new CoverageAnalyser(ValidCoverageFormat, ValidDirectory, matcher, NullLoggerFactory.Instance));
     }
 
     [Test]
