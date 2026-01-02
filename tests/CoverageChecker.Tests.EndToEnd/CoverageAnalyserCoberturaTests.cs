@@ -1,10 +1,27 @@
 ﻿using CoverageChecker.Results;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CoverageChecker.Tests.EndToEnd;
 
 public class CoverageAnalyserCoberturaTests
 {
     private readonly string _directory = Path.Combine(TestContext.CurrentContext.TestDirectory, "CoverageFiles", "Cobertura");
+
+    [Test]
+    public void CoverageAnalyser_AnalyseCoberturaCoverage_WithLogger_ReturnsCoverage()
+    {
+        Coverage coverage = new CoverageAnalyser(CoverageFormat.Cobertura, _directory, "FullLineCoverage.xml", NullLoggerFactory.Instance).AnalyseCoverage();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(coverage.Files, Has.Count.EqualTo(3));
+            Assert.That(coverage.Files[0].Lines, Has.Count.EqualTo(6));
+            Assert.That(coverage.Files[1].Lines, Has.Count.EqualTo(3));
+            Assert.That(coverage.Files[2].Lines, Has.Count.EqualTo(2));
+            Assert.That(coverage.CalculateOverallCoverage(), Is.EqualTo(1));
+            Assert.That(coverage.CalculateOverallCoverage(CoverageType.Branch), Is.EqualTo((double)5 / 6));
+        });
+    }
 
     [Test]
     public void CoverageAnalyser_AnalyseCoberturaCoverage_FullLineCoverage_ReturnsCoverage()
@@ -139,7 +156,7 @@ public class CoverageAnalyserCoberturaTests
         CoverageAnalyser coverageAnalyser = new(CoverageFormat.Cobertura, _directory, "EmptyFile.xml");
 
         Exception e = Assert.Throws<CoverageParseException>(() => coverageAnalyser.AnalyseCoverage());
-        Assert.That(e.Message, Is.EqualTo("Failed to load coverage file"));
+        Assert.That(e.Message, Does.StartWith("Failed to load coverage file"));
     }
 
     [Test]

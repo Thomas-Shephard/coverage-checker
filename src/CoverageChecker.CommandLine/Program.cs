@@ -1,20 +1,29 @@
-﻿using CommandLine;
+using CommandLine;
 using CommandLine.Text;
 using CoverageChecker;
 using CoverageChecker.CommandLine;
 using CoverageChecker.Results;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 
 Parser parser = new(with => with.HelpWriter = null);
 ParserResult<CommandLineOptions> parserResult = parser.ParseArguments<CommandLineOptions>(args);
 
-parserResult.WithParsed(Run)
-            .WithNotParsed(_ => DisplayHelp(parserResult));
+return parserResult.MapResult(Run, _ => DisplayHelp(parserResult));
 
-return;
-
-static void Run(CommandLineOptions options)
+static int Run(CommandLineOptions options)
 {
-    CoverageAnalyser coverageAnalyser = new(options.CoverageFormat, options.Directory, options.GlobPatterns);
+    using ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
+    {
+        builder.AddConsole(options => options.FormatterName = "clean")
+               .AddConsoleFormatter<ConsoleLogFormatter, ConsoleFormatterOptions>();
+        builder.SetMinimumLevel(LogLevel.Information);
+        builder.AddFilter("CoverageChecker", LogLevel.Warning);
+        builder.AddFilter("CoverageChecker.CommandLine", LogLevel.Information);
+    });
+
+    ILogger logger = loggerFactory.CreateLogger("CoverageChecker.CommandLine");
+    CoverageAnalyser coverageAnalyser = new(options.CoverageFormat, options.Directory, options.GlobPatterns, loggerFactory);
     Coverage coverage;
 
     try
@@ -23,35 +32,40 @@ static void Run(CommandLineOptions options)
     }
     catch (NoCoverageFilesFoundException)
     {
-        ExitWithFailure("No coverage files found.");
-        return;
+        logger.LogNoCoverageFilesFound();
+        return 1;
     }
     catch (CoverageParseException exception)
     {
-        ExitWithFailure($"Error parsing coverage files.{Environment.NewLine}{exception.Message}");
-        return;
+        logger.LogErrorParsingCoverageFiles(exception);
+        return 1;
     }
 
-    Console.WriteLine($"Parsed coverage information for {coverage.Files.Count} files.");
-    Console.WriteLine($"Overall line coverage: {coverage.CalculateOverallCoverage():P2}.");
-    Console.WriteLine($"Overall branch coverage: {coverage.CalculateOverallCoverage(CoverageType.Branch):P2}.");
+    logger.LogParsedCoverage(coverage.Files.Count);
 
-    if (options.LineThreshold > coverage.CalculateOverallCoverage())
+    double lineCoverage = coverage.CalculateOverallCoverage();
+    double branchCoverage = coverage.CalculateOverallCoverage(CoverageType.Branch);
+
+    logger.LogLineCoverage(lineCoverage);
+    logger.LogBranchCoverage(branchCoverage);
+
+    if (options.LineThreshold > lineCoverage)
     {
-        ExitWithFailure($"Line coverage of {coverage.CalculateOverallCoverage():P2} is below the required threshold of {options.LineThreshold:P2}");
-        return;
+        logger.LogLineCoverageBelowThreshold(lineCoverage, options.LineThreshold);
+        return 1;
     }
 
-    if (options.BranchThreshold > coverage.CalculateOverallCoverage(CoverageType.Branch))
+    if (options.BranchThreshold > branchCoverage)
     {
-        ExitWithFailure($"Branch coverage of {coverage.CalculateOverallCoverage(CoverageType.Branch):P2} is below the required threshold of {options.BranchThreshold:P2}");
-        return;
+        logger.LogBranchCoverageBelowThreshold(branchCoverage, options.BranchThreshold);
+        return 1;
     }
 
-    Console.WriteLine("The coverage threshold has been met.");
+    logger.LogThresholdMet();
+    return 0;
 }
 
-static void DisplayHelp<T>(ParserResult<T> result)
+static int DisplayHelp<T>(ParserResult<T> result)
 {
     HelpText? helpText = HelpText.AutoBuild(result, helpText =>
     {
@@ -60,10 +74,5 @@ static void DisplayHelp<T>(ParserResult<T> result)
     }, e => e);
 
     Console.WriteLine(helpText);
-}
-
-static void ExitWithFailure(string errorMessage)
-{
-    Console.WriteLine(errorMessage);
-    Environment.Exit(1);
+    return 1;
 }

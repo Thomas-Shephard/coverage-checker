@@ -1,10 +1,11 @@
 ﻿using System.Xml;
 using CoverageChecker.Results;
 using CoverageChecker.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace CoverageChecker.Parsers;
 
-internal class CoberturaParser(Coverage coverage) : ParserBase
+internal partial class CoberturaParser(Coverage coverage, ILogger<CoberturaParser> logger) : ParserBase(logger)
 {
     protected override void LoadCoverage(XmlReader reader)
     {
@@ -54,6 +55,7 @@ internal class CoberturaParser(Coverage coverage) : ParserBase
     private void LoadPackageCoverage(XmlReader reader, string? source)
     {
         string packageName = reader.GetRequiredAttribute<string>("name");
+        LogProcessingPackage(packageName);
 
         reader.TryEnterElement("package", () =>
         {
@@ -66,6 +68,9 @@ internal class CoberturaParser(Coverage coverage) : ParserBase
             });
         });
     }
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Processing package: {PackageName}")]
+    private partial void LogProcessingPackage(string packageName);
 
     private void LoadClassCoverage(XmlReader reader, string packageName, string? source)
     {

@@ -2,18 +2,22 @@ using CoverageChecker.Parsers;
 using CoverageChecker.Results;
 using CoverageChecker.Services;
 using Microsoft.Extensions.FileSystemGlobbing;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CoverageChecker;
 
 /// <summary>
 /// Analyses coverage information
 /// </summary>
-public class CoverageAnalyser
+public partial class CoverageAnalyser
 {
     private readonly CoverageFormat _coverageFormat;
     private readonly string _directory;
     private readonly IFileFinder _fileFinder;
     private readonly IParserFactory _parserFactory;
+    private readonly ILogger<CoverageAnalyser> _logger;
+    private readonly ILoggerFactory _loggerFactory;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CoverageAnalyser"/> class with a single glob pattern.
@@ -21,7 +25,8 @@ public class CoverageAnalyser
     /// <param name="coverageFormat">The format of the coverage file.</param>
     /// <param name="directory">The directory to search for coverage files within.</param>
     /// <param name="globPattern">The glob pattern to use to search for coverage files.</param>
-    public CoverageAnalyser(CoverageFormat coverageFormat, string directory, string globPattern) : this(coverageFormat, directory, [globPattern]) { }
+    /// <param name="loggerFactory">The logger factory to use for logging.</param>
+    public CoverageAnalyser(CoverageFormat coverageFormat, string directory, string globPattern, ILoggerFactory? loggerFactory = null) : this(coverageFormat, directory, [globPattern], loggerFactory) { }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CoverageAnalyser"/> class with multiple glob patterns.
@@ -29,7 +34,8 @@ public class CoverageAnalyser
     /// <param name="coverageFormat">The format of the coverage file.</param>
     /// <param name="directory">The directory to search for coverage files within.</param>
     /// <param name="globPatterns">The glob patterns to use to search for coverage files.</param>
-    public CoverageAnalyser(CoverageFormat coverageFormat, string directory, IEnumerable<string> globPatterns) : this(coverageFormat, directory, new FileFinder(globPatterns)) { }
+    /// <param name="loggerFactory">The logger factory to use for logging.</param>
+    public CoverageAnalyser(CoverageFormat coverageFormat, string directory, IEnumerable<string> globPatterns, ILoggerFactory? loggerFactory = null) : this(coverageFormat, directory, new FileFinder(globPatterns, loggerFactory?.CreateLogger<FileFinder>()), loggerFactory) { }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CoverageAnalyser"/> class with a <see cref="Matcher"/>.
@@ -37,16 +43,19 @@ public class CoverageAnalyser
     /// <param name="coverageFormat">The format of the coverage file.</param>
     /// <param name="directory">The directory to search for coverage files within.</param>
     /// <param name="matcher">The matcher to use to search for coverage files.</param>
-    public CoverageAnalyser(CoverageFormat coverageFormat, string directory, Matcher matcher) : this(coverageFormat, directory, new FileFinder(matcher)) { }
+    /// <param name="loggerFactory">The logger factory to use for logging.</param>
+    public CoverageAnalyser(CoverageFormat coverageFormat, string directory, Matcher matcher, ILoggerFactory? loggerFactory = null) : this(coverageFormat, directory, new FileFinder(matcher, loggerFactory?.CreateLogger<FileFinder>()), loggerFactory) { }
 
-    internal CoverageAnalyser(CoverageFormat coverageFormat, string directory, IFileFinder fileFinder) : this(coverageFormat, directory, fileFinder, new ParserFactory()) { }
+    internal CoverageAnalyser(CoverageFormat coverageFormat, string directory, IFileFinder fileFinder, ILoggerFactory? loggerFactory = null) : this(coverageFormat, directory, fileFinder, new ParserFactory(), loggerFactory) { }
 
-    internal CoverageAnalyser(CoverageFormat coverageFormat, string directory, IFileFinder fileFinder, IParserFactory parserFactory)
+    internal CoverageAnalyser(CoverageFormat coverageFormat, string directory, IFileFinder fileFinder, IParserFactory parserFactory, ILoggerFactory? loggerFactory = null)
     {
         _coverageFormat = coverageFormat;
         _directory = directory;
         _fileFinder = fileFinder;
         _parserFactory = parserFactory;
+        _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
+        _logger = _loggerFactory.CreateLogger<CoverageAnalyser>();
     }
 
     /// <summary>
@@ -56,19 +65,32 @@ public class CoverageAnalyser
     /// <exception cref="NoCoverageFilesFoundException">Thrown when no coverage files are found.</exception>
     public Coverage AnalyseCoverage()
     {
+        LogFindingCoverageFiles(_directory);
         string[] filePaths = _fileFinder.FindFiles(_directory).ToArray();
 
         if (filePaths.Length is 0)
             throw new NoCoverageFilesFoundException();
 
+        LogFoundCoverageFiles(filePaths.Length);
+
         Coverage coverage = new();
-        ICoverageParser parser = _parserFactory.CreateParser(_coverageFormat, coverage);
+        ICoverageParser parser = _parserFactory.CreateParser(_coverageFormat, coverage, _loggerFactory);
 
         foreach (string filePath in filePaths)
         {
+            LogParsingCoverageFile(filePath);
             parser.ParseCoverage(filePath);
         }
 
         return coverage;
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Finding coverage files in {Directory}...")]
+    private partial void LogFindingCoverageFiles(string directory);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Found {Count} coverage files.")]
+    private partial void LogFoundCoverageFiles(int count);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Parsing coverage file: {FilePath}")]
+    private partial void LogParsingCoverageFile(string filePath);
 }
