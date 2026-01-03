@@ -1,11 +1,12 @@
 using System.Xml;
 using CoverageChecker.Results;
+using CoverageChecker.Services;
 using CoverageChecker.Utils;
 using Microsoft.Extensions.Logging;
 
 namespace CoverageChecker.Parsers;
 
-internal partial class SonarQubeParser(Coverage coverage, ILogger<SonarQubeParser> logger) : ParserBase(logger)
+internal partial class SonarQubeParser(Coverage coverage, ILogger<SonarQubeParser> logger, ICoverageMergeService coverageMergeService) : ParserBase(logger)
 {
     protected override void LoadCoverage(XmlReader reader)
     {
@@ -45,7 +46,7 @@ internal partial class SonarQubeParser(Coverage coverage, ILogger<SonarQubeParse
     [LoggerMessage(Level = LogLevel.Debug, Message = "Processing file: {FilePath}")]
     private partial void LogProcessingFile(string filePath);
 
-    private static void LoadLineCoverage(FileCoverage file, XmlReader reader)
+    private void LoadLineCoverage(FileCoverage file, XmlReader reader)
     {
         int lineNumber = reader.GetRequiredAttribute<int>("lineNumber");
         bool isCovered = reader.GetRequiredAttribute<bool>("covered");
@@ -60,6 +61,6 @@ internal partial class SonarQubeParser(Coverage coverage, ILogger<SonarQubeParse
 
         reader.ConsumeElement("lineToCover");
 
-        file.AddLine(lineNumber, isCovered, branches, coveredBranches);
+        file.AddOrMergeLine(new LineCoverage(lineNumber, isCovered, branches, coveredBranches), coverageMergeService);
     }
 }
