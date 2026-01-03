@@ -1,5 +1,7 @@
 ﻿using CoverageChecker.Results;
 
+using CoverageChecker.Services;
+
 namespace CoverageChecker.Tests.Unit;
 
 internal static class CoverageTestData
@@ -55,4 +57,16 @@ internal static class CoverageTestData
         new(2, true),
         new(3, true)
     ];
+
+    internal static FileCoverage CreateFile(IEnumerable<LineCoverage> lines, string path, string? packageName = null)
+    {
+        FileCoverage file = new(path, packageName);
+        CoverageMergeService service = new();
+        foreach (LineCoverage line in lines)
+        {
+            file.AddOrMergeLine(line, service);
+        }
+
+        return file;
+    }
 }

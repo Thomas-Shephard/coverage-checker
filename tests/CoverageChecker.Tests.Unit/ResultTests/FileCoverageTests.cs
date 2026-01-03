@@ -1,4 +1,5 @@
 using CoverageChecker.Results;
+using CoverageChecker.Services;
 
 namespace CoverageChecker.Tests.Unit.ResultTests;
 
@@ -13,7 +14,7 @@ public class FileCoverageTests
             new(2, false, 6, 2),
             new(3, true, 4, 3)
         ];
-        FileCoverage fileCoverage = new(lines, CoverageTestData.FilePath);
+        FileCoverage fileCoverage = CoverageTestData.CreateFile(lines, CoverageTestData.FilePath);
 
         Assert.That(fileCoverage.Lines, Is.EqualTo(lines));
     }
@@ -22,7 +23,7 @@ public class FileCoverageTests
     public void FileCoverage_ConstructorWithEmptyLines_ReturnsObject()
     {
         LineCoverage[] lines = [];
-        FileCoverage fileCoverage = new(lines, CoverageTestData.FilePath, CoverageTestData.PackageName);
+        FileCoverage fileCoverage = CoverageTestData.CreateFile(lines, CoverageTestData.FilePath, CoverageTestData.PackageName);
 
         Assert.Multiple(() =>
         {
@@ -33,55 +34,62 @@ public class FileCoverageTests
     }
 
     [Test]
-    public void FileCoverage_AddLine_LineExactlySame_DoesntUpdateLine()
+    public void AddOrMergeLine_LineExactlySame_DoesntUpdateLine()
     {
         FileCoverage fileCoverage = new(CoverageTestData.FilePath);
+        CoverageMergeService service = new();
+        LineCoverage line = new(1, true);
 
-        fileCoverage.AddLine(1, true);
+        fileCoverage.AddOrMergeLine(line, service);
 
-        LineCoverage retrievedLine = fileCoverage.Lines.Single(line => line.LineNumber == 1);
+        LineCoverage retrievedLine = fileCoverage.Lines.Single(l => l.LineNumber == 1);
         Assert.Multiple(() =>
         {
             Assert.That(retrievedLine.IsCovered, Is.True);
             Assert.That(retrievedLine.CoveredBranches, Is.Null);
+            Assert.That(retrievedLine, Is.SameAs(line)); // Should be same object initially
         });
 
-        Assert.DoesNotThrow(() => fileCoverage.AddLine(1, true));
+        // Add same line again
+        fileCoverage.AddOrMergeLine(line, service);
 
-        retrievedLine = fileCoverage.Lines.Single(line => line.LineNumber == 1);
+        retrievedLine = fileCoverage.Lines.Single(l => l.LineNumber == 1);
         Assert.Multiple(() =>
         {
             Assert.That(retrievedLine.IsCovered, Is.True);
             Assert.That(retrievedLine.CoveredBranches, Is.Null);
+            // Should still be the same line object as merge returns existing if equal
+            Assert.That(retrievedLine, Is.SameAs(line));
         });
     }
 
     [Test]
-    public void FileCoverage_AddLine_LineSubstantivelySame1_UpdatesLine()
+    public void AddOrMergeLine_LineSubstantivelySame1_UpdatesLine()
     {
         FileCoverage fileCoverage = new(CoverageTestData.FilePath);
+        CoverageMergeService service = new();
 
-        fileCoverage.AddLine(1, true, 1, 0);
+        fileCoverage.AddOrMergeLine(new LineCoverage(1, true, 1, 0), service);
 
-        LineCoverage retrievedLine = fileCoverage.Lines.Single(line => line.LineNumber == 1);
+        LineCoverage retrievedLine = fileCoverage.Lines.Single(l => l.LineNumber == 1);
         Assert.Multiple(() =>
         {
             Assert.That(retrievedLine.IsCovered, Is.True);
             Assert.That(retrievedLine.CoveredBranches, Is.EqualTo(0));
         });
 
-        Assert.DoesNotThrow(() => fileCoverage.AddLine(1, true, 1, 1));
+        fileCoverage.AddOrMergeLine(new LineCoverage(1, true, 1, 1), service);
 
-        retrievedLine = fileCoverage.Lines.Single(line => line.LineNumber == 1);
+        retrievedLine = fileCoverage.Lines.Single(l => l.LineNumber == 1);
         Assert.Multiple(() =>
         {
             Assert.That(retrievedLine.IsCovered, Is.True);
             Assert.That(retrievedLine.CoveredBranches, Is.EqualTo(1));
         });
 
-        Assert.DoesNotThrow(() => fileCoverage.AddLine(1, false, 1, 0));
+        fileCoverage.AddOrMergeLine(new LineCoverage(1, false, 1, 0), service);
 
-        retrievedLine = fileCoverage.Lines.Single(line => line.LineNumber == 1);
+        retrievedLine = fileCoverage.Lines.Single(l => l.LineNumber == 1);
         Assert.Multiple(() =>
         {
             Assert.That(retrievedLine.IsCovered, Is.True);
@@ -90,22 +98,23 @@ public class FileCoverageTests
     }
 
     [Test]
-    public void FileCoverage_AddLine_LineSubstantivelySame2_UpdatesLine()
+    public void AddOrMergeLine_LineSubstantivelySame2_UpdatesLine()
     {
         FileCoverage fileCoverage = new(CoverageTestData.FilePath);
+        CoverageMergeService service = new();
 
-        fileCoverage.AddLine(2, false);
+        fileCoverage.AddOrMergeLine(new LineCoverage(2, false), service);
 
-        LineCoverage retrievedLine = fileCoverage.Lines.Single(line => line.LineNumber == 2);
+        LineCoverage retrievedLine = fileCoverage.Lines.Single(l => l.LineNumber == 2);
         Assert.Multiple(() =>
         {
             Assert.That(retrievedLine.IsCovered, Is.False);
             Assert.That(retrievedLine.CoveredBranches, Is.Null);
         });
 
-        Assert.DoesNotThrow(() => fileCoverage.AddLine(2, true));
+        fileCoverage.AddOrMergeLine(new LineCoverage(2, true), service);
 
-        retrievedLine = fileCoverage.Lines.Single(line => line.LineNumber == 2);
+        retrievedLine = fileCoverage.Lines.Single(l => l.LineNumber == 2);
         Assert.Multiple(() =>
         {
             Assert.That(retrievedLine.IsCovered, Is.True);
@@ -114,20 +123,21 @@ public class FileCoverageTests
     }
 
     [Test]
-    public void FileCoverage_AddLine_LineNotSubstantivelySame_ThrowsException()
+    public void AddOrMergeLine_LineNotSubstantivelySame_ThrowsException()
     {
         FileCoverage fileCoverage = new(CoverageTestData.FilePath);
+        CoverageMergeService service = new();
 
-        fileCoverage.AddLine(1, true, 1, 0);
+        fileCoverage.AddOrMergeLine(new LineCoverage(1, true, 1, 0), service);
 
-        Exception e = Assert.Throws<CoverageParseException>(() => fileCoverage.AddLine(1, false, 2, 1));
+        Exception e = Assert.Throws<CoverageParseException>(() => fileCoverage.AddOrMergeLine(new LineCoverage(1, false, 2, 1), service));
         Assert.That(e.Message, Is.EqualTo("Cannot merge lines due to a branches mismatch"));
     }
 
     [Test]
     public void FileCoverage_CalculateFileCoverage_LineCoverage_ReturnsCoverage()
     {
-        FileCoverage fileCoverage = new(CoverageTestData.Lines3Of5Covered, CoverageTestData.FilePath);
+        FileCoverage fileCoverage = CoverageTestData.CreateFile(CoverageTestData.Lines3Of5Covered, CoverageTestData.FilePath);
 
         double coverage = fileCoverage.CalculateFileCoverage();
 
@@ -137,7 +147,7 @@ public class FileCoverageTests
     [Test]
     public void FileCoverage_CalculateFileCoverage_BranchCoverage_ReturnsCoverage()
     {
-        FileCoverage fileCoverage = new(CoverageTestData.Lines2Of3CoveredWith3Of4Branches, CoverageTestData.FilePath);
+        FileCoverage fileCoverage = CoverageTestData.CreateFile(CoverageTestData.Lines2Of3CoveredWith3Of4Branches, CoverageTestData.FilePath);
 
         double coverage = fileCoverage.CalculateFileCoverage(CoverageType.Branch);
 
@@ -147,7 +157,7 @@ public class FileCoverageTests
     [Test]
     public void FileCoverage_CalculateClassCoverage_LineCoverage_ReturnsCoverage()
     {
-        FileCoverage fileCoverage = new([
+        FileCoverage fileCoverage = CoverageTestData.CreateFile([
             new LineCoverage(1, true, className: $"{CoverageTestData.ClassName}-1"),
             new LineCoverage(2, false, className: $"{CoverageTestData.ClassName}-2"),
             new LineCoverage(3, true, className: $"{CoverageTestData.ClassName}-2")
@@ -161,7 +171,7 @@ public class FileCoverageTests
     [Test]
     public void FileCoverage_CalculateClassCoverage_BranchCoverage_ReturnsCoverage()
     {
-        FileCoverage fileCoverage = new([
+        FileCoverage fileCoverage = CoverageTestData.CreateFile([
             new LineCoverage(1, true, 1, 0, $"{CoverageTestData.ClassName}-1"),
             new LineCoverage(2, false, 6, 2, $"{CoverageTestData.ClassName}-2"),
             new LineCoverage(3, true, 4, 3, $"{CoverageTestData.ClassName}-2")
@@ -175,7 +185,7 @@ public class FileCoverageTests
     [Test]
     public void FileCoverage_CalculateClassCoverage_UnknownClass_ThrowsException()
     {
-        FileCoverage fileCoverage = new([
+        FileCoverage fileCoverage = CoverageTestData.CreateFile([
             new LineCoverage(1, true, className: $"{CoverageTestData.ClassName}-1"),
             new LineCoverage(2, false, className: $"{CoverageTestData.ClassName}-2"),
             new LineCoverage(3, true, className: $"{CoverageTestData.ClassName}-2")
@@ -188,7 +198,7 @@ public class FileCoverageTests
     [Test]
     public void FileCoverage_CalculateMethodCoverage_LineCoverage_ReturnsCoverage()
     {
-        FileCoverage fileCoverage = new([
+        FileCoverage fileCoverage = CoverageTestData.CreateFile([
             new LineCoverage(1, true, methodName: $"{CoverageTestData.MethodName}-1"),
             new LineCoverage(2, false, methodName: $"{CoverageTestData.MethodName}-2"),
             new LineCoverage(3, true, methodName: $"{CoverageTestData.MethodName}-2")
@@ -202,7 +212,7 @@ public class FileCoverageTests
     [Test]
     public void FileCoverage_CalculateMethodCoverage_BranchCoverage_ReturnsCoverage()
     {
-        FileCoverage fileCoverage = new([
+        FileCoverage fileCoverage = CoverageTestData.CreateFile([
             new LineCoverage(1, true, 1, 0, methodName: $"{CoverageTestData.MethodName}-1"),
             new LineCoverage(2, false, 6, 2, methodName: $"{CoverageTestData.MethodName}-2", methodSignature: $"{CoverageTestData.MethodSignature}-1"),
             new LineCoverage(3, true, 4, 3, methodName: $"{CoverageTestData.MethodName}-2", methodSignature: $"{CoverageTestData.MethodSignature}-2")
@@ -216,7 +226,7 @@ public class FileCoverageTests
     [Test]
     public void FileCoverage_CalculateMethodCoverage_UnknownMethod_ThrowsException()
     {
-        FileCoverage fileCoverage = new([
+        FileCoverage fileCoverage = CoverageTestData.CreateFile([
             new LineCoverage(1, true, methodName: $"{CoverageTestData.MethodName}-1"),
             new LineCoverage(2, false, methodName: $"{CoverageTestData.MethodName}-2"),
             new LineCoverage(3, true, methodName: $"{CoverageTestData.MethodName}-2")
