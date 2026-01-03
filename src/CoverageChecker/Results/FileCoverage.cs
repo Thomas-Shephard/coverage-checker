@@ -1,3 +1,5 @@
+using System.Collections.ObjectModel;
+using CoverageChecker.Services;
 using CoverageChecker.Utils;
 
 namespace CoverageChecker.Results;
@@ -20,7 +22,7 @@ public class FileCoverage : ICoverageResult
 
     public IReadOnlyList<LineCoverage> Lines => _lines.AsReadOnly();
 
-    private readonly List<LineCoverage> _lines = [];
+    private readonly LineCoverageCollection _lines = [];
 
     internal FileCoverage(string path, string? packageName = null)
     {
@@ -28,23 +30,20 @@ public class FileCoverage : ICoverageResult
         PackageName = packageName;
     }
 
-    internal FileCoverage(IEnumerable<LineCoverage> lines, string path, string? packageName = null) : this(path, packageName)
+    /// <summary>
+    /// Adds a line to the file coverage or merges it if it already exists.
+    /// </summary>
+    /// <param name="incomingLine">The line to add or merge.</param>
+    /// <param name="mergeService">The service to use for merging.</param>
+    internal void AddOrMergeLine(LineCoverage incomingLine, ICoverageMergeService mergeService)
     {
-        _lines = lines.ToList();
-    }
-
-    internal void AddLine(int lineNumber, bool isCovered, int? branches = null, int? coveredBranches = null, string? className = null, string? methodName = null, string? methodSignature = null)
-    {
-        LineCoverage? existingLine = _lines.Find(line => line.LineNumber == lineNumber);
-        LineCoverage newLine = new(lineNumber, isCovered, branches, coveredBranches, className, methodName, methodSignature);
-
-        if (existingLine is not null)
+        if (_lines.TryGetValue(incomingLine.LineNumber, out LineCoverage? existingLine))
         {
-            existingLine.MergeWith(newLine);
+            mergeService.Merge(existingLine, incomingLine);
         }
         else
         {
-            _lines.Add(newLine);
+            _lines.Add(incomingLine);
         }
     }
 
@@ -102,5 +101,10 @@ public class FileCoverage : ICoverageResult
             throw new CoverageCalculationException("No lines found for the specified method");
 
         return filteredLines.CalculateCoverage(coverageType);
+    }
+
+    private sealed class LineCoverageCollection : KeyedCollection<int, LineCoverage>
+    {
+        protected override int GetKeyForItem(LineCoverage item) => item.LineNumber;
     }
 }

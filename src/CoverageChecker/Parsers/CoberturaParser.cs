@@ -1,11 +1,12 @@
 ﻿using System.Xml;
 using CoverageChecker.Results;
+using CoverageChecker.Services;
 using CoverageChecker.Utils;
 using Microsoft.Extensions.Logging;
 
 namespace CoverageChecker.Parsers;
 
-internal partial class CoberturaParser(Coverage coverage, ILogger<CoberturaParser> logger) : ParserBase(logger)
+internal partial class CoberturaParser(Coverage coverage, ILogger<CoberturaParser> logger, ICoverageMergeService coverageMergeService) : ParserBase(logger)
 {
     protected override void LoadCoverage(XmlReader reader)
     {
@@ -104,7 +105,7 @@ internal partial class CoberturaParser(Coverage coverage, ILogger<CoberturaParse
         });
     }
 
-    private static void LoadMethodCoverage(FileCoverage file, XmlReader reader, string className)
+    private void LoadMethodCoverage(FileCoverage file, XmlReader reader, string className)
     {
         string methodName = reader.GetRequiredAttribute<string>("name");
         reader.TryGetAttribute("signature", out string? methodSignature);
@@ -121,7 +122,7 @@ internal partial class CoberturaParser(Coverage coverage, ILogger<CoberturaParse
         });
     }
 
-    private static void LoadLineCoverage(FileCoverage file, XmlReader reader, string className, string? methodName = null, string? methodSignature = null)
+    private void LoadLineCoverage(FileCoverage file, XmlReader reader, string className, string? methodName = null, string? methodSignature = null)
     {
         int lineNumber = reader.GetRequiredAttribute<int>("number");
         bool isCovered = reader.GetRequiredAttribute<int>("hits") > 0;
@@ -131,7 +132,7 @@ internal partial class CoberturaParser(Coverage coverage, ILogger<CoberturaParse
         {
             if (!hasBranchCoverage)
             {
-                file.AddLine(lineNumber, isCovered, className: className, methodName: methodName, methodSignature: methodSignature);
+                file.AddOrMergeLine(new LineCoverage(lineNumber, isCovered, className: className, methodName: methodName, methodSignature: methodSignature), coverageMergeService);
                 return;
             }
 
@@ -139,7 +140,7 @@ internal partial class CoberturaParser(Coverage coverage, ILogger<CoberturaParse
 
             (int branches, int coveredBranches) = ParseConditionCoverage(conditionCoverage);
 
-            file.AddLine(lineNumber, isCovered, branches, coveredBranches, className, methodName, methodSignature);
+            file.AddOrMergeLine(new LineCoverage(lineNumber, isCovered, branches, coveredBranches, className, methodName, methodSignature), coverageMergeService);
         }
         finally
         {
