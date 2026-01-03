@@ -97,6 +97,33 @@ public class CoverageMergeServiceTests
     }
 
     [Test]
+    public void Merge_DifferentMetadata_ReturnsMergedObject()
+    {
+        LineCoverage firstLineCoverage = new(1, true, className: "ClassName");
+        LineCoverage secondLineCoverage = new(1, true, methodName: "MethodName", methodSignature: "MethodSignature");
+        LineCoverage expectedLineCoverage = new(1, true, className: "ClassName", methodName: "MethodName", methodSignature: "MethodSignature");
+
+        _service.Merge(firstLineCoverage, secondLineCoverage);
+
+        Assert.That(firstLineCoverage, Is.EqualTo(expectedLineCoverage).Using(new LineCoverageComparer()));
+    }
+
+    [Test]
+    public void Merge_MetadataUpdateWhenBranchLogicWouldSkip_ReturnsMergedObject()
+    {
+        // Existing is covered and has branches
+        LineCoverage firstLineCoverage = new(1, true, 2, 1, className: "ClassName");
+        // Incoming is NOT covered and has no branches, but has a MethodName
+        LineCoverage secondLineCoverage = new(1, false, methodName: "MethodName");
+        
+        LineCoverage expectedLineCoverage = new(1, true, 2, 1, className: "ClassName", methodName: "MethodName");
+
+        _service.Merge(firstLineCoverage, secondLineCoverage);
+
+        Assert.That(firstLineCoverage, Is.EqualTo(expectedLineCoverage).Using(new LineCoverageComparer()));
+    }
+
+    [Test]
     public void Merge_DifferentLineNumbers_ThrowsCoverageParseException()
     {
         LineCoverage firstLineCoverage = new(1, true);

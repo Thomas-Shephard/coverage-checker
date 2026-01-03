@@ -34,19 +34,19 @@ public class LineCoverage : ICoverageResult
     /// The name of the class the line is part of.
     /// If null, the line is not part of a class.
     /// </summary>
-    public string? ClassName { get; }
+    public string? ClassName { get; internal set; }
 
     /// <summary>
     /// The name of the method the line is part of.
     /// If null, the line is not part of a method.
     /// </summary>
-    public string? MethodName { get; }
+    public string? MethodName { get; internal set; }
 
     /// <summary>
     /// The method signature of the method the line is part of.
     /// If null, the line is not part of a method or the method does not have a method signature.
     /// </summary>
-    public string? MethodSignature { get; }
+    public string? MethodSignature { get; internal set; }
 
     public IReadOnlyList<LineCoverage> Lines => [this];
 

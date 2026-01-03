@@ -20,6 +20,9 @@ internal partial class CoverageMergeService(ILogger<CoverageMergeService>? logge
              // Use the max covered branches from either, defaulting to 0 if null
             existing.CoveredBranches = Math.Max(existing.CoveredBranches ?? 0, incoming.CoveredBranches ?? 0);
         }
+        existing.ClassName ??= incoming.ClassName;
+        existing.MethodName ??= incoming.MethodName;
+        existing.MethodSignature ??= incoming.MethodSignature;
     }
 
     private bool MergeRequired(LineCoverage existing, LineCoverage incoming)
@@ -35,16 +38,41 @@ internal partial class CoverageMergeService(ILogger<CoverageMergeService>? logge
             throw new CoverageParseException("Cannot merge lines due to a line number mismatch");
         }
 
-        if (existing.ClassName != incoming.ClassName)
+        if (existing.ClassName != null && incoming.ClassName != null && existing.ClassName != incoming.ClassName)
         {
-            LogMergeMismatch("class name", existing.ClassName ?? "null", incoming.ClassName ?? "null");
+            LogMergeMismatch("class name", existing.ClassName, incoming.ClassName);
             throw new CoverageParseException("Cannot merge lines due to a class name mismatch");
         }
 
+        if (existing.MethodName != null && incoming.MethodName != null && existing.MethodName != incoming.MethodName)
+        {
+            LogMergeMismatch("method name", existing.MethodName, incoming.MethodName);
+            throw new CoverageParseException("Cannot merge lines due to a method name mismatch");
+        }
+
+        if (existing.MethodSignature != null && incoming.MethodSignature != null && existing.MethodSignature != incoming.MethodSignature)
+        {
+            LogMergeMismatch("method signature", existing.MethodSignature, incoming.MethodSignature);
+            throw new CoverageParseException("Cannot merge lines due to a method signature mismatch");
+        }
+
         // If the updateable information is the same, no merge is required
-        if (existing.IsCovered == incoming.IsCovered && existing.Branches == incoming.Branches && existing.CoveredBranches == incoming.CoveredBranches)
+        if (existing.IsCovered == incoming.IsCovered && 
+            existing.Branches == incoming.Branches && 
+            existing.CoveredBranches == incoming.CoveredBranches &&
+            existing.ClassName == incoming.ClassName &&
+            existing.MethodName == incoming.MethodName &&
+            existing.MethodSignature == incoming.MethodSignature)
         {
             return false;
+        }
+
+        // If metadata is being updated, merge is required
+        if (existing.ClassName != incoming.ClassName || 
+            existing.MethodName != incoming.MethodName || 
+            existing.MethodSignature != incoming.MethodSignature)
+        {
+            return true;
         }
 
         // If the branches are the same, no additional checks are required and a merge can be performed
