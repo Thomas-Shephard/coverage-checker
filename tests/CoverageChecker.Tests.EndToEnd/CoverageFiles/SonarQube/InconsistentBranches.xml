@@ -1,0 +1,5 @@
+<coverage version="1">
+  <file path="test.cs">
+    <lineToCover lineNumber="1" covered="true" branchesToCover="2" />
+  </file>
+</coverage>

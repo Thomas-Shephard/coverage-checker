@@ -46,7 +46,7 @@ public partial class CoverageAnalyser
     /// <param name="loggerFactory">The logger factory to use for logging.</param>
     public CoverageAnalyser(CoverageFormat coverageFormat, string directory, Matcher matcher, ILoggerFactory? loggerFactory = null) : this(coverageFormat, directory, new FileFinder(matcher, loggerFactory?.CreateLogger<FileFinder>()), loggerFactory) { }
 
-    internal CoverageAnalyser(CoverageFormat coverageFormat, string directory, IFileFinder fileFinder, ILoggerFactory? loggerFactory = null) : this(coverageFormat, directory, fileFinder, new ParserFactory(), loggerFactory) { }
+    internal CoverageAnalyser(CoverageFormat coverageFormat, string directory, IFileFinder fileFinder, ILoggerFactory? loggerFactory = null) : this(coverageFormat, directory, fileFinder, new ParserFactory(new CoverageMergeService(loggerFactory?.CreateLogger<CoverageMergeService>())), loggerFactory) { }
 
     internal CoverageAnalyser(CoverageFormat coverageFormat, string directory, IFileFinder fileFinder, IParserFactory parserFactory, ILoggerFactory? loggerFactory = null)
     {
