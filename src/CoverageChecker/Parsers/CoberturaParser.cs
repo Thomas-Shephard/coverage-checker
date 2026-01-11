@@ -80,7 +80,7 @@ internal partial class CoberturaParser(Coverage coverage, ILogger<CoberturaParse
 
         if (source is not null)
         {
-            filePath = Path.Combine(source, filePath);
+            filePath = NormalizePath(Path.Combine(source, filePath));
         }
 
         reader.TryEnterElement("class", () =>
