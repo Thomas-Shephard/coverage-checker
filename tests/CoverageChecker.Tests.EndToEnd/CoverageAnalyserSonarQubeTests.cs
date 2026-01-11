@@ -143,4 +143,13 @@ public class CoverageAnalyserSonarQubeTests
 
         Assert.Throws<NoCoverageFilesFoundException>(() => coverageAnalyser.AnalyseCoverage());
     }
+
+    [Test]
+    public void CoverageAnalyser_AnalyseSonarQubeCoverage_InconsistentBranches_ThrowsCoverageParseException()
+    {
+        CoverageAnalyser coverageAnalyser = new(CoverageFormat.SonarQube, _directory, "InconsistentBranches.xml");
+
+        Exception e = Assert.Throws<CoverageParseException>(() => coverageAnalyser.AnalyseCoverage());
+        Assert.That(e.Message, Is.EqualTo("Both 'branchesToCover' and 'coveredBranches' attributes must be present if either is specified"));
+    }
 }

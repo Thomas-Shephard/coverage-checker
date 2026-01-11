@@ -59,6 +59,11 @@ internal partial class SonarQubeParser(Coverage coverage, ILogger<SonarQubeParse
         if (reader.TryGetAttribute("coveredBranches", out int tempCoveredBranches))
             coveredBranches = tempCoveredBranches;
 
+        if (branches is not null ^ coveredBranches is not null)
+        {
+            throw new CoverageParseException("Both 'branchesToCover' and 'coveredBranches' attributes must be present if either is specified");
+        }
+
         reader.ConsumeElement("lineToCover");
 
         file.AddOrMergeLine(new LineCoverage(lineNumber, isCovered, branches, coveredBranches), coverageMergeService);

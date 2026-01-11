@@ -14,6 +14,9 @@ internal partial class CoverageMergeService(ILogger<CoverageMergeService>? logge
 
         existing.IsCovered = existing.IsCovered || incoming.IsCovered;
         existing.Branches ??= incoming.Branches;
+        existing.ClassName ??= incoming.ClassName;
+        existing.MethodName ??= incoming.MethodName;
+        existing.MethodSignature ??= incoming.MethodSignature;
 
         if (existing.Branches is not null)
         {
@@ -35,14 +38,13 @@ internal partial class CoverageMergeService(ILogger<CoverageMergeService>? logge
             throw new CoverageParseException("Cannot merge lines due to a line number mismatch");
         }
 
-        if (existing.ClassName != incoming.ClassName)
-        {
-            LogMergeMismatch("class name", existing.ClassName, incoming.ClassName);
-            throw new CoverageParseException("Cannot merge lines due to a class name mismatch");
-        }
+        ValidateMetadata(existing.ClassName, incoming.ClassName, "class name");
+        ValidateMetadata(existing.MethodName, incoming.MethodName, "method name");
+        ValidateMetadata(existing.MethodSignature, incoming.MethodSignature, "method signature");
 
         // If the updateable information is the same, no merge is required
-        if (existing.IsCovered == incoming.IsCovered && existing.Branches == incoming.Branches && existing.CoveredBranches == incoming.CoveredBranches)
+        if (existing.IsCovered == incoming.IsCovered && existing.Branches == incoming.Branches && existing.CoveredBranches == incoming.CoveredBranches &&
+            existing.ClassName == incoming.ClassName && existing.MethodName == incoming.MethodName && existing.MethodSignature == incoming.MethodSignature)
         {
             return false;
         }
@@ -53,8 +55,8 @@ internal partial class CoverageMergeService(ILogger<CoverageMergeService>? logge
             return true;
         }
 
-        // Branches can only be updated from null when the line was previously not covered but now is
-        if (existing.Branches is null && !existing.IsCovered && incoming.IsCovered)
+        // Allow updating from null if the incoming line provides branch information
+        if (existing.Branches is null && incoming.Branches is not null)
         {
             return true;
         }
@@ -68,6 +70,13 @@ internal partial class CoverageMergeService(ILogger<CoverageMergeService>? logge
 
         LogMergeMismatch("branches", existing.Branches, incoming.Branches);
         throw new CoverageParseException("Cannot merge lines due to a branches mismatch");
+    }
+
+    private void ValidateMetadata(string? existing, string? incoming, string label)
+    {
+        if (existing == null || incoming == null || existing == incoming) return;
+        LogMergeMismatch(label, existing, incoming);
+        throw new CoverageParseException($"Cannot merge lines due to a {label} mismatch");
     }
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Cannot merge lines due to a {Reason} mismatch. Existing: {Existing}, Incoming: {Incoming}")]
