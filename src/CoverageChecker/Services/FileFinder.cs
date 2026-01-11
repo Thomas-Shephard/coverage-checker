@@ -26,7 +26,7 @@ internal partial class FileFinder : IFileFinder
     {
         LogSearchingForFiles(directory);
         string[] results = _matcher.GetResultsInFullPath(directory)
-                                   .Select(PathUtils.NormalizePath)
+                                   .Select(path => PathUtils.GetNormalizedFullPath(path))
                                    .ToArray();
         LogFoundFiles(results.Length);
         return results;

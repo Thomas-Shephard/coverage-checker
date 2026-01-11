@@ -75,6 +75,15 @@ public class LineCoverage : ICoverageResult
     }
 
     /// <summary>
+    /// Creates a new instance of the <see cref="LineCoverage"/> class with the same values as this instance.
+    /// </summary>
+    /// <returns>A new instance of the <see cref="LineCoverage"/> class.</returns>
+    internal LineCoverage Clone()
+    {
+        return new LineCoverage(LineNumber, IsCovered, Branches, CoveredBranches, ClassName, MethodName, MethodSignature);
+    }
+
+    /// <summary>
     /// Calculates the coverage for this line.
     /// </summary>
     /// <param name="coverageType">The type of coverage to calculate. Defaults to <see cref="CoverageType.Line"/>.</param>

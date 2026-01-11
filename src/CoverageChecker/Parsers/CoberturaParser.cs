@@ -19,7 +19,7 @@ internal partial class CoberturaParser(Coverage coverage, ILogger<CoberturaParse
 
             if (source is not null)
             {
-                source = NormalizePath(source);
+                source = ResolveFullPath(source);
             }
 
             reader.TryEnterElement("packages", () =>
@@ -75,13 +75,15 @@ internal partial class CoberturaParser(Coverage coverage, ILogger<CoberturaParse
 
     private void LoadClassCoverage(XmlReader reader, string packageName, string? source)
     {
-        string filePath = NormalizePath(reader.GetRequiredAttribute<string>("filename"));
+        string filePath = reader.GetRequiredAttribute<string>("filename");
         string className = reader.GetRequiredAttribute<string>("name");
 
         if (source is not null)
         {
-            filePath = NormalizePath(Path.Combine(source, filePath));
+            filePath = Path.Combine(source, filePath);
         }
+
+        filePath = ResolveFullPath(filePath);
 
         reader.TryEnterElement("class", () =>
         {

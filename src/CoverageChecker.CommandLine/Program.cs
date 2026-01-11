@@ -19,7 +19,9 @@ static async Task<int> Run(CommandLineOptions options)
     using ILoggerFactory loggerFactory = CreateLoggerFactory(isGitHubActions);
     ILogger logger = loggerFactory.CreateLogger("CoverageChecker.CommandLine");
 
-    if (!TryAnalyseCoverage(options, loggerFactory, logger, out Coverage? coverage))
+    CoverageAnalyser coverageAnalyser = new(options.CoverageFormat, options.Directory, options.GlobPatterns, loggerFactory);
+
+    if (!TryAnalyseCoverage(coverageAnalyser, logger, out Coverage? coverage))
     {
         return 1;
     }
@@ -30,9 +32,42 @@ static async Task<int> Run(CommandLineOptions options)
     logger.LogLineCoverage(lineCoverage);
     logger.LogBranchCoverage(branchCoverage);
 
+    Coverage? deltaCoverage = null;
+    bool hasDeltaChangedLines = false;
+    double deltaLineCoverage = double.NaN;
+    double deltaBranchCoverage = double.NaN;
+
+    if (options.Delta)
+    {
+        try
+        {
+            DeltaResult deltaResult = coverageAnalyser.AnalyseDeltaCoverage(options.DeltaBase, coverage);
+            deltaCoverage = deltaResult.Coverage;
+            hasDeltaChangedLines = deltaResult.HasChangedLines;
+
+            if (!hasDeltaChangedLines)
+            {
+                logger.LogNoDeltaLinesFound();
+            }
+            else
+            {
+                deltaLineCoverage = deltaCoverage.CalculateOverallCoverage();
+                deltaBranchCoverage = deltaCoverage.CalculateOverallCoverage(CoverageType.Branch);
+
+                logger.LogDeltaLineCoverage(deltaLineCoverage);
+                logger.LogDeltaBranchCoverage(deltaBranchCoverage);
+            }
+        }
+        catch (Exception ex) when (ex is GitException or ArgumentException)
+        {
+            logger.LogDeltaAnalysisFailed(ex);
+            return 1;
+        }
+    }
+
     if (isGitHubActions)
     {
-        await WriteGitHubSummary(coverage, lineCoverage, branchCoverage, options, logger);
+        await WriteGitHubSummary(coverage, lineCoverage, branchCoverage, deltaCoverage, deltaLineCoverage, deltaBranchCoverage, hasDeltaChangedLines, options, logger);
     }
 
     if (options.LineThreshold > lineCoverage)
@@ -45,6 +80,21 @@ static async Task<int> Run(CommandLineOptions options)
     {
         logger.LogBranchCoverageBelowThreshold(branchCoverage, options.BranchThreshold);
         return 1;
+    }
+
+    if (options.Delta && hasDeltaChangedLines && deltaCoverage != null)
+    {
+        if (!double.IsNaN(deltaLineCoverage) && options.LineThreshold > deltaLineCoverage)
+        {
+            logger.LogDeltaLineCoverageBelowThreshold(deltaLineCoverage, options.LineThreshold);
+            return 1;
+        }
+
+        if (!double.IsNaN(deltaBranchCoverage) && options.BranchThreshold > deltaBranchCoverage)
+        {
+            logger.LogDeltaBranchCoverageBelowThreshold(deltaBranchCoverage, options.BranchThreshold);
+            return 1;
+        }
     }
 
     logger.LogThresholdMet();
@@ -73,10 +123,8 @@ static ILoggerFactory CreateLoggerFactory(bool isGitHubActions)
     });
 }
 
-static bool TryAnalyseCoverage(CommandLineOptions options, ILoggerFactory loggerFactory, ILogger logger, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out Coverage? coverage)
+static bool TryAnalyseCoverage(CoverageAnalyser coverageAnalyser, ILogger logger, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out Coverage? coverage)
 {
-    CoverageAnalyser coverageAnalyser = new(options.CoverageFormat, options.Directory, options.GlobPatterns, loggerFactory);
-
     try
     {
         coverage = coverageAnalyser.AnalyseCoverage();
@@ -96,7 +144,7 @@ static bool TryAnalyseCoverage(CommandLineOptions options, ILoggerFactory logger
     return false;
 }
 
-static async Task WriteGitHubSummary(Coverage coverage, double lineCoverage, double branchCoverage, CommandLineOptions options, ILogger logger)
+static async Task WriteGitHubSummary(Coverage coverage, double lineCoverage, double branchCoverage, Coverage? deltaCoverage, double deltaLineCoverage, double deltaBranchCoverage, bool hasDeltaChangedLines, CommandLineOptions options, ILogger logger)
 {
     string? summaryPath = Environment.GetEnvironmentVariable("GITHUB_STEP_SUMMARY");
     if (string.IsNullOrEmpty(summaryPath)) return;
@@ -111,9 +159,29 @@ static async Task WriteGitHubSummary(Coverage coverage, double lineCoverage, dou
         summary.AppendLine(FormatMetricRow("Line Coverage", lineCoverage, options.LineThreshold));
         summary.AppendLine(FormatMetricRow("Branch Coverage", branchCoverage, options.BranchThreshold));
 
-        if (lineCoverage < 1.0 || (branchCoverage < 1.0 && !double.IsNaN(branchCoverage)))
+        if (options.Delta)
+        {
+            if (hasDeltaChangedLines)
+            {
+                summary.AppendLine(FormatMetricRow("Delta Line Coverage", deltaLineCoverage, options.LineThreshold));
+                summary.AppendLine(FormatMetricRow("Delta Branch Coverage", deltaBranchCoverage, options.BranchThreshold));
+            }
+            else
+            {
+                summary.AppendLine("| Delta Coverage | N/A (No changed lines) | - | ✅ |");
+            }
+        }
+
+        if (ShouldShowBreakdown(lineCoverage, branchCoverage))
         {
             summary.Append(GetFileBreakdown(coverage));
+        }
+
+        if (deltaCoverage != null && hasDeltaChangedLines && ShouldShowBreakdown(deltaLineCoverage, deltaBranchCoverage))
+        {
+            summary.AppendLine();
+            summary.AppendLine("#### Delta File Breakdown");
+            summary.Append(GetFileBreakdown(deltaCoverage));
         }
 
         await File.AppendAllTextAsync(summaryPath, summary.ToString());
@@ -122,6 +190,11 @@ static async Task WriteGitHubSummary(Coverage coverage, double lineCoverage, dou
     {
         logger.LogWarning(ex, "Failed to write GitHub summary to {SummaryPath}", summaryPath);
     }
+}
+
+static bool ShouldShowBreakdown(double lineCoverage, double branchCoverage)
+{
+    return lineCoverage < 1.0 || (branchCoverage < 1.0 && !double.IsNaN(branchCoverage));
 }
 
 static string FormatMetricRow(string label, double value, double threshold)

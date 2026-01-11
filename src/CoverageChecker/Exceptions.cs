@@ -34,3 +34,12 @@ public class CoverageParseException : CoverageException
     internal CoverageParseException(string message) : base(message) { }
     internal CoverageParseException(string message, Exception innerException) : base(message, innerException) { }
 }
+
+/// <summary>
+/// Thrown when an error occurs while interacting with Git.
+/// </summary>
+public class GitException : CoverageException
+{
+    internal GitException(string message) : base(message) { }
+    internal GitException(string message, Exception innerException) : base(message, innerException) { }
+}

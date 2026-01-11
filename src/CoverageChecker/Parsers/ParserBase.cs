@@ -13,8 +13,11 @@ internal abstract partial class ParserBase(ILogger logger) : ICoverageParser
         DtdProcessing = DtdProcessing.Ignore
     };
 
-    public void ParseCoverage(string filePath)
+    private string? RootDirectory { get; set; }
+
+    public void ParseCoverage(string filePath, string? rootDirectory = null)
     {
+        RootDirectory = rootDirectory;
         LogOpeningCoverageFile(filePath);
         try
         {
@@ -32,5 +35,5 @@ internal abstract partial class ParserBase(ILogger logger) : ICoverageParser
     [LoggerMessage(Level = LogLevel.Debug, Message = "Opening coverage file: {FilePath}")]
     private partial void LogOpeningCoverageFile(string filePath);
 
-    protected static string NormalizePath(string path) => PathUtils.NormalizePath(path);
+    protected string ResolveFullPath(string path) => PathUtils.GetNormalizedFullPath(path, RootDirectory);
 }

@@ -29,7 +29,7 @@ internal partial class SonarQubeParser(Coverage coverage, ILogger<SonarQubeParse
 
     private void LoadFileCoverage(XmlReader reader)
     {
-        string filePath = NormalizePath(reader.GetRequiredAttribute<string>("path"));
+        string filePath = ResolveFullPath(reader.GetRequiredAttribute<string>("path"));
         LogProcessingFile(filePath);
 
         FileCoverage file = coverage.GetOrCreateFile(filePath);

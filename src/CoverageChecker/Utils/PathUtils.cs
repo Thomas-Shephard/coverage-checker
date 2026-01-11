@@ -21,4 +21,27 @@ internal static class PathUtils
             _ => trimmed
         };
     }
+
+    /// <summary>
+    /// Gets the normalized absolute path.
+    /// </summary>
+    /// <param name="path">The path to normalize.</param>
+    /// <param name="basePath">Optional: The base path to resolve the path against if it is relative.</param>
+    /// <returns>The normalized absolute path.</returns>
+    public static string GetNormalizedFullPath(string path, string? basePath = null)
+    {
+        if (basePath != null && !Path.IsPathRooted(path))
+        {
+            path = Path.Combine(basePath, path);
+        }
+
+        try
+        {
+            return NormalizePath(Path.GetFullPath(path));
+        }
+        catch (Exception ex)
+        {
+            throw new ArgumentException($"Invalid path: {path}", nameof(path), ex);
+        }
+    }
 }
