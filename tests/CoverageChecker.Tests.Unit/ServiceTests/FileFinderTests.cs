@@ -1,4 +1,5 @@
 using CoverageChecker.Services;
+using CoverageChecker.Utils;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -11,7 +12,7 @@ public class FileFinderTests
     [SetUp]
     public void SetUp()
     {
-        _tempDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        _tempDirectory = PathUtils.NormalizePath(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()));
         Directory.CreateDirectory(_tempDirectory);
     }
 
@@ -57,8 +58,8 @@ public class FileFinderTests
         string[] files = fileFinder.FindFiles(_tempDirectory).ToArray();
 
         Assert.That(files, Has.Length.EqualTo(2));
-        Assert.That(files, Contains.Item(Path.Combine(_tempDirectory, "file1.xml")));
-        Assert.That(files, Contains.Item(Path.Combine(_tempDirectory, "sub", "file2.xml")));
+        Assert.That(files, Contains.Item(PathUtils.NormalizePath(Path.Combine(_tempDirectory, "file1.xml"))));
+        Assert.That(files, Contains.Item(PathUtils.NormalizePath(Path.Combine(_tempDirectory, "sub", "file2.xml"))));
     }
 
     [Test]
@@ -75,8 +76,8 @@ public class FileFinderTests
         string[] files = fileFinder.FindFiles(_tempDirectory).ToArray();
 
         Assert.That(files, Has.Length.EqualTo(2));
-        Assert.That(files, Contains.Item(Path.Combine(_tempDirectory, "file1.xml")));
-        Assert.That(files, Contains.Item(Path.Combine(_tempDirectory, "sub", "file2.xml")));
+        Assert.That(files, Contains.Item(PathUtils.NormalizePath(Path.Combine(_tempDirectory, "file1.xml"))));
+        Assert.That(files, Contains.Item(PathUtils.NormalizePath(Path.Combine(_tempDirectory, "sub", "file2.xml"))));
     }
 
     [Test]
@@ -91,9 +92,9 @@ public class FileFinderTests
         string[] files = fileFinder.FindFiles(_tempDirectory).ToArray();
 
         Assert.That(files, Has.Length.EqualTo(2));
-        Assert.That(files, Contains.Item(Path.Combine(_tempDirectory, "file1.xml")));
-        Assert.That(files, Contains.Item(Path.Combine(_tempDirectory, "sub", "file2.xml")));
-        Assert.That(files, Does.Not.Contain(Path.Combine(_tempDirectory, "obj", "file3.xml")));
+        Assert.That(files, Contains.Item(PathUtils.NormalizePath(Path.Combine(_tempDirectory, "file1.xml"))));
+        Assert.That(files, Contains.Item(PathUtils.NormalizePath(Path.Combine(_tempDirectory, "sub", "file2.xml"))));
+        Assert.That(files, Does.Not.Contain(PathUtils.NormalizePath(Path.Combine(_tempDirectory, "obj", "file3.xml"))));
     }
 
     [Test]

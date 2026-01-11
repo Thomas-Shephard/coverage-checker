@@ -1,4 +1,5 @@
 using System.Xml;
+using CoverageChecker.Utils;
 using Microsoft.Extensions.Logging;
 
 namespace CoverageChecker.Parsers;
@@ -31,8 +32,5 @@ internal abstract partial class ParserBase(ILogger logger) : ICoverageParser
     [LoggerMessage(Level = LogLevel.Debug, Message = "Opening coverage file: {FilePath}")]
     private partial void LogOpeningCoverageFile(string filePath);
 
-    protected static string NormalizePath(string path)
-    {
-        return path.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar);
-    }
+    protected static string NormalizePath(string path) => PathUtils.NormalizePath(path);
 }
