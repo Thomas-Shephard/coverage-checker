@@ -31,3 +31,10 @@ The CoverageChecker.CommandLine tool can be invoked by running `coveragechecker`
 
 The CoverageChecker Command Line tool reads the specified coverage files and outputs the line and branch coverage of the analyzed files.
 If the line or branch coverage is below the specified threshold, the tool will exit with a non-zero exit code.
+
+## GitHub Actions Integration
+
+When running in a GitHub Actions environment, the tool automatically enhances its output:
+
+- **Workflow Commands**: Coverage results and threshold failures are reported as `::notice::`, `::warning::`, or `::error::` workflow commands, making them visible directly in the GitHub Actions UI and pull request files view.
+- **Job Summary**: A detailed markdown summary is generated and attached to the workflow run, including an overall metric table and a breakdown of the top 10 files with the lowest coverage.

@@ -5,6 +5,12 @@
 Allows for the checking of code coverage using the provided .NET command line tool. It can also be used
 as a development dependency if you need to extract code coverage metrics as part of a .NET project.
 
+## Features
+
+- **Multi-format support**: Works with Cobertura and SonarQube coverage formats.
+- **CI/CD Ready**: Automatic integration with GitHub Actions for workflow commands and job summaries.
+- **Threshold enforcement**: Exit with non-zero codes if coverage targets aren't met.
+
 ## Projects
 
 - [Coverage Checker Command Line Tool](https://github.com/Thomas-Shephard/coverage-checker/blob/main/src/CoverageChecker.CommandLine)
