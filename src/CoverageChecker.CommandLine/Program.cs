@@ -147,7 +147,7 @@ static string GetFileBreakdown(Coverage coverage)
                                   Line = f.CalculateFileCoverage(),
                                   Branch = f.CalculateFileCoverage(CoverageType.Branch)
                               })
-                              .Where(f => !double.IsNaN(f.Line))
+                              .Where(f => !double.IsNaN(f.Line) && (f.Line < 1.0 || (f.Branch < 1.0 && !double.IsNaN(f.Branch))))
                               .OrderBy(f => double.IsNaN(f.Branch) ? f.Line : Math.Min(f.Line, f.Branch))
                               .Take(10);
 
