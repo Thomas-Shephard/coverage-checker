@@ -15,7 +15,7 @@ public class CoverageMergeServiceTests
     }
 
     [Test]
-    public void Merge_SameObject_ReturnsSameObject()
+    public void Merge_SameObject_DoesNotModify()
     {
         LineCoverage lineCoverage = new(1, true);
 
@@ -25,7 +25,7 @@ public class CoverageMergeServiceTests
     }
 
     [Test]
-    public void Merge_DifferentIsCovered_ReturnsMergedObject()
+    public void Merge_DifferentIsCovered_UpdatesExistingLine()
     {
         LineCoverage firstLineCoverage = new(1, false);
         LineCoverage secondLineCoverage = new(1, true);
@@ -37,7 +37,7 @@ public class CoverageMergeServiceTests
     }
 
     [Test]
-    public void Merge_DifferentIsCovered_ReturnsMergedObjectReverse()
+    public void Merge_DifferentIsCovered_UpdatesExistingLineReverse()
     {
         LineCoverage firstLineCoverage = new(1, true);
         LineCoverage secondLineCoverage = new(1, false);
@@ -49,7 +49,7 @@ public class CoverageMergeServiceTests
     }
 
     [Test]
-    public void Merge_DifferentCoveredBranches_ReturnsMergedObject()
+    public void Merge_DifferentCoveredBranches_UpdatesExistingLine()
     {
         LineCoverage firstLineCoverage = new(1, true, 2, 1);
         LineCoverage secondLineCoverage = new(1, true, 2, 2);
@@ -61,7 +61,7 @@ public class CoverageMergeServiceTests
     }
 
     [Test]
-    public void Merge_DifferentCoveredBranches_ReturnsMergedObjectReverse()
+    public void Merge_DifferentCoveredBranches_UpdatesExistingLineReverse()
     {
         LineCoverage firstLineCoverage = new(1, true, 2, 1);
         LineCoverage secondLineCoverage = new(1, true, 2, 0);
@@ -73,7 +73,7 @@ public class CoverageMergeServiceTests
     }
 
     [Test]
-    public void Merge_DifferentBranches_ReturnsMergedObject()
+    public void Merge_DifferentBranches_UpdatesExistingLine()
     {
         LineCoverage firstLineCoverage = new(1, false);
         LineCoverage secondLineCoverage = new(1, true, 2, 2);
@@ -85,7 +85,7 @@ public class CoverageMergeServiceTests
     }
 
     [Test]
-    public void Merge_DifferentBranches_ReturnsMergedObjectReverse()
+    public void Merge_DifferentBranches_UpdatesExistingLineReverse()
     {
         LineCoverage firstLineCoverage = new(1, true, 2, 1);
         LineCoverage secondLineCoverage = new(1, false);
