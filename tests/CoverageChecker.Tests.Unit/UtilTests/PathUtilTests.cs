@@ -10,10 +10,11 @@ public class PathUtilTests
     [TestCase("path/to/file/", "path/to/file")]
     [TestCase(@"path\to\file\", "path/to/file")]
     [TestCase("/", "/")]
+    [TestCase("C:", "C:/")]
     [TestCase(@"C:\", "C:/")]
     [TestCase(@"\\server\share\", "//server/share")]
     [TestCase("", "")]
-    public void NormalizePath_NormalizesSeparatorsAndRemovesTrailingSlashes(string input, string? expected)
+    public void NormalizePath_NormalizesSeparatorsAndRemovesTrailingSlashes(string input, string expected)
     {
         string result = PathUtils.NormalizePath(input);
 
