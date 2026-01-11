@@ -155,10 +155,16 @@ static string GetFileBreakdown(Coverage coverage)
     {
         string lineDisplay = double.IsNaN(item.Line) ? "N/A" : $"{item.Line:P2}";
         string branchDisplay = double.IsNaN(item.Branch) ? "N/A" : $"{item.Branch:P2}";
-        sb.AppendLine($"| `{item.Path}` | {lineDisplay} | {branchDisplay} |");
+        string escapedPath = EscapeMarkdown(item.Path);
+        sb.AppendLine($"| `{escapedPath}` | {lineDisplay} | {branchDisplay} |");
     }
 
     return sb.ToString();
+}
+
+static string EscapeMarkdown(string text)
+{
+    return text.Replace("|", "\\|").Replace("`", "\\` ");
 }
 
 static int DisplayHelp<T>(ParserResult<T> result)
