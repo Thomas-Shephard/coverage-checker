@@ -30,10 +30,8 @@ jobs:
         run: dotnet build --configuration Release
       - name: Test
         run: dotnet test --configuration Release --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage --settings coverlet.runsettings
-      - name: Install Coverage Checker
-        run: dotnet tool install --global CoverageChecker.CommandLine
       - name: Check Coverage
-        run: coveragechecker --format Cobertura --glob-patterns 'coverage/**/coverage.cobertura.xml' --line-threshold 100 --branch-threshold 100
+        run: dotnet run --project src/CoverageChecker.CommandLine/CoverageChecker.CommandLine.csproj --configuration Release --framework net10.0 --no-build -- --format Cobertura --glob-patterns 'coverage/**/coverage.cobertura.xml' --line-threshold 100 --branch-threshold 100
       - name: Pack NuGet Packages
         run: dotnet pack --configuration Release --no-build
       - name: Upload NuGet Packages
