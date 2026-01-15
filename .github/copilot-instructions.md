@@ -6,6 +6,7 @@ You are an expert code reviewer and software engineer assisting with the `Covera
 *   **Project:** C# .NET solution for parsing/analysing coverage reports (Cobertura, SonarQube) and enforcing CI/CD thresholds.
 *   **Type:** CLI Tool (`CoverageChecker.CommandLine`) and Library (`CoverageChecker`).
 *   **Frameworks:** .NET 8.0, .NET 9.0, .NET 10.0.
+*   **Versioning:** [MinVer](https://github.com/adamralph/minver). Do NOT manually set versions in `.csproj` files. Use Git tags (`vX.Y.Z`).
 *   **Key Libraries:** `CommandLineParser`, `Microsoft.Extensions.FileSystemGlobbing`, `Microsoft.Extensions.Logging` (Source Gen), `NUnit`, `Moq`.
 
 ## 2. Build and Validate
