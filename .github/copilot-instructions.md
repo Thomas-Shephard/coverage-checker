@@ -15,7 +15,7 @@ Always verify changes using these commands.
 *   **Lint/Style:** Use `.editorconfig` rules. Build with `/warnaserror` when possible.
 
 ## 3. Project Layout
-*   **`src/CoverageChecker/`**: Core library. logic for parsing (`Parsers/`), services (`Services/`), and models (`Results/`).
+*   **`src/CoverageChecker/`**: Core library. Logic for parsing (`Parsers/`), services (`Services/`), and models (`Results/`).
 *   **`src/CoverageChecker.CommandLine/`**: CLI entry point (`Program.cs`) and arguments (`CommandLineOptions.cs`).
 *   **`tests/`**: Contains `Unit` (isolated) and `EndToEnd` (integration) test projects.
 
