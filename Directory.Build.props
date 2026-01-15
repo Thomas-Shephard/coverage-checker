@@ -23,4 +23,15 @@
         <ProjectReference Include="$(MSBuildThisFileDirectory)src\CoverageChecker\CoverageChecker.csproj"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <PackageReference Include="MinVer" Version="6.0.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <PropertyGroup>
+        <MinVerTagPrefix>v</MinVerTagPrefix>
+    </PropertyGroup>
+
 </Project>
