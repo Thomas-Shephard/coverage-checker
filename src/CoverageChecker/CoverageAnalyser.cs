@@ -86,8 +86,9 @@ public partial class CoverageAnalyser
         {
             rootDirectory = _gitService.GetRepoRoot();
         }
-        catch
+        catch (GitException ex)
         {
+            LogGitRepoRootFailure(ex);
             // Fallback to current directory if not in a git repo
         }
 
@@ -124,4 +125,7 @@ public partial class CoverageAnalyser
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Parsing coverage file: {FilePath}")]
     private partial void LogParsingCoverageFile(string filePath);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Failed to get git repository root. Assuming not in a git repository.")]
+    private partial void LogGitRepoRootFailure(Exception ex);
 }

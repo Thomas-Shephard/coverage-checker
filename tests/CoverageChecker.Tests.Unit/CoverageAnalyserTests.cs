@@ -91,7 +91,7 @@ public class CoverageAnalyserTests
         string filePath = "coverage.xml";
         mockFileFinder.Setup(f => f.FindFiles(ValidDirectory)).Returns([filePath]);
 
-        mockGitService.Setup(g => g.GetRepoRoot()).Throws(new Exception("Not a git repo"));
+        mockGitService.Setup(g => g.GetRepoRoot()).Throws(new GitException("Not a git repo"));
 
         mockParserFactory.Setup(f => f.CreateParser(ValidCoverageFormat, It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()))
             .Returns(mockParser.Object);
