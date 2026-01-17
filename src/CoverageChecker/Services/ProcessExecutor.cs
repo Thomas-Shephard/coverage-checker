@@ -5,7 +5,7 @@ namespace CoverageChecker.Services;
 
 internal interface IProcessExecutor
 {
-    (int ExitCode, string StandardOutput, string StandardError) Execute(string fileName, IEnumerable<string> arguments, TimeSpan? timeout = null);
+    (int ExitCode, string StandardOutput, string StandardError) Execute(string fileName, IEnumerable<string> arguments, string? workingDirectory = null, TimeSpan? timeout = null);
 }
 
 internal partial class ProcessExecutor : IProcessExecutor
@@ -24,12 +24,14 @@ internal partial class ProcessExecutor : IProcessExecutor
         _logger = logger ?? NullLogger<ProcessExecutor>.Instance;
     }
 
-    public (int ExitCode, string StandardOutput, string StandardError) Execute(string fileName, IEnumerable<string> arguments, TimeSpan? timeout = null)
+    public (int ExitCode, string StandardOutput, string StandardError) Execute(string fileName, IEnumerable<string> arguments, string? workingDirectory = null, TimeSpan? timeout = null)
     {
         using ISystemProcess process = _processFactory();
-        if (!string.IsNullOrEmpty(_workingDirectory))
+        
+        string? effectiveWorkingDirectory = workingDirectory ?? _workingDirectory;
+        if (!string.IsNullOrEmpty(effectiveWorkingDirectory))
         {
-            process.StartInfo.WorkingDirectory = _workingDirectory;
+            process.StartInfo.WorkingDirectory = effectiveWorkingDirectory;
         }
         process.StartInfo.FileName = fileName;
         foreach (string argument in arguments)
