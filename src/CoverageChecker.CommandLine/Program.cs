@@ -26,73 +26,96 @@ static async Task<int> Run(CommandLineOptions options)
         return 1;
     }
 
-    double lineCoverage = coverage.CalculateOverallCoverage();
-    double branchCoverage = coverage.CalculateOverallCoverage(CoverageType.Branch);
+    CoverageResult result = new(
+        coverage,
+        coverage.CalculateOverallCoverage(),
+        coverage.CalculateOverallCoverage(CoverageType.Branch),
+        null,
+        double.NaN,
+        double.NaN,
+        false
+    );
 
-    logger.LogLineCoverage(lineCoverage);
-    logger.LogBranchCoverage(branchCoverage);
-
-    Coverage? deltaCoverage = null;
-    bool hasDeltaChangedLines = false;
-    double deltaLineCoverage = double.NaN;
-    double deltaBranchCoverage = double.NaN;
+    logger.LogLineCoverage(result.LineCoverage);
+    logger.LogBranchCoverage(result.BranchCoverage);
 
     if (options.Delta)
     {
-        try
+        if (!TryAnalyseDeltaCoverage(coverageAnalyser, coverage, options, logger, out Coverage? deltaCoverage, out bool hasDeltaChangedLines))
         {
-            DeltaResult deltaResult = coverageAnalyser.AnalyseDeltaCoverage(options.DeltaBase, coverage);
-            deltaCoverage = deltaResult.Coverage;
-            hasDeltaChangedLines = deltaResult.HasChangedLines;
-
-            if (!hasDeltaChangedLines)
-            {
-                logger.LogNoDeltaLinesFound();
-            }
-            else
-            {
-                deltaLineCoverage = deltaCoverage.CalculateOverallCoverage();
-                deltaBranchCoverage = deltaCoverage.CalculateOverallCoverage(CoverageType.Branch);
-
-                logger.LogDeltaLineCoverage(deltaLineCoverage);
-                logger.LogDeltaBranchCoverage(deltaBranchCoverage);
-            }
-        }
-        catch (Exception ex) when (ex is GitException or ArgumentException)
-        {
-            logger.LogDeltaAnalysisFailed(ex);
             return 1;
+        }
+
+        if (hasDeltaChangedLines && deltaCoverage != null)
+        {
+            result = result with
+            {
+                DeltaCoverage = deltaCoverage,
+                HasDeltaChangedLines = true,
+                DeltaLineCoverage = deltaCoverage.CalculateOverallCoverage(),
+                DeltaBranchCoverage = deltaCoverage.CalculateOverallCoverage(CoverageType.Branch)
+            };
+
+            logger.LogDeltaLineCoverage(result.DeltaLineCoverage);
+            logger.LogDeltaBranchCoverage(result.DeltaBranchCoverage);
+        }
+        else
+        {
+            logger.LogNoDeltaLinesFound();
         }
     }
 
     if (isGitHubActions)
     {
-        await WriteGitHubSummary(coverage, lineCoverage, branchCoverage, deltaCoverage, deltaLineCoverage, deltaBranchCoverage, hasDeltaChangedLines, options, logger);
+        await WriteGitHubSummary(result, options, logger);
     }
 
-    if (options.LineThreshold > lineCoverage)
+    return CheckThresholds(result, options, logger);
+}
+
+static bool TryAnalyseDeltaCoverage(CoverageAnalyser analyser, Coverage coverage, CommandLineOptions options, ILogger logger, out Coverage? deltaCoverage, out bool hasChangedLines)
+{
+    deltaCoverage = null;
+    hasChangedLines = false;
+    try
     {
-        logger.LogLineCoverageBelowThreshold(lineCoverage, options.LineThreshold);
+        DeltaResult deltaResult = analyser.AnalyseDeltaCoverage(options.DeltaBase, coverage);
+        deltaCoverage = deltaResult.Coverage;
+        hasChangedLines = deltaResult.HasChangedLines;
+        return true;
+    }
+    catch (Exception ex) when (ex is GitException or ArgumentException)
+    {
+        logger.LogDeltaAnalysisFailed(ex);
+        return false;
+    }
+}
+
+static int CheckThresholds(CoverageResult result, CommandLineOptions options, ILogger logger)
+{
+    if (options.LineThreshold > result.LineCoverage)
+    {
+        logger.LogLineCoverageBelowThreshold(result.LineCoverage, options.LineThreshold);
         return 1;
     }
 
-    if (options.BranchThreshold > branchCoverage)
+    if (options.BranchThreshold > result.BranchCoverage)
     {
-        logger.LogBranchCoverageBelowThreshold(branchCoverage, options.BranchThreshold);
+        logger.LogBranchCoverageBelowThreshold(result.BranchCoverage, options.BranchThreshold);
         return 1;
     }
 
-    if (options.Delta && hasDeltaChangedLines && deltaCoverage != null)
+    if (options.Delta && result is { HasDeltaChangedLines: true, DeltaCoverage: not null })
     {
-        if (!double.IsNaN(deltaLineCoverage) && options.LineThreshold > deltaLineCoverage)
+        if (!double.IsNaN(result.DeltaLineCoverage) && options.LineThreshold > result.DeltaLineCoverage)
         {
-            logger.LogDeltaLineCoverageBelowThreshold(deltaLineCoverage, options.LineThreshold);
+            logger.LogDeltaLineCoverageBelowThreshold(result.DeltaLineCoverage, options.LineThreshold);
             return 1;
         }
 
-        if (!double.IsNaN(deltaBranchCoverage) && options.BranchThreshold > deltaBranchCoverage)
+        if (!double.IsNaN(result.DeltaBranchCoverage) && options.BranchThreshold > result.DeltaBranchCoverage)
         {
-            logger.LogDeltaBranchCoverageBelowThreshold(deltaBranchCoverage, options.BranchThreshold);
+            logger.LogDeltaBranchCoverageBelowThreshold(result.DeltaBranchCoverage, options.BranchThreshold);
             return 1;
         }
     }
@@ -144,7 +167,7 @@ static bool TryAnalyseCoverage(CoverageAnalyser coverageAnalyser, ILogger logger
     return false;
 }
 
-static async Task WriteGitHubSummary(Coverage coverage, double lineCoverage, double branchCoverage, Coverage? deltaCoverage, double deltaLineCoverage, double deltaBranchCoverage, bool hasDeltaChangedLines, CommandLineOptions options, ILogger logger)
+static async Task WriteGitHubSummary(CoverageResult result, CommandLineOptions options, ILogger logger)
 {
     string? summaryPath = Environment.GetEnvironmentVariable("GITHUB_STEP_SUMMARY");
     if (string.IsNullOrEmpty(summaryPath)) return;
@@ -156,15 +179,15 @@ static async Task WriteGitHubSummary(Coverage coverage, double lineCoverage, dou
         summary.AppendLine();
         summary.AppendLine("| Metric | Current | Threshold | Status |");
         summary.AppendLine("| :--- | :---: | :---: | :---: |");
-        summary.AppendLine(FormatMetricRow("Line Coverage", lineCoverage, options.LineThreshold));
-        summary.AppendLine(FormatMetricRow("Branch Coverage", branchCoverage, options.BranchThreshold));
+        summary.AppendLine(FormatMetricRow("Line Coverage", result.LineCoverage, options.LineThreshold));
+        summary.AppendLine(FormatMetricRow("Branch Coverage", result.BranchCoverage, options.BranchThreshold));
 
         if (options.Delta)
         {
-            if (hasDeltaChangedLines)
+            if (result.HasDeltaChangedLines)
             {
-                summary.AppendLine(FormatMetricRow("Delta Line Coverage", deltaLineCoverage, options.LineThreshold));
-                summary.AppendLine(FormatMetricRow("Delta Branch Coverage", deltaBranchCoverage, options.BranchThreshold));
+                summary.AppendLine(FormatMetricRow("Delta Line Coverage", result.DeltaLineCoverage, options.LineThreshold));
+                summary.AppendLine(FormatMetricRow("Delta Branch Coverage", result.DeltaBranchCoverage, options.BranchThreshold));
             }
             else
             {
@@ -172,16 +195,16 @@ static async Task WriteGitHubSummary(Coverage coverage, double lineCoverage, dou
             }
         }
 
-        if (ShouldShowBreakdown(lineCoverage, branchCoverage))
+        if (ShouldShowBreakdown(result.LineCoverage, result.BranchCoverage))
         {
-            summary.Append(GetFileBreakdown(coverage));
+            summary.Append(GetFileBreakdown(result.OverallCoverage));
         }
 
-        if (deltaCoverage != null && hasDeltaChangedLines && ShouldShowBreakdown(deltaLineCoverage, deltaBranchCoverage))
+        if (result is { DeltaCoverage: not null, HasDeltaChangedLines: true } && ShouldShowBreakdown(result.DeltaLineCoverage, result.DeltaBranchCoverage))
         {
             summary.AppendLine();
             summary.AppendLine("#### Delta File Breakdown");
-            summary.Append(GetFileBreakdown(deltaCoverage));
+            summary.Append(GetFileBreakdown(result.DeltaCoverage));
         }
 
         await File.AppendAllTextAsync(summaryPath, summary.ToString());

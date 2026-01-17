@@ -17,11 +17,17 @@ internal partial class GitService : IGitService
         _executor = executor;
     }
 
-    public GitService() : this(new ProcessExecutor())
-    {
-    }
+    public GitService() : this(new ProcessExecutor()) { }
 
     public IDictionary<string, HashSet<int>> GetChangedLines(string @base, string head = "HEAD")
+    {
+        ValidateGitReferences(@base, head);
+        string repoRoot = GetRepoRoot();
+        string diffOutput = ExecuteGitDiff(@base, head);
+        return ParseGitDiff(diffOutput, repoRoot);
+    }
+
+    private static void ValidateGitReferences(string @base, string head)
     {
         if (@base.StartsWith('-'))
         {
@@ -32,10 +38,10 @@ internal partial class GitService : IGitService
         {
             throw new ArgumentException("Head reference cannot start with '-'.", nameof(head));
         }
+    }
 
-        string repoRoot = GetRepoRoot();
-        Dictionary<string, HashSet<int>> changedLines = [];
-
+    private string ExecuteGitDiff(string @base, string head)
+    {
         // -c core.quotepath=false: Ensure non-ASCII chars are output as UTF-8 bytes, not octal escapes.
         // --src-prefix=a/ --dst-prefix=b/: Force prefixes regardless of user config.
         string[] arguments =
@@ -59,46 +65,72 @@ internal partial class GitService : IGitService
             throw new GitException($"Git diff failed with exit code {result.exitCode}: {result.stderr}");
         }
 
+        return result.stdout;
+    }
+
+    private static Dictionary<string, HashSet<int>> ParseGitDiff(string diffOutput, string repoRoot)
+    {
+        Dictionary<string, HashSet<int>> changedLines = [];
         string? currentFile = null;
 
-        using StringReader reader = new(result.stdout);
+        using StringReader reader = new(diffOutput);
         while (reader.ReadLine() is { } line)
         {
-            if (line.StartsWith("diff --git "))
+            if (TryUpdateCurrentFile(line, repoRoot, changedLines, out string? newFile))
             {
-                currentFile = null;
-            }
-
-            Match fileMatch = FileHeaderRegex.Match(line);
-            if (fileMatch.Success)
-            {
-                string relativePath = fileMatch.Groups[1].Success
-                    ? fileMatch.Groups[1].Value
-                    : UnescapeGitPath(fileMatch.Groups[2].Value);
-
-                currentFile = PathUtils.GetNormalizedFullPath(Path.Combine(repoRoot, relativePath));
-
-                if (!changedLines.ContainsKey(currentFile))
-                {
-                    changedLines[currentFile] = [];
-                }
+                currentFile = newFile;
                 continue;
             }
 
-            if (currentFile == null) continue;
-
-            Match diffMatch = DiffHeaderRegex.Match(line);
-            if (!diffMatch.Success) continue;
-            int startLine = int.Parse(diffMatch.Groups[1].Value, CultureInfo.InvariantCulture);
-            int lineCount = diffMatch.Groups[2].Success ? int.Parse(diffMatch.Groups[2].Value, CultureInfo.InvariantCulture) : 1;
-
-            for (int i = 0; i < lineCount; i++)
+            if (currentFile != null)
             {
-                changedLines[currentFile].Add(startLine + i);
+                ProcessDiffLine(line, currentFile, changedLines);
             }
         }
 
         return changedLines;
+    }
+
+    private static bool TryUpdateCurrentFile(string line, string repoRoot, Dictionary<string, HashSet<int>> changedLines, out string? newFile)
+    {
+        if (line.StartsWith("diff --git "))
+        {
+            newFile = null;
+            return true;
+        }
+
+        Match fileMatch = FileHeaderRegex.Match(line);
+        if (fileMatch.Success)
+        {
+            string relativePath = fileMatch.Groups[1].Success
+                ? fileMatch.Groups[1].Value
+                : UnescapeGitPath(fileMatch.Groups[2].Value);
+
+            newFile = PathUtils.GetNormalizedFullPath(Path.Combine(repoRoot, relativePath));
+
+            if (!changedLines.ContainsKey(newFile))
+            {
+                changedLines[newFile] = [];
+            }
+            return true;
+        }
+
+        newFile = null;
+        return false;
+    }
+
+    private static void ProcessDiffLine(string line, string currentFile, Dictionary<string, HashSet<int>> changedLines)
+    {
+        Match diffMatch = DiffHeaderRegex.Match(line);
+        if (!diffMatch.Success)
+            return;
+        int startLine = int.Parse(diffMatch.Groups[1].Value, CultureInfo.InvariantCulture);
+        int lineCount = diffMatch.Groups[2].Success ? int.Parse(diffMatch.Groups[2].Value, CultureInfo.InvariantCulture) : 1;
+
+        for (int i = 0; i < lineCount; i++)
+        {
+            changedLines[currentFile].Add(startLine + i);
+        }
     }
 
     public string GetRepoRoot()
@@ -130,35 +162,7 @@ internal partial class GitService : IGitService
             char c = path[i];
             if (c == '\\' && i + 1 < path.Length)
             {
-                char next = path[i + 1];
-                if (IsOctal(next) && i + 3 < path.Length && IsOctal(path[i + 2]) && IsOctal(path[i + 3]))
-                {
-                    List<byte> bytes = [];
-                    while (i + 3 < path.Length && path[i] == '\\' && IsOctal(path[i + 1]) && IsOctal(path[i + 2]) && IsOctal(path[i + 3]))
-                    {
-                        int val = ((path[i + 1] - '0') << 6) | ((path[i + 2] - '0') << 3) | (path[i + 3] - '0');
-                        bytes.Add((byte)val);
-                        i += 4;
-                    }
-                    sb.Append(Encoding.UTF8.GetString(bytes.ToArray()));
-                    continue;
-                }
-
-                sb.Append(next switch
-                {
-                    '"' => '"',
-                    '\\' => '\\',
-                    'n' => '\n',
-                    't' => '\t',
-                    'b' => '\b',
-                    'f' => '\f',
-                    'r' => '\r',
-                    'v' => '\v',
-                    'a' => '\a',
-                    'e' => '\u001b',
-                    _ => next
-                });
-                i += 2;
+                i = HandleEscapedCharacter(path, i, sb);
             }
             else
             {
@@ -168,6 +172,47 @@ internal partial class GitService : IGitService
         }
         return sb.ToString();
     }
+
+    private static int HandleEscapedCharacter(string path, int index, StringBuilder sb)
+    {
+        char next = path[index + 1];
+        if (IsOctal(next) && index + 3 < path.Length && IsOctal(path[index + 2]) && IsOctal(path[index + 3]))
+        {
+            return DecodeOctalSequence(path, index, sb);
+        }
+
+        sb.Append(DecodeEscapeChar(next));
+        return index + 2;
+    }
+
+    private static int DecodeOctalSequence(string path, int index, StringBuilder sb)
+    {
+        List<byte> bytes = [];
+        int i = index;
+        while (i + 3 < path.Length && path[i] == '\\' && IsOctal(path[i + 1]) && IsOctal(path[i + 2]) && IsOctal(path[i + 3]))
+        {
+            int val = ((path[i + 1] - '0') << 6) | ((path[i + 2] - '0') << 3) | (path[i + 3] - '0');
+            bytes.Add((byte)val);
+            i += 4;
+        }
+        sb.Append(Encoding.UTF8.GetString(bytes.ToArray()));
+        return i;
+    }
+
+    private static char DecodeEscapeChar(char c) => c switch
+    {
+        '"' => '"',
+        '\\' => '\\',
+        'n' => '\n',
+        't' => '\t',
+        'b' => '\b',
+        'f' => '\f',
+        'r' => '\r',
+        'v' => '\v',
+        'a' => '\a',
+        'e' => '\u001b',
+        _ => c
+    };
 
     private static bool IsOctal(char c) => c is >= '0' and <= '7';
 

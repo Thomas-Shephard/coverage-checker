@@ -17,5 +17,26 @@ internal class SystemProcess : ISystemProcess
     public bool WaitForExit(int milliseconds) => _process.WaitForExit(milliseconds);
     public void Kill() => _process.Kill();
 
-    public void Dispose() => _process.Dispose();
+    private bool _disposed;
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        if (disposing)
+        {
+            _process.Dispose();
+        }
+
+        _disposed = true;
+    }
 }
