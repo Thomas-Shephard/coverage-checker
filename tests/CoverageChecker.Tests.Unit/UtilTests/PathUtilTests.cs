@@ -40,11 +40,14 @@ public class PathUtilTests
     [Test]
     public void GetNormalizedFullPath_ResolvesRelativePathAgainstBase()
     {
-        string basePath = @"C:\base";
+        bool isWindows = Path.DirectorySeparatorChar == '\\';
+        string basePath = isWindows ? @"C:\base" : "/base";
         string relativePath = "subdir/file.cs";
+        string expected = isWindows ? "C:/base/subdir/file.cs" : "/base/subdir/file.cs";
+
         string result = PathUtils.GetNormalizedFullPath(relativePath, basePath);
 
-        Assert.That(result, Is.EqualTo("C:/base/subdir/file.cs"));
+        Assert.That(result, Is.EqualTo(expected));
     }
 
     [Test]

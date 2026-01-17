@@ -118,7 +118,7 @@ internal partial class GitService : IGitService
             throw new GitException($"Failed to get git repo root: {result.stderr}");
         }
 
-        return result.stdout.Trim();
+        return PathUtils.GetNormalizedFullPath(result.stdout.Trim());
     }
 
     private static string UnescapeGitPath(string path)
@@ -138,7 +138,8 @@ internal partial class GitService : IGitService
                     List<byte> bytes = [];
                     while (i + 3 < path.Length && path[i] == '\\' && IsOctal(path[i + 1]) && IsOctal(path[i + 2]) && IsOctal(path[i + 3]))
                     {
-                        bytes.Add((byte)Convert.ToInt32(path.Substring(i + 1, 3), 8));
+                        int val = ((path[i + 1] - '0') << 6) | ((path[i + 2] - '0') << 3) | (path[i + 3] - '0');
+                        bytes.Add((byte)val);
                         i += 4;
                     }
                     sb.Append(Encoding.UTF8.GetString(bytes.ToArray()));
@@ -174,6 +175,6 @@ internal partial class GitService : IGitService
 
     [GeneratedRegex("""^@@\s*-\d+(?:,\d+)?\s+\+(\d+)(?:,(\d+))?\s*@@""", RegexOptions.Compiled)]
     private static partial Regex DiffHeaderGeneratedRegex();
-    [GeneratedRegex("""^\+\+\+\s+(?:b/((?:(?![\t\n]).)*?)|"b/((?:[^"\\]|\\.)+)")(?:\s+\d{4}-\d{2}-\d{2}.*)?$""", RegexOptions.Compiled)]
+    [GeneratedRegex("""^\+\+\+\s+(?:b/([^\s]*)|"b/((?:[^"\\]|\\.)+)")(?:\s+\d{4}-\d{2}-\d{2}.*)?$""", RegexOptions.Compiled)]
     private static partial Regex FileHeaderGeneratedRegex();
 }

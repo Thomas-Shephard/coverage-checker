@@ -9,7 +9,7 @@ namespace CoverageChecker.Tests.Unit;
 public class CoverageAnalyserTests
 {
     private const CoverageFormat ValidCoverageFormat = CoverageFormat.Cobertura;
-    private const string ValidDirectory = "C:/";
+    private static readonly string ValidDirectory = Path.GetTempPath();
     private static readonly string[] ValidGlobPatterns = ["**/*.xml"];
 
     [Test]

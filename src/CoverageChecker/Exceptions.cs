@@ -43,3 +43,11 @@ public class GitException : CoverageException
     internal GitException(string message) : base(message) { }
     internal GitException(string message, Exception innerException) : base(message, innerException) { }
 }
+
+/// <summary>
+/// Thrown when an error occurs while executing a system process.
+/// </summary>
+public class ProcessExecutionException : CoverageException
+{
+    internal ProcessExecutionException(string message) : base(message) { }
+}

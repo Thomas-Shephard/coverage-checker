@@ -9,7 +9,7 @@ internal class DeltaCoverageService(ICoverageMergeService mergeService) : IDelta
         Coverage resultCoverage = new();
         bool hasChangedLines = false;
 
-        ILookup<string, FileCoverage> coverageFilesByPath = coverage.Files.ToLookup(f => f.Path, StringComparer.OrdinalIgnoreCase);
+        ILookup<string, FileCoverage> coverageFilesByPath = coverage.Files.ToLookup(f => f.Path, StringComparer.Ordinal);
 
         foreach ((string gitPath, HashSet<int> changedLineNumbers) in changedLines)
         {

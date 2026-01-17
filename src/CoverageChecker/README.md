@@ -28,6 +28,9 @@ using CoverageChecker;
 
 CoverageAnalyser coverageAnalyser = new(CoverageFormat.Cobertura, ".", "**/coverage.cobertura.xml");
 Coverage coverage = coverageAnalyser.AnalyseCoverage();
+
+// Analyse only changed lines compared to origin/main
+DeltaResult delta = coverageAnalyser.AnalyseDeltaCoverage("origin/main", coverage);
 ```
 
 ## Options
@@ -47,6 +50,11 @@ and either one of the following:
 
 The `CoverageAnalyser` class returns a `Coverage` object, which contains all the code coverage metrics. The `Coverage`
 object can contain multiple `FileCoverage` objects, which can each contain multiple `LineCoverage` objects.
+
+### DeltaResult Object
+
+- `Coverage` property: A `Coverage` object containing only the filtered changed lines.
+- `HasChangedLines` property: Whether any changed lines were found in the coverage report.
 
 ### Coverage Object
 
