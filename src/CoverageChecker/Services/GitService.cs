@@ -123,8 +123,6 @@ internal partial class GitService : IGitService
 
     private static string UnescapeGitPath(string path)
     {
-        if (string.IsNullOrEmpty(path)) return path;
-
         StringBuilder sb = new();
         int i = 0;
         while (i < path.Length)
@@ -175,6 +173,6 @@ internal partial class GitService : IGitService
 
     [GeneratedRegex("""^@@\s*-\d+(?:,\d+)?\s+\+(\d+)(?:,(\d+))?\s*@@""", RegexOptions.Compiled)]
     private static partial Regex DiffHeaderGeneratedRegex();
-    [GeneratedRegex("""^\+\+\+\s+(?:b/([^\s]*)|"b/((?:[^"\\]|\\.)+)")(?:\s+\d{4}-\d{2}-\d{2}.*)?$""", RegexOptions.Compiled)]
+    [GeneratedRegex("""^\+\+\+\s+(?:b/([^\s]*)|"b/((?>[^"\\]|\\.)+)")(?:\s+\d{4}-\d{2}-\d{2}.*)?$""", RegexOptions.Compiled)]
     private static partial Regex FileHeaderGeneratedRegex();
 }

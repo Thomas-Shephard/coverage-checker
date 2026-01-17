@@ -82,4 +82,32 @@ public class ProcessExecutorTests
 
         Assert.That(_mockProcess.Object.StartInfo.WorkingDirectory, Is.EqualTo(workingDir));
     }
+
+    [Test]
+    public void Execute_ShouldLogWarning_WhenKillFailsAfterTimeout()
+    {
+        _mockProcess.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(false);
+        _mockProcess.Setup(p => p.Kill()).Throws(new Exception("Kill failed"));
+
+        // Act
+        Assert.Throws<ProcessExecutionException>(() => _sut.Execute("git", ["status"], TimeSpan.FromSeconds(1)));
+    }
+
+    [Test]
+    public void Execute_ShouldUsePluralSeconds_WhenTimeoutIsGreaterThanOne()
+    {
+        _mockProcess.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(false);
+        
+        ProcessExecutionException? ex = Assert.Throws<ProcessExecutionException>(() => _sut.Execute("git", ["status"], TimeSpan.FromSeconds(2)));
+        Assert.That(ex.Message, Does.Contain("2 seconds"));
+    }
+
+    [Test]
+    public void Execute_ShouldUseDefaultTimeout_WhenTimeoutIsNull()
+    {
+        _mockProcess.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(false);
+
+        ProcessExecutionException? ex = Assert.Throws<ProcessExecutionException>(() => _sut.Execute("git", ["status"]));
+        Assert.That(ex.Message, Does.Contain("30 seconds"));
+    }
 }

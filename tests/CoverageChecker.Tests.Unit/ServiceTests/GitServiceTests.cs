@@ -457,4 +457,103 @@ public class GitServiceTests
         Assert.That(result, Contains.Key(expectedPath));
         Assert.That(result[expectedPath], Is.EquivalentTo((int[])[1]));
     }
+
+    [Test]
+    public void GetChangedLines_ShouldHandleVariousEscapeSequences()
+    {
+        _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
+        // Git escapes: \t, \n, \b, \f, \r, \v, \a, \e (escape), \\, invalid \z, non-octal \8, partial octal \3 (end), partial octal \34z
+        _mockExecutor.DiffOutput = """
+            +++ "b/tab\tnewline\nbackspace\bformfeed\freturn\rvertical\vbell\aescape\eunknown\znum\8end\3mid\34z"
+            @@ -1 +1 @@
+            +change
+            """;
+
+        IDictionary<string, HashSet<int>> result = _sut.GetChangedLines("main");
+
+        Assert.That(result, Is.Not.Empty);
+        string path = result.Keys.First();
+        
+        // Verify path contains decoded characters
+        Assert.That(path, Does.Contain("\t"), "Tab");
+        Assert.That(path, Does.Contain("\n"), "Newline");
+        Assert.That(path, Does.Contain("\b"), "Backspace");
+        Assert.That(path, Does.Contain("\f"), "Formfeed");
+        Assert.That(path, Does.Contain("\r"), "CarriageReturn");
+        Assert.That(path, Does.Contain("\v"), "VerticalTab");
+        Assert.That(path, Does.Contain("\a"), "Bell");
+        Assert.That(path, Does.Contain("\u001b"), "Escape");
+        Assert.That(path, Does.Contain("unknownz"), "Unknown escape should strip backslash");
+        Assert.That(path, Does.Contain("num8"), "Non-octal digit should be literal");
+        Assert.That(path, Does.Contain("end3"), "Partial octal at end should be literal");
+        Assert.That(path, Does.Contain("mid34z"), "Partial octal mid-string should be literal");
+    }
+
+    [Test]
+    public void GetChangedLines_ShouldHandleCompactHunkHeader()
+    {
+        _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
+        // Compact header @@ -1 +1 @@ implies 1 line context/change
+        _mockExecutor.DiffOutput = """
+            +++ b/file.cs
+            @@ -1 +1 @@
+            +change
+            """;
+
+        IDictionary<string, HashSet<int>> result = _sut.GetChangedLines("main");
+
+        string expectedPath = PathUtils.GetNormalizedFullPath(Path.Combine(_mockExecutor.RepoRoot, "file.cs"));
+        Assert.That(result, Contains.Key(expectedPath));
+        Assert.That(result[expectedPath], Is.EquivalentTo((int[])[1]));
+    }
+
+    [Test]
+    public void DefaultConstructor_ShouldInitializeCorrectly()
+    {
+        GitService sut = new();
+        Assert.That(sut, Is.Not.Null);
+    }
+
+    [Test]
+    public void GetChangedLines_ShouldHandleSameFileAppearingTwice()
+    {
+        _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
+        // Same file appearing twice
+        _mockExecutor.DiffOutput = """
+            +++ b/file.cs
+            @@ -1 +1 @@
+            +change1
+            +++ b/file.cs
+            @@ -5 +5 @@
+            +change2
+            """;
+
+        IDictionary<string, HashSet<int>> result = _sut.GetChangedLines("main");
+
+        string expectedPath = PathUtils.GetNormalizedFullPath(Path.Combine(_mockExecutor.RepoRoot, "file.cs"));
+        Assert.That(result, Contains.Key(expectedPath));
+        Assert.That(result[expectedPath], Is.EquivalentTo((int[])[1, 5]));
+    }
+
+    [Test]
+    public void GetChangedLines_ShouldThrowGitException_WhenGitDiffFailsWithWin32Exception()
+    {
+        Mock<IProcessExecutor> mockExecutor = new();
+        // Setup GetRepoRoot to succeed
+        mockExecutor.Setup(e => e.Execute("git", It.Is<IEnumerable<string>>(a => a.Contains("rev-parse")), It.IsAny<TimeSpan?>()))
+                    .Returns((0, "/repo", ""));
+        
+        // Setup diff to throw Win32Exception
+        mockExecutor.Setup(e => e.Execute("git", It.Is<IEnumerable<string>>(a => a.Contains("diff")), It.IsAny<TimeSpan?>()))
+                    .Throws(new System.ComponentModel.Win32Exception(2, "The system cannot find the file specified"));
+
+        GitService sut = new(mockExecutor.Object);
+
+        GitException? ex = Assert.Throws<GitException>(() => sut.GetChangedLines("main"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(ex.Message, Does.Contain("Failed to execute 'git'"));
+            Assert.That(ex.InnerException, Is.TypeOf<System.ComponentModel.Win32Exception>());
+        });
+    }
 }

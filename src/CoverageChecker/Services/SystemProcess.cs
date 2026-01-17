@@ -1,7 +1,9 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 namespace CoverageChecker.Services;
 
+[ExcludeFromCodeCoverage]
 internal class SystemProcess : ISystemProcess
 {
     private readonly Process _process = new();
