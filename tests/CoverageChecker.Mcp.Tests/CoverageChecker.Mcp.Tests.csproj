@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\CoverageChecker.Mcp\CoverageChecker.Mcp.csproj" />
+    </ItemGroup>
+
+</Project>

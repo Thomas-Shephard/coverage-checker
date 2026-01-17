@@ -14,7 +14,7 @@ public class GitServiceTests
         public int DiffExitCode { get; set; }
         public string Stderr { get; set; } = "";
 
-        public (int ExitCode, string StandardOutput, string StandardError) Execute(string fileName, IEnumerable<string> arguments, TimeSpan? timeout = null)
+        public (int ExitCode, string StandardOutput, string StandardError) Execute(string fileName, IEnumerable<string> arguments, string? workingDirectory = null, TimeSpan? timeout = null)
         {
             List<string> argsList = arguments.ToList();
 
@@ -218,7 +218,7 @@ public class GitServiceTests
     public void GetChangedLines_ShouldThrowGitException_WhenGitNotFound()
     {
         Mock<IProcessExecutor> mockExecutor = new();
-        mockExecutor.Setup(e => e.Execute(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<TimeSpan?>()))
+        mockExecutor.Setup(e => e.Execute(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string?>(), It.IsAny<TimeSpan?>()))
                     .Throws(new System.ComponentModel.Win32Exception(2, "The system cannot find the file specified"));
 
         GitService sut = new(mockExecutor.Object);
@@ -235,7 +235,7 @@ public class GitServiceTests
     public void GetRepoRoot_ShouldThrowGitException_WhenGitNotFound()
     {
         Mock<IProcessExecutor> mockExecutor = new();
-        mockExecutor.Setup(e => e.Execute(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<TimeSpan?>()))
+        mockExecutor.Setup(e => e.Execute(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string?>(), It.IsAny<TimeSpan?>()))
                     .Throws(new System.ComponentModel.Win32Exception(2, "The system cannot find the file specified"));
 
         GitService sut = new(mockExecutor.Object);
@@ -540,11 +540,11 @@ public class GitServiceTests
     {
         Mock<IProcessExecutor> mockExecutor = new();
         // Setup GetRepoRoot to succeed
-        mockExecutor.Setup(e => e.Execute("git", It.Is<IEnumerable<string>>(a => a.Contains("rev-parse")), It.IsAny<TimeSpan?>()))
+        mockExecutor.Setup(e => e.Execute("git", It.Is<IEnumerable<string>>(a => a.Contains("rev-parse")), It.IsAny<string?>(), It.IsAny<TimeSpan?>()))
                     .Returns((0, "/repo", ""));
         
         // Setup diff to throw Win32Exception
-        mockExecutor.Setup(e => e.Execute("git", It.Is<IEnumerable<string>>(a => a.Contains("diff")), It.IsAny<TimeSpan?>()))
+        mockExecutor.Setup(e => e.Execute("git", It.Is<IEnumerable<string>>(a => a.Contains("diff")), It.IsAny<string?>(), It.IsAny<TimeSpan?>()))
                     .Throws(new System.ComponentModel.Win32Exception(2, "The system cannot find the file specified"));
 
         GitService sut = new(mockExecutor.Object);

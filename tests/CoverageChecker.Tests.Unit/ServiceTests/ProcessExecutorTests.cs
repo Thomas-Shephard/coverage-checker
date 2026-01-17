@@ -47,7 +47,7 @@ public class ProcessExecutorTests
         string[] arguments = ["status"];
         TimeSpan timeout = TimeSpan.FromSeconds(1);
 
-        ProcessExecutionException? ex = Assert.Throws<ProcessExecutionException>(() => _sut.Execute(fileName, arguments, timeout));
+        ProcessExecutionException? ex = Assert.Throws<ProcessExecutionException>(() => _sut.Execute(fileName, arguments, null, timeout));
         Assert.That(ex.Message, Does.Contain("timed out after 1 second"));
         _mockProcess.Verify(p => p.Kill(), Times.Once);
     }
@@ -55,9 +55,10 @@ public class ProcessExecutorTests
     [Test]
     public void Execute_ShouldReturnOutput_WhenProcessFinishesInTime()
     {
-        _mockProcess.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(true);
+        // Arrange
+        _mockProcess.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(true); // Simulate success
         _mockProcess.SetupGet(p => p.ExitCode).Returns(0);
-
+        
         using (StreamWriter writer = new(_standardOutput, leaveOpen: true))
         {
             writer.Write("Hello World");
@@ -69,8 +70,10 @@ public class ProcessExecutorTests
         string[] arguments = ["status"];
         TimeSpan timeout = TimeSpan.FromSeconds(5);
 
-        (int ExitCode, string StandardOutput, string StandardError) result = _sut.Execute(fileName, arguments, timeout);
+        // Act
+        (int ExitCode, string StandardOutput, string StandardError) result = _sut.Execute(fileName, arguments, null, timeout);
 
+        // Assert
         Assert.Multiple(() =>
         {
             Assert.That(result.ExitCode, Is.EqualTo(0));
@@ -81,14 +84,33 @@ public class ProcessExecutorTests
     [Test]
     public void Execute_ShouldSetWorkingDirectory_WhenProvided()
     {
+        // Arrange
         string workingDir = "C:\\Temp";
-        _sut = new ProcessExecutor(() => _mockProcess.Object, workingDir);
+        _sut = new ProcessExecutor(() => _mockProcess.Object, null);
         
         _mockProcess.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(true);
 
-        _sut.Execute("git", ["status"]);
+        // Act - Testing method-level working directory
+        _sut.Execute("git", ["status"], workingDir, null);
 
+        // Assert
         Assert.That(_mockProcess.Object.StartInfo.WorkingDirectory, Is.EqualTo(workingDir));
+    }
+
+    [Test]
+    public void Execute_ShouldPrioritizeMethodWorkingDirectory()
+    {
+        // Arrange
+        string constructorDir = "C:\\Old";
+        string methodDir = "C:\\New";
+        _sut = new ProcessExecutor(() => _mockProcess.Object, constructorDir);
+        _mockProcess.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(true);
+
+        // Act
+        _sut.Execute("git", ["status"], methodDir, null);
+
+        // Assert
+        Assert.That(_mockProcess.Object.StartInfo.WorkingDirectory, Is.EqualTo(methodDir));
     }
 
     [Test]
@@ -98,7 +120,7 @@ public class ProcessExecutorTests
         _mockProcess.Setup(p => p.Kill()).Throws(new Exception("Kill failed"));
 
         // Act
-        Assert.Throws<ProcessExecutionException>(() => _sut.Execute("git", ["status"], TimeSpan.FromSeconds(1)));
+        Assert.Throws<ProcessExecutionException>(() => _sut.Execute("git", ["status"], null, TimeSpan.FromSeconds(1)));
     }
 
     [Test]
@@ -106,7 +128,7 @@ public class ProcessExecutorTests
     {
         _mockProcess.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(false);
         
-        ProcessExecutionException? ex = Assert.Throws<ProcessExecutionException>(() => _sut.Execute("git", ["status"], TimeSpan.FromSeconds(2)));
+        ProcessExecutionException? ex = Assert.Throws<ProcessExecutionException>(() => _sut.Execute("git", ["status"], null, TimeSpan.FromSeconds(2)));
         Assert.That(ex.Message, Does.Contain("2 seconds"));
     }
 
@@ -115,7 +137,7 @@ public class ProcessExecutorTests
     {
         _mockProcess.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(false);
 
-        ProcessExecutionException? ex = Assert.Throws<ProcessExecutionException>(() => _sut.Execute("git", ["status"]));
+        ProcessExecutionException? ex = Assert.Throws<ProcessExecutionException>(() => _sut.Execute("git", ["status"], null, null));
         Assert.That(ex.Message, Does.Contain("30 seconds"));
     }
 }
