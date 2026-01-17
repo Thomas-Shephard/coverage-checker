@@ -25,6 +25,24 @@ internal static partial class ProgramLogs
     [LoggerMessage(Level = LogLevel.Error, Message = "Branch coverage of {BranchCoverage:P2} is below the required threshold of {BranchThreshold:P2}")]
     public static partial void LogBranchCoverageBelowThreshold(this ILogger logger, double branchCoverage, double branchThreshold);
 
+    [LoggerMessage(Level = LogLevel.Error, Message = "Delta line coverage of {LineCoverage:P2} is below the required threshold of {LineThreshold:P2}")]
+    public static partial void LogDeltaLineCoverageBelowThreshold(this ILogger logger, double lineCoverage, double lineThreshold);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Delta branch coverage of {BranchCoverage:P2} is below the required threshold of {BranchThreshold:P2}")]
+    public static partial void LogDeltaBranchCoverageBelowThreshold(this ILogger logger, double branchCoverage, double branchThreshold);
+
     [LoggerMessage(Level = LogLevel.Information, Message = "The coverage threshold has been met.")]
     public static partial void LogThresholdMet(this ILogger logger);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Delta line coverage: {LineCoverage:P2}.")]
+    public static partial void LogDeltaLineCoverage(this ILogger logger, double lineCoverage);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Delta branch coverage: {BranchCoverage:P2}.")]
+    public static partial void LogDeltaBranchCoverage(this ILogger logger, double branchCoverage);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "No changed lines found for delta coverage.")]
+    public static partial void LogNoDeltaLinesFound(this ILogger logger);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to perform delta coverage analysis.")]
+    public static partial void LogDeltaAnalysisFailed(this ILogger logger, Exception exception);
 }

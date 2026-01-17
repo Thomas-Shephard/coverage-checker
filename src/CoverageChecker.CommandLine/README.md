@@ -26,6 +26,10 @@ The CoverageChecker.CommandLine tool can be invoked by running `coveragechecker`
 | `-g`, `--glob-patterns`    | The glob pattern(s) to use to search for the coverage file(s).        | No       | `*.xml`               |
 | `-l`, `--line-threshold`   | The line coverage threshold. Default: 80                              | No       | 80                    |
 | `-b`, `--branch-threshold` | The branch coverage threshold. Default: 80                            | No       | 80                    |
+| `--delta`                  | Calculate coverage for changed lines only.                            | No       | `false`               |
+| `--delta-base`             | Base branch or commit to compare against for delta coverage.          | No       | `origin/main`         |
+
+The `--delta` and `--delta-base` options require Git to be installed and available on the system `PATH`.
 
 ## Output
 

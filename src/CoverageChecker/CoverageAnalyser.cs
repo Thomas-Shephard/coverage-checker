@@ -16,6 +16,8 @@ public partial class CoverageAnalyser
     private readonly string _directory;
     private readonly IFileFinder _fileFinder;
     private readonly IParserFactory _parserFactory;
+    private readonly IGitService _gitService;
+    private readonly IDeltaCoverageService _deltaCoverageService;
     private readonly ILogger<CoverageAnalyser> _logger;
     private readonly ILoggerFactory _loggerFactory;
 
@@ -46,14 +48,20 @@ public partial class CoverageAnalyser
     /// <param name="loggerFactory">The logger factory to use for logging.</param>
     public CoverageAnalyser(CoverageFormat coverageFormat, string directory, Matcher matcher, ILoggerFactory? loggerFactory = null) : this(coverageFormat, directory, new FileFinder(matcher, loggerFactory?.CreateLogger<FileFinder>()), loggerFactory) { }
 
-    internal CoverageAnalyser(CoverageFormat coverageFormat, string directory, IFileFinder fileFinder, ILoggerFactory? loggerFactory = null) : this(coverageFormat, directory, fileFinder, new ParserFactory(new CoverageMergeService(loggerFactory?.CreateLogger<CoverageMergeService>())), loggerFactory) { }
+    internal CoverageAnalyser(CoverageFormat coverageFormat, string directory, IFileFinder fileFinder, ILoggerFactory? loggerFactory = null)
+        : this(coverageFormat, directory, fileFinder, loggerFactory, new CoverageMergeService(loggerFactory?.CreateLogger<CoverageMergeService>())) { }
 
-    internal CoverageAnalyser(CoverageFormat coverageFormat, string directory, IFileFinder fileFinder, IParserFactory parserFactory, ILoggerFactory? loggerFactory = null)
+    private CoverageAnalyser(CoverageFormat coverageFormat, string directory, IFileFinder fileFinder, ILoggerFactory? loggerFactory, ICoverageMergeService mergeService)
+        : this(coverageFormat, directory, fileFinder, new ParserFactory(mergeService), new GitService(new ProcessExecutor(directory)), new DeltaCoverageService(mergeService), loggerFactory) { }
+
+    internal CoverageAnalyser(CoverageFormat coverageFormat, string directory, IFileFinder fileFinder, IParserFactory parserFactory, IGitService gitService, IDeltaCoverageService deltaCoverageService, ILoggerFactory? loggerFactory = null)
     {
         _coverageFormat = coverageFormat;
         _directory = directory;
         _fileFinder = fileFinder;
         _parserFactory = parserFactory;
+        _gitService = gitService;
+        _deltaCoverageService = deltaCoverageService;
         _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
         _logger = _loggerFactory.CreateLogger<CoverageAnalyser>();
     }
@@ -73,16 +81,42 @@ public partial class CoverageAnalyser
 
         LogFoundCoverageFiles(filePaths.Length);
 
+        string? rootDirectory = null;
+        try
+        {
+            rootDirectory = _gitService.GetRepoRoot();
+        }
+        catch (GitException ex)
+        {
+            LogGitRepoRootFailure(ex);
+            // Fallback to current directory if not in a git repo
+        }
+
         Coverage coverage = new();
         ICoverageParser parser = _parserFactory.CreateParser(_coverageFormat, coverage, _loggerFactory);
 
         foreach (string filePath in filePaths)
         {
             LogParsingCoverageFile(filePath);
-            parser.ParseCoverage(filePath);
+            parser.ParseCoverage(filePath, rootDirectory);
         }
 
         return coverage;
+    }
+
+    /// <summary>
+    /// Analyses the coverage information and filters it to only include changed lines.
+    /// </summary>
+    /// <param name="baseBranch">The base branch to compare against for delta coverage.</param>
+    /// <param name="coverage">Optional: The coverage information to filter. If not provided, it will be analysed from the files.</param>
+    /// <returns>The delta coverage information and status.</returns>
+    /// <exception cref="GitException">Thrown when there is an error retrieving changed lines from git.</exception>
+    /// <exception cref="NoCoverageFilesFoundException">Thrown when no coverage files are found and coverage is not provided.</exception>
+    public DeltaResult AnalyseDeltaCoverage(string baseBranch, Coverage? coverage = null)
+    {
+        coverage ??= AnalyseCoverage();
+        IDictionary<string, HashSet<int>> changedLines = _gitService.GetChangedLines(baseBranch);
+        return _deltaCoverageService.FilterCoverage(coverage, changedLines);
     }
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Finding coverage files in {Directory}...")]
@@ -93,4 +127,7 @@ public partial class CoverageAnalyser
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Parsing coverage file: {FilePath}")]
     private partial void LogParsingCoverageFile(string filePath);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Failed to get git repository root. Assuming not in a git repository.")]
+    private partial void LogGitRepoRootFailure(Exception ex);
 }

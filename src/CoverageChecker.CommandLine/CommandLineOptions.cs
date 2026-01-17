@@ -45,4 +45,10 @@ public class CommandLineOptions
             _branchThreshold = value / 100;
         }
     }
+
+    [Option("delta", Required = false, HelpText = "Calculate coverage for changed lines only.")]
+    public bool Delta { get; init; }
+
+    [Option("delta-base", Required = false, HelpText = "Base branch or commit to compare against for delta coverage. Default: origin/main", Default = "origin/main")]
+    public string DeltaBase { get; init; } = "origin/main";
 }
