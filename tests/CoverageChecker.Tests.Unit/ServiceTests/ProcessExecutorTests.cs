@@ -10,6 +10,8 @@ public class ProcessExecutorTests
     private ProcessExecutor _sut;
     private MemoryStream _standardOutput;
     private MemoryStream _standardError;
+    private StreamReader _stdoutReader;
+    private StreamReader _stderrReader;
 
     [SetUp]
     public void Setup()
@@ -17,10 +19,12 @@ public class ProcessExecutorTests
         _mockProcess = new Mock<ISystemProcess>();
         _standardOutput = new MemoryStream();
         _standardError = new MemoryStream();
+        _stdoutReader = new StreamReader(_standardOutput, leaveOpen: true);
+        _stderrReader = new StreamReader(_standardError, leaveOpen: true);
 
         _mockProcess.SetupGet(p => p.StartInfo).Returns(new ProcessStartInfo());
-        _mockProcess.SetupGet(p => p.StandardOutput).Returns(new StreamReader(_standardOutput));
-        _mockProcess.SetupGet(p => p.StandardError).Returns(new StreamReader(_standardError));
+        _mockProcess.SetupGet(p => p.StandardOutput).Returns(_stdoutReader);
+        _mockProcess.SetupGet(p => p.StandardError).Returns(_stderrReader);
         _mockProcess.Setup(p => p.Start()).Returns(true);
 
         _sut = new ProcessExecutor(() => _mockProcess.Object, null);
@@ -29,6 +33,8 @@ public class ProcessExecutorTests
     [TearDown]
     public void TearDown()
     {
+        _stdoutReader.Dispose();
+        _stderrReader.Dispose();
         _standardOutput.Dispose();
         _standardError.Dispose();
     }
@@ -52,9 +58,11 @@ public class ProcessExecutorTests
         _mockProcess.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(true);
         _mockProcess.SetupGet(p => p.ExitCode).Returns(0);
 
-        StreamWriter writer = new(_standardOutput);
-        writer.Write("Hello World");
-        writer.Flush();
+        using (StreamWriter writer = new(_standardOutput, leaveOpen: true))
+        {
+            writer.Write("Hello World");
+            writer.Flush();
+        }
         _standardOutput.Position = 0;
 
         string fileName = "git";
