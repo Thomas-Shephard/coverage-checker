@@ -29,6 +29,8 @@ The CoverageChecker.CommandLine tool can be invoked by running `coveragechecker`
 | `--delta`                  | Calculate coverage for changed lines only.                            | No       | `false`               |
 | `--delta-base`             | Base branch or commit to compare against for delta coverage.          | No       | `origin/main`         |
 
+The `--delta` and `--delta-base` options require Git to be installed and available on the system `PATH`.
+
 ## Output
 
 The CoverageChecker Command Line tool reads the specified coverage files and outputs the line and branch coverage of the analyzed files.

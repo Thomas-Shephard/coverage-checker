@@ -110,6 +110,8 @@ public partial class CoverageAnalyser
     /// <param name="baseBranch">The base branch to compare against for delta coverage.</param>
     /// <param name="coverage">Optional: The coverage information to filter. If not provided, it will be analysed from the files.</param>
     /// <returns>The delta coverage information and status.</returns>
+    /// <exception cref="GitException">Thrown when there is an error retrieving changed lines from git.</exception>
+    /// <exception cref="NoCoverageFilesFoundException">Thrown when no coverage files are found and coverage is not provided.</exception>
     public DeltaResult AnalyseDeltaCoverage(string baseBranch, Coverage? coverage = null)
     {
         coverage ??= AnalyseCoverage();

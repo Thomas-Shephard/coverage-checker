@@ -33,6 +33,11 @@ Coverage coverage = coverageAnalyser.AnalyseCoverage();
 DeltaResult delta = coverageAnalyser.AnalyseDeltaCoverage("origin/main", coverage);
 ```
 
+> **Note:** Delta coverage analysis requires Git to be installed and available on the system `PATH`.  
+> The `AnalyseDeltaCoverage` method interacts with the underlying Git repository and may throw a
+> `GitException` if Git is not installed, not on the `PATH`, the current directory is not a Git
+> repository, or if Git commands fail.
+
 ## Options
 
 The `CoverageAnalyser` class has the following options:
