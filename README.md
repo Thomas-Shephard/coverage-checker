@@ -11,10 +11,12 @@ as a development dependency if you need to extract code coverage metrics as part
 - **Delta Coverage**: Analyze only the lines changed in your current branch compared to a base branch.
 - **CI/CD Ready**: Automatic integration with GitHub Actions for workflow commands and job summaries.
 - **Threshold enforcement**: Exit with non-zero codes if coverage targets aren't met.
+- **AI-Native (MCP)**: Dedicated server for Model Context Protocol integration with AI coding agents.
 
 ## Projects
 
 - [Coverage Checker Command Line Tool](https://github.com/Thomas-Shephard/coverage-checker/blob/main/src/CoverageChecker.CommandLine)
+- [Coverage Checker Mcp Server](https://github.com/Thomas-Shephard/coverage-checker/blob/main/src/CoverageChecker.Mcp)
 - [Coverage Checker Library](https://github.com/Thomas-Shephard/coverage-checker/blob/main/src/CoverageChecker)
 
 ## Contributions

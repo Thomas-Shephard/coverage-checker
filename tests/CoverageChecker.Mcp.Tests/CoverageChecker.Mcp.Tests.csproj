@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\CoverageChecker.Mcp\CoverageChecker.Mcp.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="..\CoverageChecker.Tests.EndToEnd\CoverageFiles\**\*.*">
+        <Link>CoverageFiles\%(RecursiveDir)%(FileName)%(Extension)</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+
+</Project>
