@@ -71,7 +71,7 @@ public class CoverageAnalyserTests
         mockGitService.Setup(s => s.GetChangedLines("main", "HEAD")).Returns(changedLines);
         mockDeltaService.Setup(s => s.FilterCoverage(coverage, changedLines)).Returns(deltaResult);
 
-        CoverageAnalyser sut = new(ValidCoverageFormat, ValidDirectory, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, mockDeltaService.Object);
+        CoverageAnalyser sut = new(ValidCoverageFormat, ValidDirectory, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, mockDeltaService.Object, Mock.Of<ICoverageRegressionService>());
 
         DeltaResult result = sut.AnalyseDeltaCoverage("main", coverage);
 
@@ -96,7 +96,7 @@ public class CoverageAnalyserTests
         mockParserFactory.Setup(f => f.CreateParser(ValidCoverageFormat, It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()))
             .Returns(mockParser.Object);
 
-        CoverageAnalyser sut = new(ValidCoverageFormat, ValidDirectory, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
+        CoverageAnalyser sut = new(ValidCoverageFormat, ValidDirectory, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>(), Mock.Of<ICoverageRegressionService>());
 
         Assert.DoesNotThrow(() => sut.AnalyseCoverage());
 
@@ -125,7 +125,7 @@ public class CoverageAnalyserTests
         mockParserFactory.Setup(f => f.CreateParser(ValidCoverageFormat, It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()))
             .Returns(mockParser.Object);
 
-        CoverageAnalyser sut = new(ValidCoverageFormat, ValidDirectory, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, mockDeltaService.Object);
+        CoverageAnalyser sut = new(ValidCoverageFormat, ValidDirectory, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, mockDeltaService.Object, Mock.Of<ICoverageRegressionService>());
 
         sut.AnalyseDeltaCoverage("main");
 
@@ -150,7 +150,7 @@ public class CoverageAnalyserTests
         mockParserFactory.Setup(f => f.CreateParser(ValidCoverageFormat, It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()))
             .Returns(mockParser.Object);
 
-        CoverageAnalyser sut = new(ValidCoverageFormat, ValidDirectory, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>(), mockLoggerFactory.Object);
+        CoverageAnalyser sut = new(ValidCoverageFormat, ValidDirectory, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>(), Mock.Of<ICoverageRegressionService>(), mockLoggerFactory.Object);
 
         sut.AnalyseCoverage();
 
@@ -171,7 +171,7 @@ public class CoverageAnalyserTests
 
         mockFileFinder.Setup(f => f.FindFiles(ValidDirectory)).Returns([]);
 
-        CoverageAnalyser sut = new(ValidCoverageFormat, ValidDirectory, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
+        CoverageAnalyser sut = new(ValidCoverageFormat, ValidDirectory, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>(), Mock.Of<ICoverageRegressionService>());
 
         Assert.Throws<NoCoverageFilesFoundException>(() => sut.AnalyseCoverage());
     }

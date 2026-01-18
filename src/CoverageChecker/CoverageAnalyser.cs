@@ -12,12 +12,18 @@ namespace CoverageChecker;
 /// </summary>
 public partial class CoverageAnalyser
 {
+    /// <summary>
+    /// The default epsilon value used for floating point comparisons.
+    /// </summary>
+    public const double DefaultEpsilon = 0.0001;
+
     private readonly CoverageFormat _coverageFormat;
     private readonly string _directory;
     private readonly IFileFinder _fileFinder;
     private readonly IParserFactory _parserFactory;
     private readonly IGitService _gitService;
     private readonly IDeltaCoverageService _deltaCoverageService;
+    private readonly ICoverageRegressionService _coverageRegressionService;
     private readonly ILogger<CoverageAnalyser> _logger;
     private readonly ILoggerFactory _loggerFactory;
 
@@ -52,9 +58,9 @@ public partial class CoverageAnalyser
         : this(coverageFormat, directory, fileFinder, loggerFactory, new CoverageMergeService(loggerFactory?.CreateLogger<CoverageMergeService>())) { }
 
     private CoverageAnalyser(CoverageFormat coverageFormat, string directory, IFileFinder fileFinder, ILoggerFactory? loggerFactory, ICoverageMergeService mergeService)
-        : this(coverageFormat, directory, fileFinder, new ParserFactory(mergeService), new GitService(new ProcessExecutor(directory)), new DeltaCoverageService(mergeService), loggerFactory) { }
+        : this(coverageFormat, directory, fileFinder, new ParserFactory(mergeService), new GitService(new ProcessExecutor(directory)), new DeltaCoverageService(mergeService), new CoverageRegressionService(), loggerFactory) { }
 
-    internal CoverageAnalyser(CoverageFormat coverageFormat, string directory, IFileFinder fileFinder, IParserFactory parserFactory, IGitService gitService, IDeltaCoverageService deltaCoverageService, ILoggerFactory? loggerFactory = null)
+    internal CoverageAnalyser(CoverageFormat coverageFormat, string directory, IFileFinder fileFinder, IParserFactory parserFactory, IGitService gitService, IDeltaCoverageService deltaCoverageService, ICoverageRegressionService coverageRegressionService, ILoggerFactory? loggerFactory = null)
     {
         _coverageFormat = coverageFormat;
         _directory = directory;
@@ -62,6 +68,7 @@ public partial class CoverageAnalyser
         _parserFactory = parserFactory;
         _gitService = gitService;
         _deltaCoverageService = deltaCoverageService;
+        _coverageRegressionService = coverageRegressionService;
         _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
         _logger = _loggerFactory.CreateLogger<CoverageAnalyser>();
     }
@@ -117,6 +124,18 @@ public partial class CoverageAnalyser
         coverage ??= AnalyseCoverage();
         IDictionary<string, HashSet<int>> changedLines = _gitService.GetChangedLines(baseBranch);
         return _deltaCoverageService.FilterCoverage(coverage, changedLines);
+    }
+
+    /// <summary>
+    /// Checks for regression between the baseline and current coverage.
+    /// </summary>
+    /// <param name="baseline">The baseline coverage to compare against.</param>
+    /// <param name="current">The current coverage.</param>
+    /// <param name="epsilon">The epsilon value to use for comparison.</param>
+    /// <returns>The regression result.</returns>
+    public RegressionResult CheckRegression(Coverage baseline, Coverage current, double epsilon = DefaultEpsilon)
+    {
+        return _coverageRegressionService.CheckRegression(baseline, current, epsilon);
     }
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Finding coverage files in {Directory}...")]
