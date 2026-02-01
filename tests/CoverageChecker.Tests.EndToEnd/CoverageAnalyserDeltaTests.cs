@@ -85,7 +85,7 @@ public class CoverageAnalyserDeltaTests
     }
 
     [Test]
-    public void AnalyseDeltaCoverage_DetectsChangedLines()
+    public void AnalyseDeltaCoverageDetectsChangedLines()
     {
         string filePath = Path.Combine(_repoRoot, "Class1.cs");
         // Using \n for consistency with core.autocrlf=false

@@ -26,13 +26,13 @@ public class FileFinderTests
     }
 
     [Test]
-    public void Constructor_WithLogger_DoesNotThrow()
+    public void ConstructorWithLoggerDoesNotThrow()
     {
         Assert.DoesNotThrow(() => _ = new FileFinder(["**/*.xml"], NullLogger<FileFinder>.Instance));
     }
 
     [Test]
-    public void Constructor_WithMatcherAndLogger_DoesNotThrow()
+    public void ConstructorWithMatcherAndLoggerDoesNotThrow()
     {
         Matcher matcher = new();
         matcher.AddInclude("**/*.xml");
@@ -40,14 +40,14 @@ public class FileFinderTests
     }
 
     [Test]
-    public void Constructor_EmptyGlobPatterns_ThrowsArgumentException()
+    public void ConstructorEmptyGlobPatternsThrowsArgumentException()
     {
         Exception e = Assert.Throws<ArgumentException>(() => _ = new FileFinder([]));
         Assert.That(e.Message, Does.StartWith("At least one glob pattern must be provided"));
     }
 
     [Test]
-    public void FindFiles_WithGlobPatterns_ReturnsMatchingFiles()
+    public void FindFilesWithGlobPatternsReturnsMatchingFiles()
     {
         CreateFile("file1.xml");
         CreateFile("sub/file2.xml");
@@ -63,7 +63,7 @@ public class FileFinderTests
     }
 
     [Test]
-    public void FindFiles_WithMatcher_ReturnsMatchingFiles()
+    public void FindFilesWithMatcherReturnsMatchingFiles()
     {
         CreateFile("file1.xml");
         CreateFile("sub/file2.xml");
@@ -81,7 +81,7 @@ public class FileFinderTests
     }
 
     [Test]
-    public void FindFiles_WithExclusionPattern_ReturnsMatchingFiles()
+    public void FindFilesWithExclusionPatternReturnsMatchingFiles()
     {
         CreateFile("file1.xml");
         CreateFile("sub/file2.xml");
@@ -98,7 +98,7 @@ public class FileFinderTests
     }
 
     [Test]
-    public void FindFiles_NoMatchingFiles_ReturnsEmpty()
+    public void FindFilesNoMatchingFilesReturnsEmpty()
     {
         CreateFile("image.png");
 
