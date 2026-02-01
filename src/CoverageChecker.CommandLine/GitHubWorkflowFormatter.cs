@@ -21,7 +21,7 @@ internal sealed class GitHubWorkflowFormatter() : ConsoleFormatter("github")
         {
             LogLevel.Error or LogLevel.Critical => "error",
             LogLevel.Warning                    => "warning",
-            LogLevel.Information                => logEntry.Category.StartsWith("CoverageChecker.CommandLine") ? "notice" : "debug",
+            LogLevel.Information                => logEntry.Category.StartsWith("CoverageChecker.CommandLine", StringComparison.Ordinal) ? "notice" : "debug",
             LogLevel.Debug                      => "debug",
             _                                   => null
         };

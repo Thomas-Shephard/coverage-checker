@@ -8,7 +8,7 @@ namespace CoverageChecker.Tests.Unit.ParserTests;
 public class ParserFactoryTests
 {
     [Test]
-    public void ParserFactory_CoberturaCoverageFormat_ReturnsCoberturaParser()
+    public void ParserFactoryCoberturaCoverageFormatReturnsCoberturaParser()
     {
         ICoverageParser parser = new ParserFactory(new CoverageMergeService()).CreateParser(CoverageFormat.Cobertura, new Coverage(), NullLoggerFactory.Instance);
 
@@ -16,7 +16,7 @@ public class ParserFactoryTests
     }
 
     [Test]
-    public void ParserFactory_SonarQubeCoverageFormat_ReturnsSonarQubeParser()
+    public void ParserFactorySonarQubeCoverageFormatReturnsSonarQubeParser()
     {
         ICoverageParser parser = new ParserFactory(new CoverageMergeService()).CreateParser(CoverageFormat.SonarQube, new Coverage(), NullLoggerFactory.Instance);
 
@@ -24,7 +24,7 @@ public class ParserFactoryTests
     }
 
     [Test]
-    public void ParserFactory_UnknownCoverageFormat_ThrowsException()
+    public void ParserFactoryUnknownCoverageFormatThrowsException()
     {
         const CoverageFormat coverageFormat = (CoverageFormat)(-1);
 

@@ -15,7 +15,7 @@ public class CoverageMergeServiceTests
     }
 
     [Test]
-    public void Merge_SameObject_DoesNotModify()
+    public void MergeSameObjectDoesNotModify()
     {
         LineCoverage lineCoverage = new(1, true);
 
@@ -25,7 +25,7 @@ public class CoverageMergeServiceTests
     }
 
     [Test]
-    public void Merge_IdenticalDataDifferentObjects_DoesNotModify()
+    public void MergeIdenticalDataDifferentObjectsDoesNotModify()
     {
         LineCoverage firstLineCoverage = new(1, true, 2, 1, "Class", "Method", "Signature");
         LineCoverage secondLineCoverage = new(1, true, 2, 1, "Class", "Method", "Signature");
@@ -37,7 +37,7 @@ public class CoverageMergeServiceTests
     }
 
     [Test]
-    public void Merge_DifferentIsCovered_UpdatesExistingLine()
+    public void MergeDifferentIsCoveredUpdatesExistingLine()
     {
         LineCoverage firstLineCoverage = new(1, false);
         LineCoverage secondLineCoverage = new(1, true);
@@ -49,7 +49,7 @@ public class CoverageMergeServiceTests
     }
 
     [Test]
-    public void Merge_DifferentIsCovered_UpdatesExistingLineReverse()
+    public void MergeDifferentIsCoveredUpdatesExistingLineReverse()
     {
         LineCoverage firstLineCoverage = new(1, true);
         LineCoverage secondLineCoverage = new(1, false);
@@ -61,7 +61,7 @@ public class CoverageMergeServiceTests
     }
 
     [Test]
-    public void Merge_DifferentCoveredBranches_UpdatesExistingLine()
+    public void MergeDifferentCoveredBranchesUpdatesExistingLine()
     {
         LineCoverage firstLineCoverage = new(1, true, 2, 1);
         LineCoverage secondLineCoverage = new(1, true, 2, 2);
@@ -73,7 +73,7 @@ public class CoverageMergeServiceTests
     }
 
     [Test]
-    public void Merge_DifferentCoveredBranches_UpdatesExistingLineReverse()
+    public void MergeDifferentCoveredBranchesUpdatesExistingLineReverse()
     {
         LineCoverage firstLineCoverage = new(1, true, 2, 1);
         LineCoverage secondLineCoverage = new(1, true, 2, 0);
@@ -85,7 +85,7 @@ public class CoverageMergeServiceTests
     }
 
     [Test]
-    public void Merge_DifferentBranches_UpdatesExistingLine()
+    public void MergeDifferentBranchesUpdatesExistingLine()
     {
         LineCoverage firstLineCoverage = new(1, false);
         LineCoverage secondLineCoverage = new(1, true, 2, 2);
@@ -97,7 +97,7 @@ public class CoverageMergeServiceTests
     }
 
     [Test]
-    public void Merge_DifferentBranches_Covered_UpdatesExistingLine()
+    public void MergeDifferentBranchesCoveredUpdatesExistingLine()
     {
         LineCoverage firstLineCoverage = new(1, true);
         LineCoverage secondLineCoverage = new(1, true, 2, 2);
@@ -109,7 +109,7 @@ public class CoverageMergeServiceTests
     }
 
     [Test]
-    public void Merge_DifferentBranches_UpdatesExistingLineReverse()
+    public void MergeDifferentBranchesUpdatesExistingLineReverse()
     {
         LineCoverage firstLineCoverage = new(1, true, 2, 1);
         LineCoverage secondLineCoverage = new(1, false);
@@ -121,7 +121,7 @@ public class CoverageMergeServiceTests
     }
 
     [Test]
-    public void Merge_DifferentLineNumbers_ThrowsCoverageParseException()
+    public void MergeDifferentLineNumbersThrowsCoverageParseException()
     {
         LineCoverage firstLineCoverage = new(1, true);
         LineCoverage secondLineCoverage = new(2, true);
@@ -131,7 +131,7 @@ public class CoverageMergeServiceTests
     }
 
     [Test]
-    public void Merge_DifferentClassNames_ThrowsCoverageParseException()
+    public void MergeDifferentClassNamesThrowsCoverageParseException()
     {
         LineCoverage firstLineCoverage = new(1, true, className: "ClassName1");
         LineCoverage secondLineCoverage = new(1, true, className: "ClassName2");
@@ -141,7 +141,7 @@ public class CoverageMergeServiceTests
     }
 
     [Test]
-    public void Merge_DifferentMethodNames_ThrowsCoverageParseException()
+    public void MergeDifferentMethodNamesThrowsCoverageParseException()
     {
         LineCoverage firstLineCoverage = new(1, true, methodName: "MethodName1");
         LineCoverage secondLineCoverage = new(1, true, methodName: "MethodName2");
@@ -151,7 +151,7 @@ public class CoverageMergeServiceTests
     }
 
     [Test]
-    public void Merge_DifferentMethodSignatures_ThrowsCoverageParseException()
+    public void MergeDifferentMethodSignaturesThrowsCoverageParseException()
     {
         LineCoverage firstLineCoverage = new(1, true, methodName: "MethodName", methodSignature: "MethodSignature1");
         LineCoverage secondLineCoverage = new(1, true, methodName: "MethodName", methodSignature: "MethodSignature2");
@@ -161,7 +161,7 @@ public class CoverageMergeServiceTests
     }
 
     [Test]
-    public void Merge_OneClassNameNull_DoesNotThrow()
+    public void MergeOneClassNameNullDoesNotThrow()
     {
         LineCoverage firstLineCoverage = new(1, true);
         LineCoverage secondLineCoverage = new(1, true, className: "ClassName2");
@@ -173,7 +173,7 @@ public class CoverageMergeServiceTests
     }
 
     [Test]
-    public void Merge_Metadata_UpdatesExistingLine()
+    public void MergeMetadataUpdatesExistingLine()
     {
         LineCoverage firstLineCoverage = new(1, true);
         LineCoverage secondLineCoverage = new(1, true, className: "Class", methodName: "Method", methodSignature: "Signature");
@@ -185,7 +185,7 @@ public class CoverageMergeServiceTests
     }
 
     [Test]
-    public void Merge_InvalidDifferentBranches1_ThrowsCoverageParseException([Values] bool firstIsCovered, [Values] bool secondIsCovered)
+    public void MergeInvalidDifferentBranches1ThrowsCoverageParseException([Values] bool firstIsCovered, [Values] bool secondIsCovered)
     {
         LineCoverage firstLineCoverage = new(1, firstIsCovered, 2, 0);
         LineCoverage secondLineCoverage = new(1, secondIsCovered, 4, 0);
@@ -195,7 +195,7 @@ public class CoverageMergeServiceTests
     }
 
     [Test]
-    public void Merge_InvalidDifferentBranches2_ThrowsCoverageParseException([Values] bool firstIsCovered)
+    public void MergeInvalidDifferentBranches2ThrowsCoverageParseException([Values] bool firstIsCovered)
     {
         LineCoverage firstLineCoverage = new(1, firstIsCovered, 2, 0);
         LineCoverage secondLineCoverage = new(1, true);

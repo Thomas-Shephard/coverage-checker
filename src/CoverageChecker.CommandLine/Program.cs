@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using CommandLine;
 using CommandLine.Text;
@@ -211,7 +212,7 @@ static async Task WriteGitHubSummary(CoverageResult result, CommandLineOptions o
     }
     catch (Exception ex)
     {
-        logger.LogWarning(ex, "Failed to write GitHub summary to {SummaryPath}", summaryPath);
+        logger.LogGitHubSummaryWriteFailed(ex, summaryPath);
     }
 }
 
@@ -224,8 +225,8 @@ static string FormatMetricRow(string label, double value, double threshold)
 {
     bool passed = double.IsNaN(value) || value >= threshold;
     string status = passed ? "✅" : "❌";
-    string display = double.IsNaN(value) ? "N/A" : $"{value:P2}";
-    return $"| **{label}** | {display} | {threshold:P2} | {status} |";
+    string display = double.IsNaN(value) ? "N/A" : value.ToString("P2", CultureInfo.InvariantCulture);
+    return $"| **{label}** | {display} | {threshold.ToString("P2", CultureInfo.InvariantCulture)} | {status} |";
 }
 
 static string GetFileBreakdown(Coverage coverage)
@@ -249,10 +250,10 @@ static string GetFileBreakdown(Coverage coverage)
 
     foreach (var item in lowestFiles)
     {
-        string lineDisplay = double.IsNaN(item.Line) ? "N/A" : $"{item.Line:P2}";
-        string branchDisplay = double.IsNaN(item.Branch) ? "N/A" : $"{item.Branch:P2}";
+        string lineDisplay = double.IsNaN(item.Line) ? "N/A" : item.Line.ToString("P2", CultureInfo.InvariantCulture);
+        string branchDisplay = double.IsNaN(item.Branch) ? "N/A" : item.Branch.ToString("P2", CultureInfo.InvariantCulture);
         string escapedPath = EscapeMarkdown(item.Path);
-        sb.AppendLine($"| `{escapedPath}` | {lineDisplay} | {branchDisplay} |");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"| `{escapedPath}` | {lineDisplay} | {branchDisplay} |");
     }
 
     return sb.ToString();
