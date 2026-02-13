@@ -1,4 +1,4 @@
-﻿using CoverageChecker.Results;
+using CoverageChecker.Results;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CoverageChecker.Tests.EndToEnd;
@@ -8,7 +8,7 @@ public class CoverageAnalyserCoberturaTests
     private readonly string _directory = Path.Combine(TestContext.CurrentContext.TestDirectory, "CoverageFiles", "Cobertura");
 
     [Test]
-    public void CoverageAnalyser_AnalyseCoberturaCoverage_WithLogger_ReturnsCoverage()
+    public void CoverageAnalyserAnalyseCoberturaCoverageWithLoggerReturnsCoverage()
     {
         Coverage coverage = new CoverageAnalyser(CoverageFormat.Cobertura, _directory, "FullLineCoverage.xml", NullLoggerFactory.Instance).AnalyseCoverage();
 
@@ -24,7 +24,7 @@ public class CoverageAnalyserCoberturaTests
     }
 
     [Test]
-    public void CoverageAnalyser_AnalyseCoberturaCoverage_FullLineCoverage_ReturnsCoverage()
+    public void CoverageAnalyserAnalyseCoberturaCoverageFullLineCoverageReturnsCoverage()
     {
         Coverage coverage = new CoverageAnalyser(CoverageFormat.Cobertura, _directory, "FullLineCoverage.xml").AnalyseCoverage();
 
@@ -40,7 +40,7 @@ public class CoverageAnalyserCoberturaTests
     }
 
     [Test]
-    public void CoverageAnalyser_AnalyseCoberturaCoverage_FullBranchCoverage_ReturnsCoverage()
+    public void CoverageAnalyserAnalyseCoberturaCoverageFullBranchCoverageReturnsCoverage()
     {
         Coverage coverage = new CoverageAnalyser(CoverageFormat.Cobertura, _directory, "FullBranchCoverage.xml").AnalyseCoverage();
 
@@ -55,7 +55,7 @@ public class CoverageAnalyserCoberturaTests
     }
 
     [Test]
-    public void CoverageAnalyser_AnalyseCoberturaCoverage_PartialLineCoverage_ReturnsCoverage()
+    public void CoverageAnalyserAnalyseCoberturaCoveragePartialLineCoverageReturnsCoverage()
     {
         Coverage coverage = new CoverageAnalyser(CoverageFormat.Cobertura, _directory, "PartialLineCoverage.xml").AnalyseCoverage();
 
@@ -69,7 +69,7 @@ public class CoverageAnalyserCoberturaTests
     }
 
     [Test]
-    public void CoverageAnalyser_AnalyseCoberturaCoverage_NoPackages_ReturnsCoverage()
+    public void CoverageAnalyserAnalyseCoberturaCoverageNoPackagesReturnsCoverage()
     {
         Coverage coverage = new CoverageAnalyser(CoverageFormat.Cobertura, _directory, "NoPackages.xml").AnalyseCoverage();
 
@@ -82,7 +82,7 @@ public class CoverageAnalyserCoberturaTests
     }
 
     [Test]
-    public void CoverageAnalyser_AnalyseCoberturaCoverage_NoClasses_ReturnsCoverage()
+    public void CoverageAnalyserAnalyseCoberturaCoverageNoClassesReturnsCoverage()
     {
         Coverage coverage = new CoverageAnalyser(CoverageFormat.Cobertura, _directory, "NoClasses.xml").AnalyseCoverage();
 
@@ -95,7 +95,7 @@ public class CoverageAnalyserCoberturaTests
     }
 
     [Test]
-    public void CoverageAnalyser_AnalyseCoberturaCoverage_NoLines_ReturnsCoverage()
+    public void CoverageAnalyserAnalyseCoberturaCoverageNoLinesReturnsCoverage()
     {
         Coverage coverage = new CoverageAnalyser(CoverageFormat.Cobertura, _directory, "NoLines.xml").AnalyseCoverage();
 
@@ -110,7 +110,7 @@ public class CoverageAnalyserCoberturaTests
     }
 
     [Test]
-    public void CoverageAnalyser_AnalyseCoberturaCoverage_WithSources_ReturnsCoverage()
+    public void CoverageAnalyserAnalyseCoberturaCoverageWithSourcesReturnsCoverage()
     {
         Coverage coverage = new CoverageAnalyser(CoverageFormat.Cobertura, _directory, ["Sources1.xml", "Sources2.xml"]).AnalyseCoverage();
 
@@ -124,7 +124,7 @@ public class CoverageAnalyserCoberturaTests
     }
 
     [Test]
-    public void CoverageAnalyser_AnalyseCoberturaCoverage_InvalidBranchCoverage1_ThrowsCoverageParseException()
+    public void CoverageAnalyserAnalyseCoberturaCoverageInvalidBranchCoverage1ThrowsCoverageParseException()
     {
         CoverageAnalyser coverageAnalyser = new(CoverageFormat.Cobertura, _directory, "InvalidBranchCoverage1.xml");
 
@@ -133,7 +133,7 @@ public class CoverageAnalyserCoberturaTests
     }
 
     [Test]
-    public void CoverageAnalyser_AnalyseCoberturaCoverage_InvalidBranchCoverage2_ThrowsCoverageParseException()
+    public void CoverageAnalyserAnalyseCoberturaCoverageInvalidBranchCoverage2ThrowsCoverageParseException()
     {
         CoverageAnalyser coverageAnalyser = new(CoverageFormat.Cobertura, _directory, "InvalidBranchCoverage2.xml");
 
@@ -142,7 +142,7 @@ public class CoverageAnalyserCoberturaTests
     }
 
     [Test]
-    public void CoverageAnalyser_AnalyseCoberturaCoverage_InvalidBranchCoverage3_ThrowsCoverageParseException()
+    public void CoverageAnalyserAnalyseCoberturaCoverageInvalidBranchCoverage3ThrowsCoverageParseException()
     {
         CoverageAnalyser coverageAnalyser = new(CoverageFormat.Cobertura, _directory, "InvalidBranchCoverage3.xml");
 
@@ -151,7 +151,7 @@ public class CoverageAnalyserCoberturaTests
     }
 
     [Test]
-    public void CoverageAnalyser_AnalyseCoberturaCoverage_EmptyFile_ThrowsCoverageParseException()
+    public void CoverageAnalyserAnalyseCoberturaCoverageEmptyFileThrowsCoverageParseException()
     {
         CoverageAnalyser coverageAnalyser = new(CoverageFormat.Cobertura, _directory, "EmptyFile.xml");
 
@@ -160,7 +160,7 @@ public class CoverageAnalyserCoberturaTests
     }
 
     [Test]
-    public void CoverageAnalyser_AnalyseCoberturaCoverage_InvalidFileSetup1_ThrowsCoverageParseException()
+    public void CoverageAnalyserAnalyseCoberturaCoverageInvalidFileSetup1ThrowsCoverageParseException()
     {
         CoverageAnalyser coverageAnalyser = new(CoverageFormat.Cobertura, _directory, "InvalidFileSetup1.xml");
 
@@ -169,7 +169,7 @@ public class CoverageAnalyserCoberturaTests
     }
 
     [Test]
-    public void CoverageAnalyser_AnalyseCoberturaCoverage_InvalidFileSetup2_ThrowsCoverageParseException()
+    public void CoverageAnalyserAnalyseCoberturaCoverageInvalidFileSetup2ThrowsCoverageParseException()
     {
         CoverageAnalyser coverageAnalyser = new(CoverageFormat.Cobertura, _directory, "InvalidFileSetup2.xml");
 
@@ -178,7 +178,7 @@ public class CoverageAnalyserCoberturaTests
     }
 
     [Test]
-    public void CoverageAnalyser_AnalyseCoberturaCoverage_InvalidFile_ThrowsCoverageParseException()
+    public void CoverageAnalyserAnalyseCoberturaCoverageInvalidFileThrowsCoverageParseException()
     {
         CoverageAnalyser coverageAnalyser = new(CoverageFormat.Cobertura, _directory, "InvalidFile.xml");
 
@@ -186,7 +186,7 @@ public class CoverageAnalyserCoberturaTests
     }
 
     [Test]
-    public void CoverageAnalyser_AnalyseCoberturaCoverage_MultipleSources_ThrowsCoverageParseException()
+    public void CoverageAnalyserAnalyseCoberturaCoverageMultipleSourcesThrowsCoverageParseException()
     {
         CoverageAnalyser coverageAnalyser = new(CoverageFormat.Cobertura, _directory, "MultipleSources.xml");
 

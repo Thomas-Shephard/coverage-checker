@@ -1,37 +1,38 @@
 <Project>
+  <PropertyGroup>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
 
-    <PropertyGroup>
-        <CurrentYear>$([System.DateTime]::UtcNow.Year)</CurrentYear>
-    </PropertyGroup>
+    <!-- Unified Artifacts Output -->
+    <ArtifactsPath>$(MSBuildThisFileDirectory)artifacts</ArtifactsPath>
 
-    <PropertyGroup>
-        <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-    </PropertyGroup>
+    <!-- Analysis & Code Style -->
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 
-    <PropertyGroup>
-        <Authors>Thomas Shephard</Authors>
-        <Copyright>Copyright (c) Thomas Shephard $(CurrentYear)</Copyright>
-        <PackageProjectUrl>https://github.com/Thomas-Shephard/coverage-checker</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/Thomas-Shephard/coverage-checker.git</RepositoryUrl>
-        <RepositoryType>git</RepositoryType>
-        <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    </PropertyGroup>
+    <!-- NuGet Metadata -->
+    <Authors>Thomas Shephard</Authors>
+    <Company>$(Authors)</Company>
+    <Copyright>Copyright (c) $([System.DateTime]::Now.ToString("yyyy")) $(Authors)</Copyright>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Description>A lightweight tool for checking code coverage against thresholds and calculating coverage deltas.</Description>
+    <PackageTags>coverage;testing;dotnet;cobertura;sonarqube</PackageTags>
+    <PackageProjectUrl>https://github.com/Thomas-Shephard/coverage-checker</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Thomas-Shephard/coverage-checker.git</RepositoryUrl>
+    <IsPackable>false</IsPackable>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+  </PropertyGroup>
 
-    <ItemGroup Condition="$(MSBuildProjectName) != 'CoverageChecker'">
-        <ProjectReference Include="$(MSBuildThisFileDirectory)src\CoverageChecker\CoverageChecker.csproj"/>
-    </ItemGroup>
+  <ItemGroup Condition="$(MSBuildProjectName) != 'CoverageChecker'">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)src\CoverageChecker\CoverageChecker.csproj" />
+  </ItemGroup>
 
-    <ItemGroup>
-        <PackageReference Include="MinVer" Version="6.0.0">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-    </ItemGroup>
-
-    <PropertyGroup>
-        <MinVerTagPrefix>v</MinVerTagPrefix>
-    </PropertyGroup>
-
+  <ItemGroup>
+    <PackageReference Include="MinVer" PrivateAssets="All" />
+  </ItemGroup>
 </Project>

@@ -13,7 +13,7 @@ public class CoverageAnalyserTests
     private static readonly string[] ValidGlobPatterns = ["**/*.xml"];
 
     [Test]
-    public void CoverageAnalyserConstructor_SingleGlobPattern_InitializesCorrectly()
+    public void CoverageAnalyserConstructorSingleGlobPatternInitializesCorrectly()
     {
         CoverageAnalyser sut = new(ValidCoverageFormat, ValidDirectory, ValidGlobPatterns[0]);
 
@@ -21,7 +21,7 @@ public class CoverageAnalyserTests
     }
 
     [Test]
-    public void CoverageAnalyserConstructor_MultipleGlobPatterns_InitializesCorrectly()
+    public void CoverageAnalyserConstructorMultipleGlobPatternsInitializesCorrectly()
     {
         CoverageAnalyser sut = new(ValidCoverageFormat, ValidDirectory, ValidGlobPatterns);
 
@@ -29,7 +29,7 @@ public class CoverageAnalyserTests
     }
 
     [Test]
-    public void CoverageAnalyserConstructor_Matcher_InitializesCorrectly()
+    public void CoverageAnalyserConstructorMatcherInitializesCorrectly()
     {
         Matcher matcher = new();
         matcher.AddIncludePatterns(ValidGlobPatterns);
@@ -39,7 +39,7 @@ public class CoverageAnalyserTests
     }
 
     [Test]
-    public void CoverageAnalyserConstructor_Matcher_WithLoggerFactory_InitializesCorrectly()
+    public void CoverageAnalyserConstructorMatcherWithLoggerFactoryInitializesCorrectly()
     {
         Matcher matcher = new();
         matcher.AddIncludePatterns(ValidGlobPatterns);
@@ -51,21 +51,21 @@ public class CoverageAnalyserTests
     }
 
     [Test]
-    public void CoverageAnalyserConstructor_EmptyGlobPatterns_ThrowsException()
+    public void CoverageAnalyserConstructorEmptyGlobPatternsThrowsException()
     {
         Exception e = Assert.Throws<ArgumentException>(() => _ = new CoverageAnalyser(ValidCoverageFormat, ValidDirectory, []));
         Assert.That(e.Message, Does.Contain("At least one glob pattern must be provided"));
     }
 
     [Test]
-    public void AnalyseDeltaCoverage_CallsServicesWithCorrectParameters()
+    public void AnalyseDeltaCoverageCallsServicesWithCorrectParameters()
     {
         Mock<IFileFinder> mockFileFinder = new();
         Mock<IParserFactory> mockParserFactory = new();
         Mock<IGitService> mockGitService = new();
         Mock<IDeltaCoverageService> mockDeltaService = new();
         Coverage coverage = new();
-        Dictionary<string, HashSet<int>> changedLines = new();
+        Dictionary<string, HashSet<int>> changedLines = [];
         DeltaResult deltaResult = new(new Coverage(), true);
 
         mockGitService.Setup(s => s.GetChangedLines("main", "HEAD")).Returns(changedLines);
@@ -81,7 +81,7 @@ public class CoverageAnalyserTests
     }
 
     [Test]
-    public void AnalyseCoverage_ShouldDetectFormat_WhenAutoIsUsed()
+    public void AnalyseCoverageShouldDetectFormatWhenAutoIsUsed()
     {
         Mock<IFileFinder> mockFileFinder = new();
         Mock<IParserFactory> mockParserFactory = new();
@@ -104,7 +104,7 @@ public class CoverageAnalyserTests
     }
 
     [Test]
-    public void AnalyseCoverage_ShouldHandleGitRepoRootFailure()
+    public void AnalyseCoverageShouldHandleGitRepoRootFailure()
     {
         Mock<IFileFinder> mockFileFinder = new();
         Mock<IParserFactory> mockParserFactory = new();
@@ -127,7 +127,7 @@ public class CoverageAnalyserTests
     }
 
     [Test]
-    public void CoverageAnalyserConstructor_WithLoggerFactory_InitializesCorrectly()
+    public void CoverageAnalyserConstructorWithLoggerFactoryInitializesCorrectly()
     {
         Mock<Microsoft.Extensions.Logging.ILoggerFactory> mockLoggerFactory = new();
         CoverageAnalyser sut = new(ValidCoverageFormat, ValidDirectory, ValidGlobPatterns, mockLoggerFactory.Object);
@@ -135,7 +135,7 @@ public class CoverageAnalyserTests
     }
 
     [Test]
-    public void AnalyseDeltaCoverage_ShouldAnalyseCoverage_WhenCoverageIsNull()
+    public void AnalyseDeltaCoverageShouldAnalyseCoverageWhenCoverageIsNull()
     {
         Mock<IFileFinder> mockFileFinder = new();
         Mock<IParserFactory> mockParserFactory = new();
@@ -157,7 +157,7 @@ public class CoverageAnalyserTests
     }
 
     [Test]
-    public void AnalyseCoverage_ShouldLogMessages_WhenLoggingIsEnabled()
+    public void AnalyseCoverageShouldLogMessagesWhenLoggingIsEnabled()
     {
         Mock<Microsoft.Extensions.Logging.ILoggerFactory> mockLoggerFactory = new();
         Mock<Microsoft.Extensions.Logging.ILogger> mockLogger = new();
@@ -186,7 +186,7 @@ public class CoverageAnalyserTests
     }
 
     [Test]
-    public void AnalyseCoverage_ShouldThrowException_WhenNoFilesFound()
+    public void AnalyseCoverageShouldThrowExceptionWhenNoFilesFound()
     {
         Mock<IFileFinder> mockFileFinder = new();
         Mock<IParserFactory> mockParserFactory = new();

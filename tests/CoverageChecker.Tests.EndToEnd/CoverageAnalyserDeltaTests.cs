@@ -85,7 +85,7 @@ public class CoverageAnalyserDeltaTests
     }
 
     [Test]
-    public void AnalyseDeltaCoverage_DetectsChangedLines()
+    public void AnalyseDeltaCoverageDetectsChangedLines()
     {
         string filePath = Path.Combine(_repoRoot, "Class1.cs");
         // Using \n for consistency with core.autocrlf=false
@@ -164,7 +164,7 @@ public class CoverageAnalyserDeltaTests
     }
 
     [Test]
-    public void AnalyseDeltaCoverage_WithAutoFormat_DetectsChangedLines()
+    public void AnalyseDeltaCoverageWithAutoFormatDetectsChangedLines()
     {
         string filePath = Path.Combine(_repoRoot, "Class1.cs");
         File.WriteAllText(filePath, "public class Class1\n{\n    public void Method1()\n    {\n        Console.WriteLine(\"Old\");\n    }\n}\n");

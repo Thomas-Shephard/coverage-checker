@@ -1,4 +1,5 @@
 using System.Xml;
+using System.Globalization;
 using CoverageChecker.Utils;
 
 namespace CoverageChecker.Tests.Unit.UtilTests.CoverageFileParseUtilTests;
@@ -6,7 +7,7 @@ namespace CoverageChecker.Tests.Unit.UtilTests.CoverageFileParseUtilTests;
 public class TryGetAttributeTests
 {
     [Test]
-    public void CoverageFileParseUtils_TryGetAttribute_StringAttributeFound_ReturnsValue()
+    public void CoverageFileParseUtilsTryGetAttributeStringAttributeFoundReturnsValue()
     {
         const string attributeValue = "value";
         const string xml = $"""<{XmlReaderTestUtils.ElementName} {XmlReaderTestUtils.AttributeName}="{attributeValue}"/>""";
@@ -25,7 +26,7 @@ public class TryGetAttributeTests
     }
 
     [Test]
-    public void CoverageFileParseUtils_TryGetAttribute_StringAttributeNotFound_ReturnsDefault()
+    public void CoverageFileParseUtilsTryGetAttributeStringAttributeNotFoundReturnsDefault()
     {
         const string xml = $"<{XmlReaderTestUtils.ElementName}/>";
 
@@ -43,7 +44,7 @@ public class TryGetAttributeTests
     }
 
     [Test]
-    public void CoverageFileParseUtils_TryGetAttribute_IntAttributeFound_ReturnsValue()
+    public void CoverageFileParseUtilsTryGetAttributeIntAttributeFoundReturnsValue()
     {
         const string attributeValue = "42";
         const string xml = $"""<{XmlReaderTestUtils.ElementName} {XmlReaderTestUtils.AttributeName}="{attributeValue}"/>""";
@@ -57,12 +58,12 @@ public class TryGetAttributeTests
         Assert.Multiple(() =>
         {
             Assert.That(attributeFound, Is.True);
-            Assert.That(attribute, Is.EqualTo(int.Parse(attributeValue)));
+            Assert.That(attribute, Is.EqualTo(int.Parse(attributeValue, CultureInfo.InvariantCulture)));
         });
     }
 
     [Test]
-    public void CoverageFileParseUtils_TryGetAttribute_IntAttributeNotFound_ReturnsDefault()
+    public void CoverageFileParseUtilsTryGetAttributeIntAttributeNotFoundReturnsDefault()
     {
         const string xml = $"<{XmlReaderTestUtils.ElementName}/>";
 
@@ -80,7 +81,7 @@ public class TryGetAttributeTests
     }
 
     [Test]
-    public void CoverageFileParseUtils_TryGetAttribute_IntAttributeFoundButInvalid_ThrowsException()
+    public void CoverageFileParseUtilsTryGetAttributeIntAttributeFoundButInvalidThrowsException()
     {
         const string attributeValue = "not-a-number";
         const string xml = $"""<{XmlReaderTestUtils.ElementName} {XmlReaderTestUtils.AttributeName}="{attributeValue}"/>""";

@@ -45,4 +45,7 @@ internal static partial class ProgramLogs
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Failed to perform delta coverage analysis.")]
     public static partial void LogDeltaAnalysisFailed(this ILogger logger, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to write GitHub summary to {SummaryPath}")]
+    public static partial void LogGitHubSummaryWriteFailed(this ILogger logger, Exception exception, string summaryPath);
 }

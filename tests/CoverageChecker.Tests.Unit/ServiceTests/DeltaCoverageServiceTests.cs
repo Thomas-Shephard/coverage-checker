@@ -16,7 +16,7 @@ public class DeltaCoverageServiceTests
     }
 
     [Test]
-    public void FilterCoverage_ShouldReturnEmptyCoverage_WhenNoFilesMatch()
+    public void FilterCoverageShouldReturnEmptyCoverageWhenNoFilesMatch()
     {
         Coverage coverage = new();
         FileCoverage file = coverage.GetOrCreateFile("file1.cs");
@@ -33,7 +33,7 @@ public class DeltaCoverageServiceTests
     }
 
     [Test]
-    public void FilterCoverage_ShouldFilterLines_WhenFileMatches()
+    public void FilterCoverageShouldFilterLinesWhenFileMatches()
     {
         Coverage coverage = new();
         FileCoverage file = coverage.GetOrCreateFile("file1.cs");
@@ -53,7 +53,7 @@ public class DeltaCoverageServiceTests
     }
 
     [Test]
-    public void FilterCoverage_ShouldMatchPathWithDifferentSeparators()
+    public void FilterCoverageShouldMatchPathWithDifferentSeparators()
     {
         Coverage coverage = new();
         string path = PathUtils.NormalizePath(@"folder\file1.cs");
@@ -71,7 +71,7 @@ public class DeltaCoverageServiceTests
     }
 
     [Test]
-    public void FilterCoverage_ShouldMatchAbsoluteCoveragePathWithRelativeGitPath()
+    public void FilterCoverageShouldMatchAbsoluteCoveragePathWithRelativeGitPath()
     {
         Coverage coverage = new();
         // The service now expects paths in 'changedLines' to be normalized absolute paths too, 
@@ -93,7 +93,7 @@ public class DeltaCoverageServiceTests
     }
 
     [Test]
-    public void FilterCoverage_ShouldSetHasChangedLinesToTrue_WhenLinesAreMatched()
+    public void FilterCoverageShouldSetHasChangedLinesToTrueWhenLinesAreMatched()
     {
         Coverage coverage = new();
         FileCoverage file = coverage.GetOrCreateFile("file1.cs");
@@ -110,7 +110,7 @@ public class DeltaCoverageServiceTests
     }
 
     [Test]
-    public void FilterCoverage_ShouldSetHasChangedLinesToFalse_WhenNoLinesAreMatched()
+    public void FilterCoverageShouldSetHasChangedLinesToFalseWhenNoLinesAreMatched()
     {
         Coverage coverage = new();
         FileCoverage file = coverage.GetOrCreateFile("file1.cs");
@@ -127,7 +127,7 @@ public class DeltaCoverageServiceTests
     }
 
     [Test]
-    public void FilterCoverage_ShouldMergeFiles_WhenFileAppearsInMultiplePackages()
+    public void FilterCoverageShouldMergeFilesWhenFileAppearsInMultiplePackages()
     {
         Coverage coverage = new();
         string path = "file1.cs";

@@ -16,7 +16,7 @@ public class ParserFactoryTests
     }
 
     [Test]
-    public void ParserFactory_CoberturaCoverageFormat_ReturnsCoberturaParser()
+    public void ParserFactoryCoberturaCoverageFormatReturnsCoberturaParser()
     {
         ICoverageParser parser = _factory.CreateParser(CoverageFormat.Cobertura, new Coverage(), NullLoggerFactory.Instance);
 
@@ -24,7 +24,7 @@ public class ParserFactoryTests
     }
 
     [Test]
-    public void ParserFactory_SonarQubeCoverageFormat_ReturnsSonarQubeParser()
+    public void ParserFactorySonarQubeCoverageFormatReturnsSonarQubeParser()
     {
         ICoverageParser parser = _factory.CreateParser(CoverageFormat.SonarQube, new Coverage(), NullLoggerFactory.Instance);
 
@@ -32,13 +32,13 @@ public class ParserFactoryTests
     }
 
     [Test]
-    public void ParserFactory_AutoCoverageFormat_ThrowsException()
+    public void ParserFactoryAutoCoverageFormatThrowsException()
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => _factory.CreateParser(CoverageFormat.Auto, new Coverage(), NullLoggerFactory.Instance));
     }
 
     [Test]
-    public void ParserFactory_UnknownCoverageFormat_ThrowsException()
+    public void ParserFactoryUnknownCoverageFormatThrowsException()
     {
         const CoverageFormat coverageFormat = (CoverageFormat)99;
 
@@ -47,7 +47,7 @@ public class ParserFactoryTests
     }
 
     [Test]
-    public void DetectFormat_CoberturaFile_ReturnsCobertura()
+    public void DetectFormatCoberturaFileReturnsCobertura()
     {
         string path = Path.GetTempFileName();
         try
@@ -62,7 +62,7 @@ public class ParserFactoryTests
     }
 
     [Test]
-    public void DetectFormat_SonarQubeFile_ReturnsSonarQube()
+    public void DetectFormatSonarQubeFileReturnsSonarQube()
     {
         string path = Path.GetTempFileName();
         try
@@ -77,7 +77,7 @@ public class ParserFactoryTests
     }
 
     [Test]
-    public void DetectFormat_UnknownFile_ThrowsCoverageParseException()
+    public void DetectFormatUnknownFileThrowsCoverageParseException()
     {
         string path = Path.GetTempFileName();
         try

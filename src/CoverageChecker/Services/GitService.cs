@@ -93,7 +93,7 @@ internal partial class GitService : IGitService
 
     private static bool TryUpdateCurrentFile(string line, string repoRoot, Dictionary<string, HashSet<int>> changedLines, out string? newFile)
     {
-        if (line.StartsWith("diff --git "))
+        if (line.StartsWith("diff --git ", StringComparison.Ordinal))
         {
             newFile = null;
             return true;

@@ -7,6 +7,7 @@ You are an expert code reviewer and software engineer assisting with the `Covera
 *   **Type:** CLI Tool (`CoverageChecker.CommandLine`) and Library (`CoverageChecker`).
 *   **Frameworks:** .NET 8.0, .NET 9.0, .NET 10.0.
 *   **Versioning:** [MinVer](https://github.com/adamralph/minver). Do NOT manually set versions in `.csproj` files. Use Git tags (`vX.Y.Z`).
+*   **Dependency Management:** Central Package Management (CPM) is enabled. Define package versions in `Directory.Packages.props`. Do NOT set `Version` attributes in `.csproj` `PackageReference` items.
 *   **Key Libraries:** `CommandLineParser`, `Microsoft.Extensions.FileSystemGlobbing`, `Microsoft.Extensions.Logging` (Source Gen), `NUnit`, `Moq`.
 
 ## 2. Build and Validate

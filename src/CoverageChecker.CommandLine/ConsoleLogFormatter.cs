@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging.Console;
@@ -11,7 +12,7 @@ internal sealed class ConsoleLogFormatter() : ConsoleFormatter("clean")
         string message = logEntry.Formatter(logEntry.State, logEntry.Exception);
         if (string.IsNullOrEmpty(message)) return;
 
-        string timestamp = DateTime.Now.ToString("HH:mm:ss");
+        string timestamp = DateTime.Now.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
         string level = logEntry.LogLevel switch
         {
             LogLevel.Trace => "trace",
@@ -20,7 +21,7 @@ internal sealed class ConsoleLogFormatter() : ConsoleFormatter("clean")
             LogLevel.Warning => "warn",
             LogLevel.Error => "fail",
             LogLevel.Critical => "critical",
-            _ => logEntry.LogLevel.ToString().ToLower()
+            _ => logEntry.LogLevel.ToString().ToLowerInvariant()
         };
 
         textWriter.WriteLine($"{timestamp} {level}: {message}");
