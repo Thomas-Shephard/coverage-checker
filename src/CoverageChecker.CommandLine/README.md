@@ -19,15 +19,15 @@ dotnet tool install --global CoverageChecker.CommandLine
 
 The CoverageChecker.CommandLine tool can be invoked by running `coveragechecker` from the command line.
 
-| Option                     | Description                                                           | Required | Default               |
-|----------------------------|-----------------------------------------------------------------------|----------|-----------------------|
-| `-f`, `--format`           | The format of the coverage file(s). Options: `SonarQube`, `Cobertura` | Yes      |                       |
-| `-d`, `--directory`        | The directory to search for the coverage file(s) within.              | No       | The current directory |
-| `-g`, `--glob-patterns`    | The glob pattern(s) to use to search for the coverage file(s).        | No       | `*.xml`               |
-| `-l`, `--line-threshold`   | The line coverage threshold. Default: 80                              | No       | 80                    |
-| `-b`, `--branch-threshold` | The branch coverage threshold. Default: 80                            | No       | 80                    |
-| `--delta`                  | Calculate coverage for changed lines only.                            | No       | `false`               |
-| `--delta-base`             | Base branch or commit to compare against for delta coverage.          | No       | `origin/main`         |
+| Option                     | Description                                                                   | Required | Default               |
+|----------------------------|-------------------------------------------------------------------------------|----------|-----------------------|
+| `-f`, `--format`           | The format of the coverage file(s). Options: `Auto`, `SonarQube`, `Cobertura` | No       | `Auto`                |
+| `-d`, `--directory`        | The directory to search for the coverage file(s) within.                      | No       | The current directory |
+| `-g`, `--glob-patterns`    | The glob pattern(s) to use to search for the coverage file(s).                | No       | `*.xml`               |
+| `-l`, `--line-threshold`   | The line coverage threshold. Default: 80                                      | No       | 80                    |
+| `-b`, `--branch-threshold` | The branch coverage threshold. Default: 80                                    | No       | 80                    |
+| `--delta`                  | Calculate coverage for changed lines only.                                    | No       | `false`               |
+| `--delta-base`             | Base branch or commit to compare against for delta coverage.                  | No       | `origin/main`         |
 
 The `--delta` and `--delta-base` options require Git to be installed and available on the system `PATH`.
 

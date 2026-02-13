@@ -81,6 +81,29 @@ public class CoverageAnalyserTests
     }
 
     [Test]
+    public void AnalyseCoverage_ShouldDetectFormat_WhenAutoIsUsed()
+    {
+        Mock<IFileFinder> mockFileFinder = new();
+        Mock<IParserFactory> mockParserFactory = new();
+        Mock<IGitService> mockGitService = new();
+        Mock<ICoverageParser> mockParser = new();
+
+        string filePath = "coverage.xml";
+        mockFileFinder.Setup(f => f.FindFiles(ValidDirectory)).Returns([filePath]);
+        mockParserFactory.Setup(f => f.DetectFormat(filePath)).Returns(CoverageFormat.Cobertura);
+        mockParserFactory.Setup(f => f.CreateParser(CoverageFormat.Cobertura, It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()))
+            .Returns(mockParser.Object);
+
+        CoverageAnalyser sut = new(CoverageFormat.Auto, ValidDirectory, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
+
+        sut.AnalyseCoverage();
+
+        mockParserFactory.Verify(f => f.DetectFormat(filePath), Times.Once);
+        mockParserFactory.Verify(f => f.CreateParser(CoverageFormat.Cobertura, It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()), Times.Once);
+        mockParser.Verify(p => p.ParseCoverage(filePath, It.IsAny<string?>()), Times.Once);
+    }
+
+    [Test]
     public void AnalyseCoverage_ShouldHandleGitRepoRootFailure()
     {
         Mock<IFileFinder> mockFileFinder = new();

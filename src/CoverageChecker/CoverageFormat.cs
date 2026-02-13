@@ -5,6 +5,7 @@ namespace CoverageChecker;
 /// </summary>
 public enum CoverageFormat
 {
+    Auto,
     Cobertura,
     SonarQube
 }
