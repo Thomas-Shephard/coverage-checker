@@ -20,18 +20,21 @@ dotnet add package CoverageChecker
 
 The `CoverageAnalyser` class is the entry point for extracting code coverage metrics from a coverage file.
 
-The following example shows how to use the `CoverageAnalyser` class to extract code coverage metrics from a Cobertura
-coverage file:
+The following example shows how to use the `CoverageAnalyser` class to extract code coverage metrics from a coverage
+file while automatically detecting its format:
 
 ```csharp
 using CoverageChecker;
 
-CoverageAnalyser coverageAnalyser = new(CoverageFormat.Cobertura, ".", "**/coverage.cobertura.xml");
+CoverageAnalyser coverageAnalyser = new(CoverageFormat.Auto, ".", "**/coverage.xml");
 Coverage coverage = coverageAnalyser.AnalyseCoverage();
 
 // Analyse only changed lines compared to origin/main
 DeltaResult delta = coverageAnalyser.AnalyseDeltaCoverage("origin/main", coverage);
 ```
+
+By using `CoverageFormat.Auto`, the library will attempt to detect whether each coverage file is in Cobertura or 
+SonarQube format. You can also specify a specific format if it is known.
 
 > **Note:** Delta coverage analysis requires Git to be installed and available on the system `PATH`.  
 > The `AnalyseDeltaCoverage` method interacts with the underlying Git repository and may throw a
@@ -42,7 +45,7 @@ DeltaResult delta = coverageAnalyser.AnalyseDeltaCoverage("origin/main", coverag
 
 The `CoverageAnalyser` class has the following options:
 
-- `coverageFormat`: The format of the coverage file. Options: SonarQube, Cobertura
+- `coverageFormat`: The format of the coverage file. Options: `Auto`, `SonarQube`, `Cobertura`. Default: `Auto`.
 - `directory`: The directory to search for the coverage file(s) within.
 
 and either one of the following:

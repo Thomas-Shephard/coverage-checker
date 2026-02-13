@@ -93,12 +93,24 @@ public partial class CoverageAnalyser
         }
 
         Coverage coverage = new();
-        ICoverageParser parser = _parserFactory.CreateParser(_coverageFormat, coverage, _loggerFactory);
+        Dictionary<CoverageFormat, ICoverageParser> parsers = _coverageFormat == CoverageFormat.Auto
+            ? []
+            : new Dictionary<CoverageFormat, ICoverageParser> { [_coverageFormat] = _parserFactory.CreateParser(_coverageFormat, coverage, _loggerFactory) };
 
         foreach (string filePath in filePaths)
         {
             LogParsingCoverageFile(filePath);
-            parser.ParseCoverage(filePath, rootDirectory);
+            CoverageFormat format = _coverageFormat == CoverageFormat.Auto
+                ? _parserFactory.DetectFormat(filePath)
+                : _coverageFormat;
+
+            if (!parsers.TryGetValue(format, out ICoverageParser? currentParser))
+            {
+                currentParser = _parserFactory.CreateParser(format, coverage, _loggerFactory);
+                parsers[format] = currentParser;
+            }
+
+            currentParser.ParseCoverage(filePath, rootDirectory);
         }
 
         return coverage;

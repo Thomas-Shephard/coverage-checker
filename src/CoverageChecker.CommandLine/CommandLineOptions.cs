@@ -4,8 +4,8 @@ namespace CoverageChecker.CommandLine;
 
 public class CommandLineOptions
 {
-    [Option('f', "format", Required = true, HelpText = "Format of coverage files.")]
-    public CoverageFormat CoverageFormat { get; init; }
+    [Option('f', "format", Required = false, HelpText = "Format of coverage files. Default: Auto", Default = CoverageFormat.Auto)]
+    public CoverageFormat CoverageFormat { get; init; } = CoverageFormat.Auto;
 
     [Option('d', "directory", Required = false, HelpText = "Directory where coverage files are located. Default: Current directory")]
     public string Directory { get; init; } = Environment.CurrentDirectory;
