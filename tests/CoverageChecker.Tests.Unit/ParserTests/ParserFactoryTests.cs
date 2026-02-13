@@ -92,13 +92,103 @@ public class ParserFactoryTests
     }
 
     [Test]
-    public void DetectFormatUnknownFileThrowsCoverageParseException()
+    public void DetectFormatCoberturaFileWithSourcesReturnsCobertura()
     {
         string path = Path.GetTempFileName();
         try
         {
-            File.WriteAllText(path, "<unknown></unknown>");
+            File.WriteAllText(path, "<?xml version=\"1.0\"?><coverage><sources><source>src</source></sources></coverage>");
+            Assert.That(_factory.DetectFormat(path), Is.EqualTo(CoverageFormat.Cobertura));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Test]
+    public void DetectFormatSonarQubeFileWithLineToCoverReturnsSonarQube()
+    {
+        string path = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(path, "<coverage><lineToCover /></coverage>");
+            Assert.That(_factory.DetectFormat(path), Is.EqualTo(CoverageFormat.SonarQube));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Test]
+    public void DetectFormatWithCoverageAtWrongDepthThrowsCoverageParseException()
+    {
+        string path = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(path, "<root><coverage /></root>");
             Assert.Throws<CoverageParseException>(() => _factory.DetectFormat(path));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Test]
+    public void DetectFormatWithEmptyCoverageElementThrowsCoverageParseException()
+    {
+        string path = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(path, "<coverage />");
+            Assert.Throws<CoverageParseException>(() => _factory.DetectFormat(path));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Test]
+    public void DetectFormatWithInvalidXmlThrowsCoverageParseException()
+    {
+        string path = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(path, "invalid xml");
+            Assert.Throws<CoverageParseException>(() => _factory.DetectFormat(path));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Test]
+    public void DetectFormatWithUnknownChildElementThrowsCoverageParseException()
+    {
+        string path = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(path, "<coverage><unknown /></coverage>");
+            Assert.Throws<CoverageParseException>(() => _factory.DetectFormat(path));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Test]
+    public void DetectFormatWithNonElementNodeInsideCoverageSucceedsOnNextElement()
+    {
+        string path = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(path, "<coverage>  <packages /></coverage>");
+            Assert.That(_factory.DetectFormat(path), Is.EqualTo(CoverageFormat.Cobertura));
         }
         finally
         {
