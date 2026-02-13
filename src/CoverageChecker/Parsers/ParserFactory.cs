@@ -27,37 +27,43 @@ internal class ParserFactory(ICoverageMergeService coverageMergeService) : IPars
                 throw new CoverageParseException($"Could not find root 'coverage' element in file: {filePath}");
             }
 
-            string? version = reader.GetAttribute("version");
-            if (version == "1")
+            if (reader.GetAttribute("version") == "1")
             {
                 return CoverageFormat.SonarQube;
             }
 
-            if (!reader.IsEmptyElement)
-            {
-                int rootDepth = reader.Depth;
-                while (reader.Read() && reader.Depth > rootDepth)
-                {
-                    if (reader.NodeType != XmlNodeType.Element)
-                    {
-                        continue;
-                    }
-
-                    switch (reader.Name)
-                    {
-                        case "file" or "lineToCover":
-                            return CoverageFormat.SonarQube;
-                        case "packages" or "sources":
-                            return CoverageFormat.Cobertura;
-                    }
-                }
-            }
-
-            throw new CoverageParseException($"Could not auto-detect coverage format for file: {filePath}");
+            return DetectFromChildElements(reader) ?? throw new CoverageParseException($"Could not auto-detect coverage format for file: {filePath}");
         }
         catch (Exception ex) when (ex is not CoverageException)
         {
             throw new CoverageParseException($"Could not auto-detect coverage format for file: {filePath}", ex);
         }
+    }
+
+    private static CoverageFormat? DetectFromChildElements(XmlReader reader)
+    {
+        if (reader.IsEmptyElement)
+        {
+            return null;
+        }
+
+        int rootDepth = reader.Depth;
+        while (reader.Read() && reader.Depth > rootDepth)
+        {
+            if (reader.NodeType != XmlNodeType.Element)
+            {
+                continue;
+            }
+
+            switch (reader.Name)
+            {
+                case "file" or "lineToCover":
+                    return CoverageFormat.SonarQube;
+                case "packages" or "sources":
+                    return CoverageFormat.Cobertura;
+            }
+        }
+
+        return null;
     }
 }

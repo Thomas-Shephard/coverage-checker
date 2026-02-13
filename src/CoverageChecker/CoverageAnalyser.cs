@@ -93,11 +93,9 @@ public partial class CoverageAnalyser
         }
 
         Coverage coverage = new();
-        Dictionary<CoverageFormat, ICoverageParser> parsers = new();
-        if (_coverageFormat != CoverageFormat.Auto)
-        {
-            parsers[_coverageFormat] = _parserFactory.CreateParser(_coverageFormat, coverage, _loggerFactory);
-        }
+        Dictionary<CoverageFormat, ICoverageParser> parsers = _coverageFormat == CoverageFormat.Auto
+            ? []
+            : new Dictionary<CoverageFormat, ICoverageParser> { [_coverageFormat] = _parserFactory.CreateParser(_coverageFormat, coverage, _loggerFactory) };
 
         foreach (string filePath in filePaths)
         {
