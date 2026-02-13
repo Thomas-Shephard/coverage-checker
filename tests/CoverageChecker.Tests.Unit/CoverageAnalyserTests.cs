@@ -104,6 +104,44 @@ public class CoverageAnalyserTests
     }
 
     [Test]
+    public void AnalyseCoverageShouldCacheParsersForDifferentFormatsWhenAutoIsUsed()
+    {
+        Mock<IFileFinder> mockFileFinder = new();
+        Mock<IParserFactory> mockParserFactory = new();
+        Mock<IGitService> mockGitService = new();
+        Mock<ICoverageParser> mockCoberturaParser = new();
+        Mock<ICoverageParser> mockSonarQubeParser = new();
+
+        string file1 = "coverage.cobertura.xml";
+        string file2 = "coverage.sonarqube.xml";
+        string file3 = "coverage.another.cobertura.xml";
+
+        mockFileFinder.Setup(f => f.FindFiles(ValidDirectory)).Returns([file1, file2, file3]);
+        
+        mockParserFactory.Setup(f => f.DetectFormat(file1)).Returns(CoverageFormat.Cobertura);
+        mockParserFactory.Setup(f => f.DetectFormat(file2)).Returns(CoverageFormat.SonarQube);
+        mockParserFactory.Setup(f => f.DetectFormat(file3)).Returns(CoverageFormat.Cobertura);
+
+        mockParserFactory.Setup(f => f.CreateParser(CoverageFormat.Cobertura, It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()))
+            .Returns(mockCoberturaParser.Object);
+        mockParserFactory.Setup(f => f.CreateParser(CoverageFormat.SonarQube, It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()))
+            .Returns(mockSonarQubeParser.Object);
+
+        CoverageAnalyser sut = new(CoverageFormat.Auto, ValidDirectory, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
+
+        sut.AnalyseCoverage();
+
+        // Verify parsers were only created once per format
+        mockParserFactory.Verify(f => f.CreateParser(CoverageFormat.Cobertura, It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()), Times.Once);
+        mockParserFactory.Verify(f => f.CreateParser(CoverageFormat.SonarQube, It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()), Times.Once);
+
+        // Verify correct parser was used for each file
+        mockCoberturaParser.Verify(p => p.ParseCoverage(file1, It.IsAny<string?>()), Times.Once);
+        mockSonarQubeParser.Verify(p => p.ParseCoverage(file2, It.IsAny<string?>()), Times.Once);
+        mockCoberturaParser.Verify(p => p.ParseCoverage(file3, It.IsAny<string?>()), Times.Once);
+    }
+
+    [Test]
     public void AnalyseCoverageShouldHandleGitRepoRootFailure()
     {
         Mock<IFileFinder> mockFileFinder = new();
