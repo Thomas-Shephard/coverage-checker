@@ -1,3 +1,4 @@
+using System.Xml;
 using CoverageChecker.Results;
 using CoverageChecker.Services;
 using Microsoft.Extensions.Logging;
@@ -18,22 +19,45 @@ internal class ParserFactory(ICoverageMergeService coverageMergeService) : IPars
 
     public CoverageFormat DetectFormat(string filePath)
     {
-        using StreamReader reader = new(filePath);
-        char[] buffer = new char[1024];
-        int read = reader.Read(buffer, 0, buffer.Length);
-        string content = new(buffer, 0, read);
-
-        if (content.Contains("<coverage", StringComparison.OrdinalIgnoreCase))
+        try
         {
-            // SonarQube generic coverage uses <coverage version="1">
-            if (content.Contains("version=\"1\"", StringComparison.OrdinalIgnoreCase))
+            using XmlReader reader = XmlReader.Create(filePath, ParserBase.XmlReaderSettings);
+            if (!reader.ReadToFollowing("coverage") || reader.Depth != 0)
+            {
+                throw new CoverageParseException($"Could not find root 'coverage' element in file: {filePath}");
+            }
+
+            string? version = reader.GetAttribute("version");
+            if (version == "1")
             {
                 return CoverageFormat.SonarQube;
             }
 
-            return CoverageFormat.Cobertura;
-        }
+            if (!reader.IsEmptyElement)
+            {
+                int rootDepth = reader.Depth;
+                while (reader.Read() && reader.Depth > rootDepth)
+                {
+                    if (reader.NodeType != XmlNodeType.Element)
+                    {
+                        continue;
+                    }
 
-        throw new CoverageParseException($"Could not auto-detect coverage format for file: {filePath}");
+                    switch (reader.Name)
+                    {
+                        case "file" or "lineToCover":
+                            return CoverageFormat.SonarQube;
+                        case "packages" or "sources":
+                            return CoverageFormat.Cobertura;
+                    }
+                }
+            }
+
+            throw new CoverageParseException($"Could not auto-detect coverage format for file: {filePath}");
+        }
+        catch (Exception ex) when (ex is not CoverageException)
+        {
+            throw new CoverageParseException($"Could not auto-detect coverage format for file: {filePath}", ex);
+        }
     }
 }

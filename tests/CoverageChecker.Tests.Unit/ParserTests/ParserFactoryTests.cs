@@ -52,7 +52,7 @@ public class ParserFactoryTests
         string path = Path.GetTempFileName();
         try
         {
-            File.WriteAllText(path, "<?xml version=\"1.0\"?><coverage line-rate=\"0.5\"></coverage>");
+            File.WriteAllText(path, "<?xml version=\"1.0\"?><coverage line-rate=\"0.5\"><packages /></coverage>");
             Assert.That(_factory.DetectFormat(path), Is.EqualTo(CoverageFormat.Cobertura));
         }
         finally
@@ -68,6 +68,21 @@ public class ParserFactoryTests
         try
         {
             File.WriteAllText(path, "<coverage version=\"1\"><file path=\"test.cs\"></file></coverage>");
+            Assert.That(_factory.DetectFormat(path), Is.EqualTo(CoverageFormat.SonarQube));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Test]
+    public void DetectFormatSonarQubeFileWithInvalidVersionReturnsSonarQube()
+    {
+        string path = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(path, "<coverage version=\"invalid\"><file path=\"test.cs\"></file></coverage>");
             Assert.That(_factory.DetectFormat(path), Is.EqualTo(CoverageFormat.SonarQube));
         }
         finally
