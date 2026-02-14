@@ -10,8 +10,14 @@ public class CommandLineOptions
     [Option('d', "directory", Required = false, HelpText = "Directory where coverage files are located. Default: Current directory")]
     public string Directory { get; init; } = Environment.CurrentDirectory;
 
-    [Option('g', "glob-patterns", Required = false, HelpText = "Glob patterns of coverage file locations. Default: *.xml", Default = new[] { "*.xml" })]
-    public IEnumerable<string> GlobPatterns { get; init; } = ["*.xml"];
+    [Option('g', "glob-patterns", Required = false, HelpText = "Glob patterns of coverage file locations. Default: **/*.xml", Default = new[] { "**/*.xml" })]
+    public IEnumerable<string> GlobPatterns { get; init; } = ["**/*.xml"];
+
+    [Option('i', "include", Required = false, HelpText = "Glob patterns of files to include in the coverage analysis.")]
+    public IEnumerable<string>? Include { get; init; }
+
+    [Option('e', "exclude", Required = false, HelpText = "Glob patterns of files to exclude from the coverage analysis.")]
+    public IEnumerable<string>? Exclude { get; init; }
 
     private readonly double _lineThreshold = 0.8;
     [Option('l', "line-threshold", Required = false, HelpText = "Line coverage threshold (percentage). Default: 80")]

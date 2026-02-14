@@ -35,6 +35,11 @@ public class Coverage : ICoverageResult
         return file;
     }
 
+    internal bool RemoveFile(FileCoverage file)
+    {
+        return _files.Remove(file);
+    }
+
     /// <summary>
     /// Calculates the coverage for all files.
     /// </summary>
