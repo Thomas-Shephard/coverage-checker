@@ -23,7 +23,9 @@ The CoverageChecker.CommandLine tool can be invoked by running `coveragechecker`
 |----------------------------|-------------------------------------------------------------------------------|----------|-----------------------|
 | `-f`, `--format`           | The format of the coverage file(s). Options: `Auto`, `SonarQube`, `Cobertura` | No       | `Auto`                |
 | `-d`, `--directory`        | The directory to search for the coverage file(s) within.                      | No       | The current directory |
-| `-g`, `--glob-patterns`    | The glob pattern(s) to use to search for the coverage file(s).                | No       | `*.xml`               |
+| `-g`, `--glob-patterns`    | The glob pattern(s) to use to search for the coverage file(s).                | No       | `**/*.xml`            |
+| `-i`, `--include`          | Glob patterns of files to include in the coverage analysis.                   | No       |                       |
+| `-e`, `--exclude`          | Glob patterns of files to exclude from the coverage analysis.                 | No       |                       |
 | `-l`, `--line-threshold`   | The line coverage threshold. Default: 80                                      | No       | 80                    |
 | `-b`, `--branch-threshold` | The branch coverage threshold. Default: 80                                    | No       | 80                    |
 | `--delta`                  | Calculate coverage for changed lines only.                                    | No       | `false`               |

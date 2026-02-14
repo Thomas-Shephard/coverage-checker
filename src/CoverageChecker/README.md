@@ -47,6 +47,8 @@ The `CoverageAnalyser` class has the following options:
 
 - `coverageFormat`: The format of the coverage file. Options: `Auto`, `SonarQube`, `Cobertura`. Default: `Auto`.
 - `directory`: The directory to search for the coverage file(s) within.
+- `include`: Optional glob patterns of files to include in the coverage analysis.
+- `exclude`: Optional glob patterns of files to exclude from the coverage analysis.
 
 and either one of the following:
 

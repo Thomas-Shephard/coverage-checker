@@ -71,7 +71,7 @@ public class CoverageAnalyserTests
         mockGitService.Setup(s => s.GetChangedLines("main", "HEAD")).Returns(changedLines);
         mockDeltaService.Setup(s => s.FilterCoverage(coverage, changedLines)).Returns(deltaResult);
 
-        CoverageAnalyser sut = new(ValidCoverageFormat, ValidDirectory, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, mockDeltaService.Object);
+        CoverageAnalyser sut = new(ValidCoverageFormat, ValidDirectory, mockFileFinder.Object, null, null, mockParserFactory.Object, mockGitService.Object, mockDeltaService.Object);
 
         DeltaResult result = sut.AnalyseDeltaCoverage("main", coverage);
 
@@ -94,7 +94,7 @@ public class CoverageAnalyserTests
         mockParserFactory.Setup(f => f.CreateParser(CoverageFormat.Cobertura, It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()))
             .Returns(mockParser.Object);
 
-        CoverageAnalyser sut = new(CoverageFormat.Auto, ValidDirectory, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
+        CoverageAnalyser sut = new(CoverageFormat.Auto, ValidDirectory, mockFileFinder.Object, null, null, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
 
         sut.AnalyseCoverage();
 
@@ -104,41 +104,32 @@ public class CoverageAnalyserTests
     }
 
     [Test]
-    public void AnalyseCoverageShouldCacheParsersForDifferentFormatsWhenAutoIsUsed()
+    public void AnalyseCoverageShouldFilterFilesWhenIncludeOrExcludeIsUsed()
     {
         Mock<IFileFinder> mockFileFinder = new();
         Mock<IParserFactory> mockParserFactory = new();
         Mock<IGitService> mockGitService = new();
-        Mock<ICoverageParser> mockCoberturaParser = new();
-        Mock<ICoverageParser> mockSonarQubeParser = new();
+        Mock<ICoverageParser> mockParser = new();
 
-        string file1 = "coverage.cobertura.xml";
-        string file2 = "coverage.sonarqube.xml";
-        string file3 = "coverage.another.cobertura.xml";
+        string file1 = Path.Combine(ValidDirectory, "src/File1.cs");
+        string file2 = Path.Combine(ValidDirectory, "tests/File2.cs");
+        mockFileFinder.Setup(f => f.FindFiles(ValidDirectory)).Returns(["coverage.xml"]);
 
-        mockFileFinder.Setup(f => f.FindFiles(ValidDirectory)).Returns([file1, file2, file3]);
-        
-        mockParserFactory.Setup(f => f.DetectFormat(file1)).Returns(CoverageFormat.Cobertura);
-        mockParserFactory.Setup(f => f.DetectFormat(file2)).Returns(CoverageFormat.SonarQube);
-        mockParserFactory.Setup(f => f.DetectFormat(file3)).Returns(CoverageFormat.Cobertura);
+        mockParserFactory.Setup(f => f.CreateParser(It.IsAny<CoverageFormat>(), It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()))
+                         .Callback<CoverageFormat, Coverage, Microsoft.Extensions.Logging.ILoggerFactory>((_, c, _) =>
+                         {
+                             c.GetOrCreateFile(file1);
+                             c.GetOrCreateFile(file2);
+                         })
+                         .Returns(mockParser.Object);
 
-        mockParserFactory.Setup(f => f.CreateParser(CoverageFormat.Cobertura, It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()))
-            .Returns(mockCoberturaParser.Object);
-        mockParserFactory.Setup(f => f.CreateParser(CoverageFormat.SonarQube, It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()))
-            .Returns(mockSonarQubeParser.Object);
+        // Filter: include only src/**
+        CoverageAnalyser sut = new(CoverageFormat.Auto, ValidDirectory, mockFileFinder.Object, ["src/**"], null, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
 
-        CoverageAnalyser sut = new(CoverageFormat.Auto, ValidDirectory, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
+        Coverage result = sut.AnalyseCoverage();
 
-        sut.AnalyseCoverage();
-
-        // Verify parsers were only created once per format
-        mockParserFactory.Verify(f => f.CreateParser(CoverageFormat.Cobertura, It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()), Times.Once);
-        mockParserFactory.Verify(f => f.CreateParser(CoverageFormat.SonarQube, It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()), Times.Once);
-
-        // Verify correct parser was used for each file
-        mockCoberturaParser.Verify(p => p.ParseCoverage(file1, It.IsAny<string?>()), Times.Once);
-        mockSonarQubeParser.Verify(p => p.ParseCoverage(file2, It.IsAny<string?>()), Times.Once);
-        mockCoberturaParser.Verify(p => p.ParseCoverage(file3, It.IsAny<string?>()), Times.Once);
+        Assert.That(result.Files, Has.Count.EqualTo(1));
+        Assert.That(result.Files[0].Path, Is.EqualTo(file1));
     }
 
     [Test]
@@ -157,7 +148,7 @@ public class CoverageAnalyserTests
         mockParserFactory.Setup(f => f.CreateParser(ValidCoverageFormat, It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()))
             .Returns(mockParser.Object);
 
-        CoverageAnalyser sut = new(ValidCoverageFormat, ValidDirectory, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
+        CoverageAnalyser sut = new(ValidCoverageFormat, ValidDirectory, mockFileFinder.Object, null, null, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
 
         Assert.DoesNotThrow(() => sut.AnalyseCoverage());
 
@@ -186,7 +177,7 @@ public class CoverageAnalyserTests
         mockParserFactory.Setup(f => f.CreateParser(ValidCoverageFormat, It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()))
             .Returns(mockParser.Object);
 
-        CoverageAnalyser sut = new(ValidCoverageFormat, ValidDirectory, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, mockDeltaService.Object);
+        CoverageAnalyser sut = new(ValidCoverageFormat, ValidDirectory, mockFileFinder.Object, null, null, mockParserFactory.Object, mockGitService.Object, mockDeltaService.Object);
 
         sut.AnalyseDeltaCoverage("main");
 
@@ -211,7 +202,7 @@ public class CoverageAnalyserTests
         mockParserFactory.Setup(f => f.CreateParser(ValidCoverageFormat, It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()))
             .Returns(mockParser.Object);
 
-        CoverageAnalyser sut = new(ValidCoverageFormat, ValidDirectory, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>(), mockLoggerFactory.Object);
+        CoverageAnalyser sut = new(ValidCoverageFormat, ValidDirectory, mockFileFinder.Object, null, null, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>(), mockLoggerFactory.Object);
 
         sut.AnalyseCoverage();
 
@@ -232,7 +223,7 @@ public class CoverageAnalyserTests
 
         mockFileFinder.Setup(f => f.FindFiles(ValidDirectory)).Returns([]);
 
-        CoverageAnalyser sut = new(ValidCoverageFormat, ValidDirectory, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
+        CoverageAnalyser sut = new(ValidCoverageFormat, ValidDirectory, mockFileFinder.Object, null, null, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
 
         Assert.Throws<NoCoverageFilesFoundException>(() => sut.AnalyseCoverage());
     }
