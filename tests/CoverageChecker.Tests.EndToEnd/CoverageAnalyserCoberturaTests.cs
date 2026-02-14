@@ -1,4 +1,5 @@
 using CoverageChecker.Results;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CoverageChecker.Tests.EndToEnd;
@@ -7,10 +8,32 @@ public class CoverageAnalyserCoberturaTests
 {
     private readonly string _directory = Path.Combine(TestContext.CurrentContext.TestDirectory, "CoverageFiles", "Cobertura");
 
+    private CoverageAnalyser CreateAnalyser(string globPattern, ILoggerFactory? loggerFactory = null)
+    {
+        CoverageAnalyserOptions options = new()
+        {
+            CoverageFormat = CoverageFormat.Cobertura,
+            Directory = _directory,
+            GlobPatterns = [globPattern]
+        };
+        return new CoverageAnalyser(options, loggerFactory);
+    }
+
+    private CoverageAnalyser CreateAnalyser(IEnumerable<string> globPatterns)
+    {
+        CoverageAnalyserOptions options = new()
+        {
+            CoverageFormat = CoverageFormat.Cobertura,
+            Directory = _directory,
+            GlobPatterns = globPatterns
+        };
+        return new CoverageAnalyser(options);
+    }
+
     [Test]
     public void CoverageAnalyserAnalyseCoberturaCoverageWithLoggerReturnsCoverage()
     {
-        Coverage coverage = new CoverageAnalyser(CoverageFormat.Cobertura, _directory, "FullLineCoverage.xml", NullLoggerFactory.Instance).AnalyseCoverage();
+        Coverage coverage = CreateAnalyser("FullLineCoverage.xml", NullLoggerFactory.Instance).AnalyseCoverage();
 
         Assert.Multiple(() =>
         {
@@ -26,7 +49,7 @@ public class CoverageAnalyserCoberturaTests
     [Test]
     public void CoverageAnalyserAnalyseCoberturaCoverageFullLineCoverageReturnsCoverage()
     {
-        Coverage coverage = new CoverageAnalyser(CoverageFormat.Cobertura, _directory, "FullLineCoverage.xml").AnalyseCoverage();
+        Coverage coverage = CreateAnalyser("FullLineCoverage.xml").AnalyseCoverage();
 
         Assert.Multiple(() =>
         {
@@ -42,7 +65,7 @@ public class CoverageAnalyserCoberturaTests
     [Test]
     public void CoverageAnalyserAnalyseCoberturaCoverageFullBranchCoverageReturnsCoverage()
     {
-        Coverage coverage = new CoverageAnalyser(CoverageFormat.Cobertura, _directory, "FullBranchCoverage.xml").AnalyseCoverage();
+        Coverage coverage = CreateAnalyser("FullBranchCoverage.xml").AnalyseCoverage();
 
         Assert.Multiple(() =>
         {
@@ -57,7 +80,7 @@ public class CoverageAnalyserCoberturaTests
     [Test]
     public void CoverageAnalyserAnalyseCoberturaCoveragePartialLineCoverageReturnsCoverage()
     {
-        Coverage coverage = new CoverageAnalyser(CoverageFormat.Cobertura, _directory, "PartialLineCoverage.xml").AnalyseCoverage();
+        Coverage coverage = CreateAnalyser("PartialLineCoverage.xml").AnalyseCoverage();
 
         Assert.Multiple(() =>
         {
@@ -71,7 +94,7 @@ public class CoverageAnalyserCoberturaTests
     [Test]
     public void CoverageAnalyserAnalyseCoberturaCoverageNoPackagesReturnsCoverage()
     {
-        Coverage coverage = new CoverageAnalyser(CoverageFormat.Cobertura, _directory, "NoPackages.xml").AnalyseCoverage();
+        Coverage coverage = CreateAnalyser("NoPackages.xml").AnalyseCoverage();
 
         Assert.Multiple(() =>
         {
@@ -84,7 +107,7 @@ public class CoverageAnalyserCoberturaTests
     [Test]
     public void CoverageAnalyserAnalyseCoberturaCoverageNoClassesReturnsCoverage()
     {
-        Coverage coverage = new CoverageAnalyser(CoverageFormat.Cobertura, _directory, "NoClasses.xml").AnalyseCoverage();
+        Coverage coverage = CreateAnalyser("NoClasses.xml").AnalyseCoverage();
 
         Assert.Multiple(() =>
         {
@@ -97,7 +120,7 @@ public class CoverageAnalyserCoberturaTests
     [Test]
     public void CoverageAnalyserAnalyseCoberturaCoverageNoLinesReturnsCoverage()
     {
-        Coverage coverage = new CoverageAnalyser(CoverageFormat.Cobertura, _directory, "NoLines.xml").AnalyseCoverage();
+        Coverage coverage = CreateAnalyser("NoLines.xml").AnalyseCoverage();
 
         Assert.Multiple(() =>
         {
@@ -112,7 +135,7 @@ public class CoverageAnalyserCoberturaTests
     [Test]
     public void CoverageAnalyserAnalyseCoberturaCoverageWithSourcesReturnsCoverage()
     {
-        Coverage coverage = new CoverageAnalyser(CoverageFormat.Cobertura, _directory, ["Sources1.xml", "Sources2.xml"]).AnalyseCoverage();
+        Coverage coverage = CreateAnalyser(["Sources1.xml", "Sources2.xml"]).AnalyseCoverage();
 
         Assert.Multiple(() =>
         {
@@ -126,7 +149,7 @@ public class CoverageAnalyserCoberturaTests
     [Test]
     public void CoverageAnalyserAnalyseCoberturaCoverageInvalidBranchCoverage1ThrowsCoverageParseException()
     {
-        CoverageAnalyser coverageAnalyser = new(CoverageFormat.Cobertura, _directory, "InvalidBranchCoverage1.xml");
+        CoverageAnalyser coverageAnalyser = CreateAnalyser("InvalidBranchCoverage1.xml");
 
         Exception e = Assert.Throws<CoverageParseException>(() => coverageAnalyser.AnalyseCoverage());
         Assert.That(e.Message, Is.EqualTo("Attribute 'condition-coverage' on element 'line' is not in the correct format"));
@@ -135,7 +158,7 @@ public class CoverageAnalyserCoberturaTests
     [Test]
     public void CoverageAnalyserAnalyseCoberturaCoverageInvalidBranchCoverage2ThrowsCoverageParseException()
     {
-        CoverageAnalyser coverageAnalyser = new(CoverageFormat.Cobertura, _directory, "InvalidBranchCoverage2.xml");
+        CoverageAnalyser coverageAnalyser = CreateAnalyser("InvalidBranchCoverage2.xml");
 
         Exception e = Assert.Throws<CoverageParseException>(() => coverageAnalyser.AnalyseCoverage());
         Assert.That(e.Message, Is.EqualTo("Attribute 'condition-coverage' on element 'line' is not in the correct format"));
@@ -144,7 +167,7 @@ public class CoverageAnalyserCoberturaTests
     [Test]
     public void CoverageAnalyserAnalyseCoberturaCoverageInvalidBranchCoverage3ThrowsCoverageParseException()
     {
-        CoverageAnalyser coverageAnalyser = new(CoverageFormat.Cobertura, _directory, "InvalidBranchCoverage3.xml");
+        CoverageAnalyser coverageAnalyser = CreateAnalyser("InvalidBranchCoverage3.xml");
 
         Exception e = Assert.Throws<CoverageParseException>(() => coverageAnalyser.AnalyseCoverage());
         Assert.That(e.Message, Is.EqualTo("Attribute 'condition-coverage' on element 'line' is not in the correct format"));
@@ -153,7 +176,7 @@ public class CoverageAnalyserCoberturaTests
     [Test]
     public void CoverageAnalyserAnalyseCoberturaCoverageEmptyFileThrowsCoverageParseException()
     {
-        CoverageAnalyser coverageAnalyser = new(CoverageFormat.Cobertura, _directory, "EmptyFile.xml");
+        CoverageAnalyser coverageAnalyser = CreateAnalyser("EmptyFile.xml");
 
         Exception e = Assert.Throws<CoverageParseException>(() => coverageAnalyser.AnalyseCoverage());
         Assert.That(e.Message, Does.StartWith("Failed to load coverage file"));
@@ -162,7 +185,7 @@ public class CoverageAnalyserCoberturaTests
     [Test]
     public void CoverageAnalyserAnalyseCoberturaCoverageInvalidFileSetup1ThrowsCoverageParseException()
     {
-        CoverageAnalyser coverageAnalyser = new(CoverageFormat.Cobertura, _directory, "InvalidFileSetup1.xml");
+        CoverageAnalyser coverageAnalyser = CreateAnalyser("InvalidFileSetup1.xml");
 
         Exception e = Assert.Throws<CoverageParseException>(() => coverageAnalyser.AnalyseCoverage());
         Assert.That(e.Message, Is.EqualTo("Expected coverage to be the root element"));
@@ -171,7 +194,7 @@ public class CoverageAnalyserCoberturaTests
     [Test]
     public void CoverageAnalyserAnalyseCoberturaCoverageInvalidFileSetup2ThrowsCoverageParseException()
     {
-        CoverageAnalyser coverageAnalyser = new(CoverageFormat.Cobertura, _directory, "InvalidFileSetup2.xml");
+        CoverageAnalyser coverageAnalyser = CreateAnalyser("InvalidFileSetup2.xml");
 
         Exception e = Assert.Throws<CoverageParseException>(() => coverageAnalyser.AnalyseCoverage());
         Assert.That(e.Message, Is.EqualTo("Expected coverage to be the root element"));
@@ -180,7 +203,7 @@ public class CoverageAnalyserCoberturaTests
     [Test]
     public void CoverageAnalyserAnalyseCoberturaCoverageInvalidFileThrowsCoverageParseException()
     {
-        CoverageAnalyser coverageAnalyser = new(CoverageFormat.Cobertura, _directory, "InvalidFile.xml");
+        CoverageAnalyser coverageAnalyser = CreateAnalyser("InvalidFile.xml");
 
         Assert.Throws<NoCoverageFilesFoundException>(() => coverageAnalyser.AnalyseCoverage());
     }
@@ -188,7 +211,7 @@ public class CoverageAnalyserCoberturaTests
     [Test]
     public void CoverageAnalyserAnalyseCoberturaCoverageMultipleSourcesThrowsCoverageParseException()
     {
-        CoverageAnalyser coverageAnalyser = new(CoverageFormat.Cobertura, _directory, "MultipleSources.xml");
+        CoverageAnalyser coverageAnalyser = CreateAnalyser("MultipleSources.xml");
 
         Exception e = Assert.Throws<CoverageParseException>(() => coverageAnalyser.AnalyseCoverage());
         Assert.That(e.Message, Is.EqualTo("Multiple sources are not supported"));

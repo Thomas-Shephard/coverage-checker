@@ -26,7 +26,14 @@ file while automatically detecting its format:
 ```csharp
 using CoverageChecker;
 
-CoverageAnalyser coverageAnalyser = new(CoverageFormat.Auto, ".", "**/coverage.xml");
+CoverageAnalyserOptions options = new()
+{
+    CoverageFormat = CoverageFormat.Auto,
+    Directory = ".",
+    GlobPatterns = ["**/coverage.xml"]
+};
+
+CoverageAnalyser coverageAnalyser = new(options);
 Coverage coverage = coverageAnalyser.AnalyseCoverage();
 
 // Analyse only changed lines compared to origin/main
@@ -43,18 +50,15 @@ SonarQube format. You can also specify a specific format if it is known.
 
 ## Options
 
-The `CoverageAnalyser` class has the following options:
+The `CoverageAnalyserOptions` class has the following properties:
 
-- `coverageFormat`: The format of the coverage file. Options: `Auto`, `SonarQube`, `Cobertura`. Default: `Auto`.
-- `directory`: The directory to search for the coverage file(s) within.
-- `include`: Optional glob patterns of files to include in the coverage analysis.
-- `exclude`: Optional glob patterns of files to exclude from the coverage analysis.
+- `CoverageFormat`: The format of the coverage file. Options: `Auto`, `SonarQube`, `Cobertura`. Default: `Auto`.
+- `Directory`: The directory to search for the coverage file(s) within.
+- `GlobPatterns`: The glob patterns to use to search for the coverage file(s). Default: `**/*.xml`.
+- `Include`: Optional glob patterns of files to include in the coverage analysis.
+- `Exclude`: Optional glob patterns of files to exclude from the coverage analysis.
 
-and either one of the following:
-
-- `globPattern`: The glob pattern to use to match the coverage file(s).
-- `globPatterns`: The glob patterns to use to match the coverage file(s).
-- `matcher`: The glob pattern matcher to use to match the coverage file(s).
+The `CoverageAnalyser` class can be initialized with either an instance of `CoverageAnalyserOptions` or with an options instance and a `Matcher`.
 
 ## Results
 

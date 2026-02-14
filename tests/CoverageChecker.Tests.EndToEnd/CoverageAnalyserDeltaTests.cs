@@ -149,7 +149,13 @@ public class CoverageAnalyserDeltaTests
         string coverageFile = Path.Combine(_repoRoot, "coverage.cobertura.xml");
         File.WriteAllText(coverageFile, coverageXml);
 
-        CoverageAnalyser analyser = new(CoverageFormat.Cobertura, _repoRoot, "coverage.cobertura.xml", NullLoggerFactory.Instance);
+        CoverageAnalyserOptions options = new()
+        {
+            CoverageFormat = CoverageFormat.Cobertura,
+            Directory = _repoRoot,
+            GlobPatterns = ["coverage.cobertura.xml"]
+        };
+        CoverageAnalyser analyser = new(options, NullLoggerFactory.Instance);
         DeltaResult result = analyser.AnalyseDeltaCoverage(baseCommit);
 
         Assert.Multiple(() =>
@@ -209,7 +215,13 @@ public class CoverageAnalyserDeltaTests
         File.WriteAllText(coverageFile, coverageXml);
 
         // Using CoverageFormat.Auto here
-        CoverageAnalyser analyser = new(CoverageFormat.Auto, _repoRoot, "coverage.cobertura.xml", NullLoggerFactory.Instance);
+        CoverageAnalyserOptions options = new()
+        {
+            CoverageFormat = CoverageFormat.Auto,
+            Directory = _repoRoot,
+            GlobPatterns = ["coverage.cobertura.xml"]
+        };
+        CoverageAnalyser analyser = new(options, NullLoggerFactory.Instance);
         DeltaResult result = analyser.AnalyseDeltaCoverage(baseCommit);
 
         Assert.Multiple(() =>
