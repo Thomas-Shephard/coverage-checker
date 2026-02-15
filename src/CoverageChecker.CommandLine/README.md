@@ -64,9 +64,31 @@ coveragechecker -d ./coverage-results -g "**/cobertura-coverage.xml" -l 90 -b 85
 The CoverageChecker Command Line tool reads the specified coverage files and outputs the line and branch coverage of the analyzed files.
 If the line or branch coverage is below the specified threshold, the tool will exit with a non-zero exit code.
 
+### Coverage Gap Reporting
+
+When thresholds are not met, the tool automatically identifies and reports the top 5 files with the most significant coverage gaps. This helps you quickly pinpoint where tests are missing.
+
+For each problematic file, the output includes:
+- **Uncovered Lines**: A summary of line ranges that have no coverage.
+- **Partial Branches**: Detailed information about lines with branch coverage gaps (e.g., `Line 42 (1/2)` branches covered).
+
+Example console output:
+```text
+[Line Coverage]: 75.00% (Threshold: 80.00%)
+[Branch Coverage]: 60.00% (Threshold: 80.00%)
+
+File Gaps: src/Services/AuthService.cs
+  Uncovered Lines: 10-15, 22
+  Partial Branches: Line 42 (1/2), Line 55 (0/2)
+```
+
 ## GitHub Actions Integration
 
-When running in a GitHub Actions environment, the tool automatically enhances its output:
+When running in a GitHub Actions environment (detected via the `GITHUB_ACTIONS` environment variable), the tool automatically enhances its output:
 
-- **Workflow Commands**: Coverage results and threshold failures are reported as `::notice::`, `::warning::`, or `::error::` workflow commands, making them visible directly in the GitHub Actions UI and pull request files view.
-- **Job Summary**: A detailed markdown summary is generated and attached to the workflow run, including an overall metric table and a breakdown of the top 10 files with the lowest coverage.
+- **Workflow Commands**: Coverage results and threshold failures are reported as `::notice::`, `::warning::`, or `::error::` workflow commands.
+- **File Annotations**: When thresholds fail, the tool emits warning annotations directly onto the changed lines in the Pull Request files view, highlighting missing line coverage and partial branch coverage.
+- **Job Summary**: A detailed markdown summary is generated and attached to the workflow run, including:
+  - An overall metric table with status indicators (✅/❌).
+  - A delta coverage summary (if `--delta` is used).
+  - A file breakdown table for the top 10 files with the lowest coverage, including a direct list of gaps.
