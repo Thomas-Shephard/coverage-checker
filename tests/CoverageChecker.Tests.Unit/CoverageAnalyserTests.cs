@@ -112,8 +112,9 @@ public class CoverageAnalyserTests
         Mock<IGitService> mockGitService = new();
         Mock<ICoverageParser> mockParser = new();
 
-        string file1 = Path.Combine(ValidDirectory, "src/File1.cs");
-        string file2 = Path.Combine(ValidDirectory, "tests/File2.cs");
+        string currentDir = Environment.CurrentDirectory;
+        string file1 = Path.Combine(currentDir, "src/File1.cs");
+        string file2 = Path.Combine(currentDir, "tests/File2.cs");
         string filePath = "coverage.xml";
         mockFileFinder.Setup(f => f.FindFiles(ValidDirectory)).Returns([filePath]);
         mockParserFactory.Setup(f => f.DetectFormat(filePath)).Returns(CoverageFormat.Cobertura);
@@ -144,8 +145,9 @@ public class CoverageAnalyserTests
         Mock<IGitService> mockGitService = new();
         Mock<ICoverageParser> mockParser = new();
 
-        string file1 = Path.Combine(ValidDirectory, "src/File1.cs");
-        string file2 = Path.Combine(ValidDirectory, "src/Internal/File2.cs");
+        string currentDir = Environment.CurrentDirectory;
+        string file1 = Path.Combine(currentDir, "src/File1.cs");
+        string file2 = Path.Combine(currentDir, "src/Internal/File2.cs");
         string filePath = "coverage.xml";
         mockFileFinder.Setup(f => f.FindFiles(ValidDirectory)).Returns([filePath]);
         mockParserFactory.Setup(f => f.DetectFormat(filePath)).Returns(CoverageFormat.Cobertura);
@@ -176,8 +178,9 @@ public class CoverageAnalyserTests
         Mock<IGitService> mockGitService = new();
         Mock<ICoverageParser> mockParser = new();
 
-        string file1 = Path.Combine(ValidDirectory, "src/File1.cs");
-        string file2 = Path.Combine(ValidDirectory, "tests/File2.cs");
+        string currentDir = Environment.CurrentDirectory;
+        string file1 = Path.Combine(currentDir, "src/File1.cs");
+        string file2 = Path.Combine(currentDir, "tests/File2.cs");
         string filePath = "coverage.xml";
         mockFileFinder.Setup(f => f.FindFiles(ValidDirectory)).Returns([filePath]);
         mockParserFactory.Setup(f => f.DetectFormat(filePath)).Returns(CoverageFormat.Cobertura);
@@ -209,8 +212,9 @@ public class CoverageAnalyserTests
         Mock<IGitService> mockGitService = new();
         Mock<ICoverageParser> mockParser = new();
 
-        string file1 = Path.Combine(ValidDirectory, "src/File1.cs");
-        string file2 = Path.Combine(ValidDirectory, "tests/File2.cs");
+        string currentDir = Environment.CurrentDirectory;
+        string file1 = Path.Combine(currentDir, "src/File1.cs");
+        string file2 = Path.Combine(currentDir, "tests/File2.cs");
         string filePath = "coverage.xml";
         mockFileFinder.Setup(f => f.FindFiles(ValidDirectory)).Returns([filePath]);
         mockParserFactory.Setup(f => f.DetectFormat(filePath)).Returns(CoverageFormat.Cobertura);
@@ -231,6 +235,74 @@ public class CoverageAnalyserTests
 
         Assert.That(result.Files, Has.Count.EqualTo(1));
         Assert.That(result.Files[0].Path, Is.EqualTo(file1));
+    }
+
+    [Test]
+    public void FilterFilesShouldUseCurrentDirectoryWhenGitRootIsNull()
+    {
+        Mock<IFileFinder> mockFileFinder = new();
+        Mock<IParserFactory> mockParserFactory = new();
+        Mock<IGitService> mockGitService = new();
+        Mock<ICoverageParser> mockParser = new();
+
+        string currentDir = Environment.CurrentDirectory;
+        string file1 = Path.Combine(currentDir, "src/File1.cs");
+        string coverageDir = Path.Combine(currentDir, "coverage_reports");
+        
+        mockFileFinder.Setup(f => f.FindFiles(coverageDir)).Returns(["coverage.xml"]);
+        mockGitService.Setup(g => g.GetRepoRoot()).Throws(new GitException("Not in git"));
+        mockParserFactory.Setup(f => f.DetectFormat(It.IsAny<string>())).Returns(CoverageFormat.Cobertura);
+
+        mockParserFactory.Setup(f => f.CreateParser(It.IsAny<CoverageFormat>(), It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()))
+                         .Callback<CoverageFormat, Coverage, Microsoft.Extensions.Logging.ILoggerFactory>((_, c, _) =>
+                         {
+                             c.GetOrCreateFile(file1);
+                         })
+                         .Returns(mockParser.Object);
+
+        // Filter: include src/** (relative to current directory, NOT coverageDir)
+        CoverageAnalyserOptions options = CreateDefaultOptions() with 
+        { 
+            Directory = coverageDir,
+            Include = ["src/**"] 
+        };
+        CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
+
+        Coverage result = sut.AnalyseCoverage();
+
+        Assert.That(result.Files, Has.Count.EqualTo(1));
+        Assert.That(result.Files[0].Path, Is.EqualTo(file1));
+    }
+
+    [Test]
+    public void FilterFilesShouldHandleDifferentDrivesGracefully()
+    {
+        // This test is mostly relevant on Windows
+        if (Path.DirectorySeparatorChar != '\\') return;
+
+        Mock<IFileFinder> mockFileFinder = new();
+        Mock<IParserFactory> mockParserFactory = new();
+        Mock<IGitService> mockGitService = new();
+        Mock<ICoverageParser> mockParser = new();
+
+        string fileOnOtherDrive = "D:\\OtherDrive\\File1.cs";
+        mockFileFinder.Setup(f => f.FindFiles(ValidDirectory)).Returns(["coverage.xml"]);
+        mockParserFactory.Setup(f => f.DetectFormat(It.IsAny<string>())).Returns(CoverageFormat.Cobertura);
+
+        mockParserFactory.Setup(f => f.CreateParser(It.IsAny<CoverageFormat>(), It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()))
+                         .Callback<CoverageFormat, Coverage, Microsoft.Extensions.Logging.ILoggerFactory>((_, c, _) =>
+                         {
+                             c.GetOrCreateFile(fileOnOtherDrive);
+                         })
+                         .Returns(mockParser.Object);
+
+        CoverageAnalyserOptions options = CreateDefaultOptions() with { Include = ["**/*"] };
+        CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
+
+        // Should not throw and should exclude the file because it's on a different drive than Environment.CurrentDirectory
+        Coverage result = sut.AnalyseCoverage();
+
+        Assert.That(result.Files, Is.Empty);
     }
 
     [Test]
@@ -366,8 +438,9 @@ public class CoverageAnalyserTests
         Mock<IGitService> mockGitService = new();
         Mock<ICoverageParser> mockParser = new();
 
-        string file1 = Path.Combine(ValidDirectory, "src/File1.cs");
-        string file2 = Path.Combine(ValidDirectory, "tests/File2.cs");
+        string currentDir = Environment.CurrentDirectory;
+        string file1 = Path.Combine(currentDir, "src/File1.cs");
+        string file2 = Path.Combine(currentDir, "tests/File2.cs");
         mockFileFinder.Setup(f => f.FindFiles(ValidDirectory)).Returns(["coverage.xml"]);
 
         mockParserFactory.Setup(f => f.CreateParser(It.IsAny<CoverageFormat>(), It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()))
@@ -396,7 +469,8 @@ public class CoverageAnalyserTests
         Mock<IGitService> mockGitService = new();
         Mock<ICoverageParser> mockParser = new();
 
-        string file1 = Path.Combine(ValidDirectory, "src/File1.cs");
+        string currentDir = Environment.CurrentDirectory;
+        string file1 = Path.Combine(currentDir, "src/File1.cs");
         mockFileFinder.Setup(f => f.FindFiles(ValidDirectory)).Returns(["coverage.xml"]);
 
         mockParserFactory.Setup(f => f.CreateParser(It.IsAny<CoverageFormat>(), It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()))

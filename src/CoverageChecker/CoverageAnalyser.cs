@@ -105,7 +105,7 @@ public partial class CoverageAnalyser
     {
         if (_options.Include == null && _options.Exclude == null) return;
 
-        string root = rootDirectory ?? _options.Directory;
+        string root = rootDirectory ?? Environment.CurrentDirectory;
 
         Matcher matcher = new();
         if (_options.Include != null && _options.Include.Any(p => !p.StartsWith('!')))
@@ -129,6 +129,12 @@ public partial class CoverageAnalyser
         List<FileCoverage> filesToRemove = [];
         foreach (FileCoverage file in coverage.Files)
         {
+            if (Path.GetPathRoot(root) != Path.GetPathRoot(file.Path))
+            {
+                filesToRemove.Add(file);
+                continue;
+            }
+
             string relativePath = PathUtils.NormalizePath(Path.GetRelativePath(root, file.Path));
             if (!matcher.Match(relativePath).HasMatches)
             {
