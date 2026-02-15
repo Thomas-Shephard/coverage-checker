@@ -6,6 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <InternalsVisibleTo Include="CoverageChecker.CommandLine"/>
         <InternalsVisibleTo Include="CoverageChecker.Tests.Unit"/>
         <!-- Required for Moq to mock internal interfaces in unit tests -->
         <InternalsVisibleTo Include="DynamicProxyGenAssembly2"/>

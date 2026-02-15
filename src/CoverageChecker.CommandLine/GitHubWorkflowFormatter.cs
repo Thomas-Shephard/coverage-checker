@@ -28,12 +28,26 @@ internal sealed class GitHubWorkflowFormatter() : ConsoleFormatter("github")
 
         if (command is not null)
         {
-            message = message.Replace("%", "%25").Replace("\n", "%0A").Replace("\r", "%0D");
+            message = EscapeMessage(message);
             textWriter.WriteLine($"::{command}::{message}");
         }
         else
         {
             textWriter.WriteLine(message);
         }
+    }
+
+    public static string EscapeMessage(string message)
+    {
+        return message.Replace("%", "%25").Replace("\n", "%0A").Replace("\r", "%0D");
+    }
+
+    public static string EscapeProperty(string value)
+    {
+        return value.Replace("%", "%25")
+                    .Replace("\n", "%0A")
+                    .Replace("\r", "%0D")
+                    .Replace(":", "%3A")
+                    .Replace(",", "%2C");
     }
 }
