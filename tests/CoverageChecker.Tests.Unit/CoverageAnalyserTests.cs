@@ -286,6 +286,7 @@ public class CoverageAnalyserTests
         // On Windows, use a different drive letter.
         // On Linux/Unix, use a relative path. Path.GetPathRoot will return "" while the root (CurrentDirectory) will be "/".
         string fileOnOtherDrive = Path.DirectorySeparatorChar == '\\'
+            // ReSharper disable once NullableWarningSuppressionIsUsed
             ? (Path.GetPathRoot(Environment.CurrentDirectory)!.StartsWith("C", StringComparison.OrdinalIgnoreCase) ? "D:\\File.cs" : "C:\\File.cs")
             : "RelativeFile.cs";
 
