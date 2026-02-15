@@ -86,7 +86,7 @@ File Gaps: src/Services/AuthService.cs
 
 When running in a GitHub Actions environment (detected via the `GITHUB_ACTIONS` environment variable), the tool automatically enhances its output:
 
-- **Workflow Commands**: Coverage results and threshold failures are reported as `::notice::`, `::warning::`, or `::error::` workflow commands.
+- **Workflow Commands**: Threshold failures and coverage gaps are reported as `::warning::` or `::error::` workflow commands.
 - **File Annotations**: When thresholds fail, the tool emits warning annotations directly onto the changed lines in the Pull Request files view, highlighting missing line coverage and partial branch coverage.
 - **Job Summary**: A detailed markdown summary is generated and attached to the workflow run, including:
   - An overall metric table with status indicators (✅/❌).

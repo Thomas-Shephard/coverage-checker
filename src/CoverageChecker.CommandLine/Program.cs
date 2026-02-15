@@ -345,25 +345,36 @@ static void EmitFileAnnotations(FileCoverage file, string rootDirectory, ref int
     string relativePath = PathUtils.NormalizePath(Path.GetRelativePath(rootDirectory, file.Path));
     string escapedPath = GitHubWorkflowFormatter.EscapeProperty(relativePath);
 
-    // Line gaps
+    EmitLineGaps(file, relativePath, escapedPath, ref totalAnnotations, maxTotalAnnotations);
+    EmitBranchGaps(file, relativePath, escapedPath, ref totalAnnotations, maxTotalAnnotations);
+}
+
+static void EmitLineGaps(FileCoverage file, string relativePath, string escapedPath, ref int totalAnnotations, int maxTotalAnnotations)
+{
     foreach ((int Start, int End) range in GapReportUtils.GetLineGapRanges(file.Lines).Take(10))
     {
         if (totalAnnotations >= maxTotalAnnotations) return;
 
+        bool isSingleLine = range.Start == range.End;
+        string lineInfo = isSingleLine ? range.Start.ToString(CultureInfo.InvariantCulture) : $"{range.Start}-{range.End}";
+        string noun = isSingleLine ? "line" : "range";
+
         string title = GitHubWorkflowFormatter.EscapeProperty("Missing Line Coverage");
-        string message = GitHubWorkflowFormatter.EscapeMessage("This range is not covered by tests.");
-        string lineParams = range.Start == range.End ? $"line={range.Start}" : $"line={range.Start},endLine={range.End}";
+        string message = GitHubWorkflowFormatter.EscapeMessage($"[{relativePath} : {lineInfo}] This {noun} is not covered by tests.");
+        string lineParams = isSingleLine ? $"line={range.Start}" : $"line={range.Start},endLine={range.End}";
         Console.WriteLine($"::warning file={escapedPath},{lineParams},title={title}::{message}");
         totalAnnotations++;
     }
+}
 
-    // Branch gaps
+static void EmitBranchGaps(FileCoverage file, string relativePath, string escapedPath, ref int totalAnnotations, int maxTotalAnnotations)
+{
     foreach ((int LineNumber, int Covered, int Total) gap in GapReportUtils.GetBranchGaps(file.Lines).Take(10))
     {
         if (totalAnnotations >= maxTotalAnnotations) return;
 
         string title = GitHubWorkflowFormatter.EscapeProperty("Partial Branch Coverage");
-        string message = GitHubWorkflowFormatter.EscapeMessage($"Only {gap.Covered} out of {gap.Total} branches are covered.");
+        string message = GitHubWorkflowFormatter.EscapeMessage($"[{relativePath} : {gap.LineNumber}] Only {gap.Covered} out of {gap.Total} branches are covered.");
         Console.WriteLine($"::warning file={escapedPath},line={gap.LineNumber},title={title}::{message}");
         totalAnnotations++;
     }
