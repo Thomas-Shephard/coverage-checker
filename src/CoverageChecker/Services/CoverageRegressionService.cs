@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using CoverageChecker.Results;
 
 namespace CoverageChecker.Services;
@@ -8,66 +9,58 @@ internal class CoverageRegressionService : ICoverageRegressionService
 
     public RegressionResult CheckRegression(Coverage baseline, Coverage current, double epsilon = CoverageAnalyser.DefaultEpsilon)
     {
-        List<RegressedFile> regressedFiles = [];
-        
-        Dictionary<(string Path, string? PackageName), FileCoverage> currentFilesMap = new();
-        foreach (FileCoverage file in current.Files)
-        {
-            currentFilesMap.TryAdd((file.Path, file.PackageName), file);
-        }
+        Dictionary<(string Path, string? PackageName), FileCoverage> currentFilesMap = current.Files.ToDictionary(f => (f.Path, f.PackageName));
 
-        foreach (FileCoverage baselineFile in baseline.Files)
-        {
-            foreach (CoverageType coverageType in CoverageTypes)
-            {
-                double baselineCoverage = baselineFile.CalculateFileCoverage(coverageType);
-
-                if (double.IsNaN(baselineCoverage))
-                {
-                    continue;
-                }
-
-                if (currentFilesMap.TryGetValue((baselineFile.Path, baselineFile.PackageName), out FileCoverage? currentFile))
-                {
-                    double newCoverage = currentFile.CalculateFileCoverage(coverageType);
-
-                    if (double.IsNaN(newCoverage))
-                    {
-                        continue;
-                    }
-
-                    if (newCoverage < baselineCoverage - epsilon)
-                    {
-                        regressedFiles.Add(new RegressedFile(
-                            baselineFile.Path,
-                            baselineFile.PackageName,
-                            baselineCoverage,
-                            newCoverage,
-                            newCoverage - baselineCoverage,
-                            coverageType
-                        ));
-                    }
-                }
-                else
-                {
-                    // If missing in current, it is treated as a regression to 0%
-                    const double effectiveNewCoverage = 0.0;
-
-                    if (effectiveNewCoverage < baselineCoverage - epsilon)
-                    {
-                        regressedFiles.Add(new RegressedFile(
-                            baselineFile.Path,
-                            baselineFile.PackageName,
-                            baselineCoverage,
-                            effectiveNewCoverage,
-                            effectiveNewCoverage - baselineCoverage,
-                            coverageType
-                        ));
-                    }
-                }
-            }
-        }
+        List<RegressedFile> regressedFiles = baseline.Files
+                                                     .SelectMany(baselineFile =>
+                                                     {
+                                                         currentFilesMap.TryGetValue((baselineFile.Path, baselineFile.PackageName), out FileCoverage? currentFile);
+                                                         return CheckFileRegression(baselineFile, currentFile, epsilon);
+                                                     })
+                                                     .ToList();
 
         return new RegressionResult(regressedFiles);
+    }
+
+    private static IEnumerable<RegressedFile> CheckFileRegression(FileCoverage baselineFile, FileCoverage? currentFile, double epsilon)
+    {
+        foreach (CoverageType type in CoverageTypes)
+        {
+            if (TryGetRegression(baselineFile, currentFile, type, epsilon, out RegressedFile? regression))
+            {
+                yield return regression;
+            }
+        }
+    }
+
+    private static bool TryGetRegression(FileCoverage baselineFile, FileCoverage? currentFile, CoverageType type, double epsilon, [NotNullWhen(true)] out RegressedFile? regression)
+    {
+        regression = null;
+        double baselineCoverage = baselineFile.CalculateFileCoverage(type);
+        if (double.IsNaN(baselineCoverage))
+        {
+            return false;
+        }
+
+        double currentCoverage = currentFile?.CalculateFileCoverage(type) ?? 0.0;
+        if (double.IsNaN(currentCoverage))
+        {
+            return false;
+        }
+
+        if (currentCoverage >= baselineCoverage - epsilon)
+        {
+            return false;
+        }
+
+        regression = new RegressedFile(
+                                       baselineFile.Path,
+                                       baselineFile.PackageName,
+                                       baselineCoverage,
+                                       currentCoverage,
+                                       currentCoverage - baselineCoverage,
+                                       type
+                                      );
+        return true;
     }
 }

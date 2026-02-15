@@ -122,4 +122,21 @@ public class CoverageRegressionServiceTests
             Assert.That(result.RegressedFiles[0].CoverageType, Is.EqualTo(CoverageType.Line));
         });
     }
+
+    [Test]
+    public void CheckRegressionHandlesNaNCurrentCoverage()
+    {
+        // Baseline has line coverage
+        FileCoverage baselineFile = CoverageTestData.CreateFile(CoverageTestData.Lines4Of4Covered, "Service.cs");
+        Coverage baseline = new([baselineFile]);
+
+        // Current file exists but has NO lines (results in NaN line coverage)
+        FileCoverage currentFile = new("Service.cs");
+        Coverage current = new([currentFile]);
+
+        // This should hit 'if (double.IsNaN(currentCoverage)) return false;' and return no regressions
+        RegressionResult result = _service.CheckRegression(baseline, current);
+
+        Assert.That(result.HasRegressions, Is.False);
+    }
 }

@@ -492,4 +492,23 @@ public class CoverageAnalyserTests
 
         Assert.That(result.Files, Has.Count.EqualTo(1));
     }
+
+    [Test]
+    public void CheckRegressionCallsServiceWithCorrectParameters()
+    {
+        Mock<ICoverageRegressionService> mockRegressionService = new();
+        Coverage baseline = new();
+        Coverage current = new();
+        RegressionResult regressionResult = new([]);
+        double epsilon = 0.001;
+
+        mockRegressionService.Setup(s => s.CheckRegression(baseline, current, epsilon)).Returns(regressionResult);
+
+        CoverageAnalyser sut = new(CreateDefaultOptions(), Mock.Of<IFileFinder>(), Mock.Of<IParserFactory>(), Mock.Of<IGitService>(), Mock.Of<IDeltaCoverageService>(), mockRegressionService.Object);
+
+        RegressionResult result = sut.CheckRegression(baseline, current, epsilon);
+
+        Assert.That(result, Is.EqualTo(regressionResult));
+        mockRegressionService.Verify(s => s.CheckRegression(baseline, current, epsilon), Times.Once);
+    }
 }
