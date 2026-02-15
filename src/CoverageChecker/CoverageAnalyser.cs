@@ -108,13 +108,17 @@ public partial class CoverageAnalyser
         string root = rootDirectory ?? _options.Directory;
 
         Matcher matcher = new();
-        if (_options.Include != null && _options.Include.Any())
+        if (_options.Include != null && _options.Include.Any(p => !p.StartsWith('!')))
         {
             matcher.AddGlobPatterns(_options.Include);
         }
         else
         {
             matcher.AddInclude("**/*");
+            if (_options.Include != null && _options.Include.Any())
+            {
+                matcher.AddGlobPatterns(_options.Include);
+            }
         }
 
         if (_options.Exclude != null && _options.Exclude.Any())

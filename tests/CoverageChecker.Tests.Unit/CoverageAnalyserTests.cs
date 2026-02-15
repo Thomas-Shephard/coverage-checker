@@ -114,9 +114,11 @@ public class CoverageAnalyserTests
 
         string file1 = Path.Combine(ValidDirectory, "src/File1.cs");
         string file2 = Path.Combine(ValidDirectory, "tests/File2.cs");
-        mockFileFinder.Setup(f => f.FindFiles(ValidDirectory)).Returns(["coverage.xml"]);
+        string filePath = "coverage.xml";
+        mockFileFinder.Setup(f => f.FindFiles(ValidDirectory)).Returns([filePath]);
+        mockParserFactory.Setup(f => f.DetectFormat(filePath)).Returns(CoverageFormat.Cobertura);
 
-        mockParserFactory.Setup(f => f.CreateParser(It.IsAny<CoverageFormat>(), It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()))
+        mockParserFactory.Setup(f => f.CreateParser(CoverageFormat.Cobertura, It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()))
                          .Callback<CoverageFormat, Coverage, Microsoft.Extensions.Logging.ILoggerFactory>((_, c, _) =>
                          {
                              c.GetOrCreateFile(file1);
@@ -125,7 +127,104 @@ public class CoverageAnalyserTests
                          .Returns(mockParser.Object);
 
         // Filter: include only src/**
-        CoverageAnalyserOptions options = CreateDefaultOptions() with { Include = ["src/**"] };
+        CoverageAnalyserOptions options = CreateDefaultOptions() with { CoverageFormat = CoverageFormat.Auto, Include = ["src/**"] };
+        CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
+
+        Coverage result = sut.AnalyseCoverage();
+
+        Assert.That(result.Files, Has.Count.EqualTo(1));
+        Assert.That(result.Files[0].Path, Is.EqualTo(file1));
+    }
+
+    [Test]
+    public void AnalyseCoverageShouldFilterFilesWhenIncludeAndExcludeAreCombined()
+    {
+        Mock<IFileFinder> mockFileFinder = new();
+        Mock<IParserFactory> mockParserFactory = new();
+        Mock<IGitService> mockGitService = new();
+        Mock<ICoverageParser> mockParser = new();
+
+        string file1 = Path.Combine(ValidDirectory, "src/File1.cs");
+        string file2 = Path.Combine(ValidDirectory, "src/Internal/File2.cs");
+        string filePath = "coverage.xml";
+        mockFileFinder.Setup(f => f.FindFiles(ValidDirectory)).Returns([filePath]);
+        mockParserFactory.Setup(f => f.DetectFormat(filePath)).Returns(CoverageFormat.Cobertura);
+
+        mockParserFactory.Setup(f => f.CreateParser(CoverageFormat.Cobertura, It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()))
+                         .Callback<CoverageFormat, Coverage, Microsoft.Extensions.Logging.ILoggerFactory>((_, c, _) =>
+                         {
+                             c.GetOrCreateFile(file1);
+                             c.GetOrCreateFile(file2);
+                         })
+                         .Returns(mockParser.Object);
+
+        // Filter: include src/** but exclude src/Internal/**
+        CoverageAnalyserOptions options = CreateDefaultOptions() with { CoverageFormat = CoverageFormat.Auto, Include = ["src/**"], Exclude = ["src/Internal/**"] };
+        CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
+
+        Coverage result = sut.AnalyseCoverage();
+
+        Assert.That(result.Files, Has.Count.EqualTo(1));
+        Assert.That(result.Files[0].Path, Is.EqualTo(file1));
+    }
+
+    [Test]
+    public void AnalyseCoverageShouldSupportNegativePatternsInIncludeList()
+    {
+        Mock<IFileFinder> mockFileFinder = new();
+        Mock<IParserFactory> mockParserFactory = new();
+        Mock<IGitService> mockGitService = new();
+        Mock<ICoverageParser> mockParser = new();
+
+        string file1 = Path.Combine(ValidDirectory, "src/File1.cs");
+        string file2 = Path.Combine(ValidDirectory, "tests/File2.cs");
+        string filePath = "coverage.xml";
+        mockFileFinder.Setup(f => f.FindFiles(ValidDirectory)).Returns([filePath]);
+        mockParserFactory.Setup(f => f.DetectFormat(filePath)).Returns(CoverageFormat.Cobertura);
+
+        mockParserFactory.Setup(f => f.CreateParser(CoverageFormat.Cobertura, It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()))
+                         .Callback<CoverageFormat, Coverage, Microsoft.Extensions.Logging.ILoggerFactory>((_, c, _) =>
+                         {
+                             c.GetOrCreateFile(file1);
+                             c.GetOrCreateFile(file2);
+                         })
+                         .Returns(mockParser.Object);
+
+        // Filter: ONLY negative pattern in Include list
+        CoverageAnalyserOptions options = CreateDefaultOptions() with { CoverageFormat = CoverageFormat.Auto, Include = ["!tests/**"] };
+        CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
+
+        Coverage result = sut.AnalyseCoverage();
+
+        // Should include src/File1.cs and exclude tests/File2.cs
+        Assert.That(result.Files, Has.Count.EqualTo(1));
+        Assert.That(result.Files[0].Path, Is.EqualTo(file1));
+    }
+
+    [Test]
+    public void AnalyseCoverageShouldExcludeFilesWhenExcludeHasLeadingExclamationMark()
+    {
+        Mock<IFileFinder> mockFileFinder = new();
+        Mock<IParserFactory> mockParserFactory = new();
+        Mock<IGitService> mockGitService = new();
+        Mock<ICoverageParser> mockParser = new();
+
+        string file1 = Path.Combine(ValidDirectory, "src/File1.cs");
+        string file2 = Path.Combine(ValidDirectory, "tests/File2.cs");
+        string filePath = "coverage.xml";
+        mockFileFinder.Setup(f => f.FindFiles(ValidDirectory)).Returns([filePath]);
+        mockParserFactory.Setup(f => f.DetectFormat(filePath)).Returns(CoverageFormat.Cobertura);
+
+        mockParserFactory.Setup(f => f.CreateParser(CoverageFormat.Cobertura, It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()))
+                         .Callback<CoverageFormat, Coverage, Microsoft.Extensions.Logging.ILoggerFactory>((_, c, _) =>
+                         {
+                             c.GetOrCreateFile(file1);
+                             c.GetOrCreateFile(file2);
+                         })
+                         .Returns(mockParser.Object);
+
+        // Filter: exclude tests/** using ! prefix in Exclude list (which should be handled correctly)
+        CoverageAnalyserOptions options = CreateDefaultOptions() with { CoverageFormat = CoverageFormat.Auto, Exclude = ["!tests/**"] };
         CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
 
         Coverage result = sut.AnalyseCoverage();
