@@ -20,8 +20,8 @@ dotnet add package CoverageChecker
 
 The `CoverageAnalyser` class is the entry point for extracting code coverage metrics from a coverage file.
 
-The following example shows how to use the `CoverageAnalyser` class to extract code coverage metrics from a coverage
-file while automatically detecting its format:
+The following example shows how to use the `CoverageAnalyser` class to extract code coverage metrics from specific 
+coverage files while filtering the results to only include specific source files:
 
 ```csharp
 using CoverageChecker;
@@ -30,7 +30,9 @@ CoverageAnalyserOptions options = new()
 {
     CoverageFormat = CoverageFormat.Auto,
     Directory = ".",
-    GlobPatterns = ["**/coverage.xml"]
+    GlobPatterns = ["**/coverage.xml"],
+    Include = ["src/**"],           // Only analyze source files under src/
+    Exclude = ["**/Generated/**"]    // Exclude any files in a "Generated" directory
 };
 
 CoverageAnalyser coverageAnalyser = new(options);
@@ -54,9 +56,14 @@ The `CoverageAnalyserOptions` class has the following properties:
 
 - `CoverageFormat`: The format of the coverage file. Options: `Auto`, `SonarQube`, `Cobertura`. Default: `Auto`.
 - `Directory`: The directory to search for the coverage file(s) within.
-- `GlobPatterns`: The glob patterns to use to search for the coverage file(s). Default: `**/*.xml`.
-- `Include`: Optional glob patterns of files to include in the coverage analysis.
-- `Exclude`: Optional glob patterns of files to exclude from the coverage analysis.
+- `GlobPatterns`: The glob patterns to use to search for the coverage report file(s). Default: `**/*.xml`.
+- `Include`: Optional glob patterns of **source files** to include in the analysis. 
+  - Patterns are matched relative to the Git repository root (or current directory fallback).
+  - Supports the `!` prefix for negative patterns (e.g., `!**/*Tests.cs`).
+  - If specified, only source files matching at least one include pattern will be processed.
+- `Exclude`: Optional glob patterns of **source files** to exclude from the analysis.
+  - Matches are removed from the set of included files.
+  - Useful for skipping generated code or third-party libraries.
 
 The `CoverageAnalyser` class can be initialized with either an instance of `CoverageAnalyserOptions` or with an options instance and a `Matcher`.
 
