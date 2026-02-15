@@ -6,6 +6,42 @@ namespace CoverageChecker.Tests.Unit.ServiceTests;
 
 public class GitServiceTests
 {
+    [Test]
+    public void GetRenamesShouldParseRenameOutputCorrectly()
+    {
+        _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
+        _mockExecutor.DiffOutput = "R100\told_file.cs\tnew_file.cs\n";
+
+        IDictionary<string, string> result = _sut.GetRenames("main");
+
+        string oldPath = PathUtils.GetNormalizedFullPath(Path.Combine(_mockExecutor.RepoRoot, "old_file.cs"));
+        string newPath = PathUtils.GetNormalizedFullPath(Path.Combine(_mockExecutor.RepoRoot, "new_file.cs"));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result, Has.Count.EqualTo(1));
+            Assert.That(result[oldPath], Is.EqualTo(newPath));
+        });
+    }
+
+    [Test]
+    public void GetRenamesShouldHandleRenamesWithSpaces()
+    {
+        _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
+        _mockExecutor.DiffOutput = "R090\told file.cs\tnew file.cs\n";
+
+        IDictionary<string, string> result = _sut.GetRenames("main");
+
+        string oldPath = PathUtils.GetNormalizedFullPath(Path.Combine(_mockExecutor.RepoRoot, "old file.cs"));
+        string newPath = PathUtils.GetNormalizedFullPath(Path.Combine(_mockExecutor.RepoRoot, "new file.cs"));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result, Has.Count.EqualTo(1));
+            Assert.That(result[oldPath], Is.EqualTo(newPath));
+        });
+    }
+
     private sealed class MockProcessExecutor : IProcessExecutor
     {
         public string RepoRoot { get; set; } = "/repo";
@@ -21,6 +57,11 @@ public class GitServiceTests
             if (argsList.Contains("rev-parse") && argsList.Contains("--show-toplevel"))
             {
                 return (RepoRootExitCode, RepoRoot, Stderr);
+            }
+
+            if (argsList.Contains("diff") && argsList.Contains("--name-status") && argsList.Any(a => a.StartsWith("-M", StringComparison.Ordinal)))
+            {
+                return (DiffExitCode, DiffOutput, Stderr);
             }
 
             // Updated check to match the robust command arguments

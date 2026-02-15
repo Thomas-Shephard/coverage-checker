@@ -29,4 +29,9 @@ public record CoverageAnalyserOptions
     /// Glob patterns of files to exclude from the coverage analysis.
     /// </summary>
     public IEnumerable<string>? Exclude { get; init; }
+
+    /// <summary>
+    /// The similarity threshold for rename detection (0.0 to 1.0). Default is 0.5 (50%).
+    /// </summary>
+    public double RenameThreshold { get; init; } = 0.5;
 }

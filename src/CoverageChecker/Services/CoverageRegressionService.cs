@@ -1,5 +1,5 @@
-using System.Diagnostics.CodeAnalysis;
 using CoverageChecker.Results;
+using CoverageChecker.Utils;
 
 namespace CoverageChecker.Services;
 
@@ -7,60 +7,128 @@ internal class CoverageRegressionService : ICoverageRegressionService
 {
     private static readonly CoverageType[] CoverageTypes = Enum.GetValues<CoverageType>();
 
-    public RegressionResult CheckRegression(Coverage baseline, Coverage current, double epsilon = CoverageAnalyser.DefaultEpsilon)
+    public RegressionResult CheckRegression(Coverage baseline, Coverage current, IDictionary<string, string>? renames = null, double epsilon = CoverageAnalyser.DefaultEpsilon)
     {
-        Dictionary<(string Path, string? PackageName), FileCoverage> currentFilesMap = current.Files.ToDictionary(f => (f.Path, f.PackageName));
+        ArgumentNullException.ThrowIfNull(baseline);
+        ArgumentNullException.ThrowIfNull(current);
 
-        List<RegressedFile> regressedFiles = baseline.Files
-                                                     .SelectMany(baselineFile =>
-                                                     {
-                                                         currentFilesMap.TryGetValue((baselineFile.Path, baselineFile.PackageName), out FileCoverage? currentFile);
-                                                         return CheckFileRegression(baselineFile, currentFile, epsilon);
-                                                     })
-                                                     .ToList();
+        // Aggregate current coverage stats by path to handle files split across packages.
+        Dictionary<string, FileStats> currentStats = CoverageRegressionService.AggregateStats(current.Files);
+
+        // Aggregate baseline coverage stats by path, applying renames to the lookup key.
+        Dictionary<string, FileStats> baselineStats = CoverageRegressionService.AggregateStats(baseline.Files, renames);
+
+        List<RegressedFile> regressedFiles = [];
+        foreach (KeyValuePair<string, FileStats> baselinePair in baselineStats)
+        {
+            string path = baselinePair.Key;
+            if (!currentStats.TryGetValue(path, out FileStats? currentFileStats))
+            {
+                continue; // File deleted, not a regression.
+            }
+
+            FileStats baselineFileStats = baselinePair.Value;
+            foreach (CoverageType type in CoverageTypes)
+            {
+                double baselineCoverage = baselineFileStats.Calculate(type);
+                double currentCoverage = currentFileStats.Calculate(type);
+
+                if (double.IsNaN(baselineCoverage) || double.IsNaN(currentCoverage))
+                    continue;
+
+                if (currentCoverage < baselineCoverage - epsilon)
+                {
+                    regressedFiles.Add(new RegressedFile(
+                        path,
+                        currentFileStats.PackageName,
+                        baselineCoverage,
+                        currentCoverage,
+                        baselineCoverage - currentCoverage,
+                        type
+                    ));
+                }
+            }
+        }
 
         return new RegressionResult(regressedFiles);
     }
 
-    private static IEnumerable<RegressedFile> CheckFileRegression(FileCoverage baselineFile, FileCoverage? currentFile, double epsilon)
+    private static Dictionary<string, FileStats> AggregateStats(IEnumerable<FileCoverage> files, IDictionary<string, string>? renames = null)
     {
-        foreach (CoverageType type in CoverageTypes)
+        Dictionary<string, FileStats> statsByPath = new(PathUtils.PathComparer);
+        foreach (FileCoverage file in files)
         {
-            if (TryGetRegression(baselineFile, currentFile, type, epsilon, out RegressedFile? regression))
+            string lookupPath = (renames != null && renames.TryGetValue(file.Path, out string? newPath)) ? newPath : file.Path;
+            if (!statsByPath.TryGetValue(lookupPath, out FileStats? stats))
             {
-                yield return regression;
+                stats = new FileStats(file.PackageName);
+                statsByPath[lookupPath] = stats;
+            }
+
+            foreach (LineCoverage line in file.Lines)
+            {
+                stats.AddOrMergeLine(line);
             }
         }
+
+        return statsByPath;
     }
 
-    private static bool TryGetRegression(FileCoverage baselineFile, FileCoverage? currentFile, CoverageType type, double epsilon, [NotNullWhen(true)] out RegressedFile? regression)
+    private sealed class FileStats(string? packageName)
     {
-        regression = null;
-        double baselineCoverage = baselineFile.CalculateFileCoverage(type);
-        if (double.IsNaN(baselineCoverage))
+        public string? PackageName { get; } = packageName;
+
+        // Using a dictionary to merge lines by line number correctly.
+        private readonly Dictionary<int, LineStats> _lines = [];
+
+        public void AddOrMergeLine(LineCoverage line)
         {
-            return false;
+            if (_lines.TryGetValue(line.LineNumber, out LineStats? existing))
+            {
+                existing.IsCovered |= line.IsCovered;
+                if (!line.Branches.HasValue)
+                    return;
+                // If existing has no branches, take them from incoming.
+                // If both have branches, they should match (mergeService would throw if they didn't).
+                existing.Branches ??= line.Branches;
+                existing.CoveredBranches = Math.Max(existing.CoveredBranches ?? 0, line.CoveredBranches ?? 0);
+            }
+            else
+            {
+                _lines[line.LineNumber] = new LineStats
+                {
+                    IsCovered = line.IsCovered,
+                    Branches = line.Branches,
+                    CoveredBranches = line.CoveredBranches
+                };
+            }
         }
 
-        double currentCoverage = currentFile?.CalculateFileCoverage(type) ?? 0.0;
-        if (double.IsNaN(currentCoverage))
+        public double Calculate(CoverageType type)
         {
-            return false;
+            int covered = 0, total = 0;
+            foreach (LineStats line in _lines.Values)
+            {
+                if (type == CoverageType.Line)
+                {
+                    covered += line.IsCovered ? 1 : 0;
+                    total++;
+                }
+                else if (type == CoverageType.Branch && line.Branches.HasValue)
+                {
+                    covered += line.CoveredBranches ?? 0;
+                    total += line.Branches.Value;
+                }
+            }
+
+            return total == 0 ? double.NaN : (double)covered / total;
         }
 
-        if (currentCoverage >= baselineCoverage - epsilon)
+        private sealed class LineStats
         {
-            return false;
+            public bool IsCovered { get; set; }
+            public int? Branches { get; set; }
+            public int? CoveredBranches { get; set; }
         }
-
-        regression = new RegressedFile(
-                                       baselineFile.Path,
-                                       baselineFile.PackageName,
-                                       baselineCoverage,
-                                       currentCoverage,
-                                       currentCoverage - baselineCoverage,
-                                       type
-                                      );
-        return true;
     }
 }

@@ -4,5 +4,5 @@ namespace CoverageChecker.Services;
 
 internal interface ICoverageRegressionService
 {
-    RegressionResult CheckRegression(Coverage baseline, Coverage current, double epsilon = CoverageAnalyser.DefaultEpsilon);
+    RegressionResult CheckRegression(Coverage baseline, Coverage current, IDictionary<string, string>? renames = null, double epsilon = CoverageAnalyser.DefaultEpsilon);
 }

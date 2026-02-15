@@ -502,13 +502,36 @@ public class CoverageAnalyserTests
         RegressionResult regressionResult = new([]);
         double epsilon = 0.001;
 
-        mockRegressionService.Setup(s => s.CheckRegression(baseline, current, epsilon)).Returns(regressionResult);
+        mockRegressionService.Setup(s => s.CheckRegression(baseline, current, null, epsilon)).Returns(regressionResult);
 
         CoverageAnalyser sut = new(CreateDefaultOptions(), Mock.Of<IFileFinder>(), Mock.Of<IParserFactory>(), Mock.Of<IGitService>(), Mock.Of<IDeltaCoverageService>(), mockRegressionService.Object);
 
         RegressionResult result = sut.CheckRegression(baseline, current, epsilon);
 
         Assert.That(result, Is.EqualTo(regressionResult));
-        mockRegressionService.Verify(s => s.CheckRegression(baseline, current, epsilon), Times.Once);
+        mockRegressionService.Verify(s => s.CheckRegression(baseline, current, null, epsilon), Times.Once);
+    }
+
+    [Test]
+    public void CheckRegressionWithBaseRefCallsServiceWithRenames()
+    {
+        Mock<ICoverageRegressionService> mockRegressionService = new();
+        Mock<IGitService> mockGitService = new();
+        Coverage baseline = new();
+        Coverage current = new();
+        RegressionResult regressionResult = new([]);
+        string baseRef = "main";
+        Dictionary<string, string> renames = new() { { "old", "new" } };
+
+        mockGitService.Setup(s => s.GetRenames(baseRef, "HEAD")).Returns(renames);
+        mockRegressionService.Setup(s => s.CheckRegression(baseline, current, renames, CoverageAnalyser.DefaultEpsilon)).Returns(regressionResult);
+
+        CoverageAnalyser sut = new(CreateDefaultOptions(), Mock.Of<IFileFinder>(), Mock.Of<IParserFactory>(), mockGitService.Object, Mock.Of<IDeltaCoverageService>(), mockRegressionService.Object);
+
+        RegressionResult result = sut.CheckRegression(baseline, current, baseRef);
+
+        Assert.That(result, Is.EqualTo(regressionResult));
+        mockGitService.Verify(s => s.GetRenames(baseRef, "HEAD"), Times.Once);
+        mockRegressionService.Verify(s => s.CheckRegression(baseline, current, renames, CoverageAnalyser.DefaultEpsilon), Times.Once);
     }
 }

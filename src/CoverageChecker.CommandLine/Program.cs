@@ -27,7 +27,8 @@ static async Task<int> Run(CommandLineOptions options)
         Directory = options.Directory,
         GlobPatterns = options.GlobPatterns,
         Include = options.Include,
-        Exclude = options.Exclude
+        Exclude = options.Exclude,
+        RenameThreshold = options.RenameThreshold
     };
 
     CoverageAnalyser coverageAnalyser = new(analyserOptions, loggerFactory);

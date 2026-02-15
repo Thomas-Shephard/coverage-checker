@@ -20,36 +20,20 @@ public class CommandLineOptions
     public IEnumerable<string>? Exclude { get; init; }
 
     private readonly double _lineThreshold = 0.8;
-    [Option('l', "line-threshold", Required = false, HelpText = "Line coverage threshold (percentage). Default: 80")]
+    [Option('l', "line-threshold", Required = false, HelpText = "Line coverage threshold (percentage). Default: 80", Default = 80.0)]
     public double LineThreshold
     {
         get => _lineThreshold;
-        init
-        {
-            if (value is < 0 or > 100)
-            {
-                throw new ArgumentOutOfRangeException(nameof(LineThreshold), "Line threshold must be between 0 and 100");
-            }
-
-            _lineThreshold = value / 100;
-        }
+        init => _lineThreshold = ValidateThreshold(value, nameof(LineThreshold)) / 100;
     }
 
     private readonly double _branchThreshold = 0.8;
 
-    [Option('b', "branch-threshold", Required = false, HelpText = "Branch coverage threshold (percentage). Default: 80")]
+    [Option('b', "branch-threshold", Required = false, HelpText = "Branch coverage threshold (percentage). Default: 80", Default = 80.0)]
     public double BranchThreshold
     {
         get => _branchThreshold;
-        init
-        {
-            if (value is < 0 or > 100)
-            {
-                throw new ArgumentOutOfRangeException(nameof(BranchThreshold), "Branch threshold must be between 0 and 100");
-            }
-
-            _branchThreshold = value / 100;
-        }
+        init => _branchThreshold = ValidateThreshold(value, nameof(BranchThreshold)) / 100;
     }
 
     [Option("delta", Required = false, HelpText = "Calculate coverage for changed lines only.")]
@@ -57,4 +41,23 @@ public class CommandLineOptions
 
     [Option("delta-base", Required = false, HelpText = "Base branch or commit to compare against for delta coverage. Default: origin/main", Default = "origin/main")]
     public string DeltaBase { get; init; } = "origin/main";
+
+    private readonly double _renameThreshold = 0.5;
+
+    [Option('r', "rename-threshold", Required = false, HelpText = "The similarity threshold for rename detection (percentage). Default: 50", Default = 50.0)]
+    public double RenameThreshold
+    {
+        get => _renameThreshold;
+        init => _renameThreshold = ValidateThreshold(value, nameof(RenameThreshold)) / 100;
+    }
+
+    private static double ValidateThreshold(double value, string paramName)
+    {
+        if (double.IsNaN(value) || value is < 0 or > 100)
+        {
+            throw new ArgumentOutOfRangeException(paramName, $"{paramName} must be between 0 and 100");
+        }
+
+        return value;
+    }
 }
