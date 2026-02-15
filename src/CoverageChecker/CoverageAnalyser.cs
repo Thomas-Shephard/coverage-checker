@@ -117,8 +117,8 @@ public partial class CoverageAnalyser
     private Matcher CreateMatcher()
     {
         Matcher matcher = new();
-        IEnumerable<string> include = _options.Include?.ToArray() ?? [];
-        IEnumerable<string> exclude = _options.Exclude?.ToArray() ?? [];
+        string[] include = _options.Include?.ToArray() ?? [];
+        string[] exclude = _options.Exclude?.ToArray() ?? [];
 
         if (include.Any(p => !p.StartsWith('!')))
         {
@@ -127,15 +127,18 @@ public partial class CoverageAnalyser
         else
         {
             matcher.AddInclude("**/*");
-            if (include.Any())
+            if (include.Length > 0)
             {
                 matcher.AddGlobPatterns(include);
             }
         }
 
-        if (exclude.Any())
+        if (exclude.Length > 0)
         {
-            matcher.AddGlobPatterns(exclude.Select(e => e.StartsWith('!') ? e : $"!{e}"));
+            foreach (string pattern in exclude)
+            {
+                matcher.AddExclude(pattern.StartsWith('!') ? pattern[1..] : pattern);
+            }
         }
 
         return matcher;
