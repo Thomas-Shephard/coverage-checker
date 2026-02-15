@@ -277,15 +277,21 @@ public class CoverageAnalyserTests
     [Test]
     public void FilterFilesShouldHandleDifferentDrivesGracefully()
     {
-        // This test is mostly relevant on Windows
-        if (Path.DirectorySeparatorChar != '\\') return;
-
         Mock<IFileFinder> mockFileFinder = new();
         Mock<IParserFactory> mockParserFactory = new();
         Mock<IGitService> mockGitService = new();
         Mock<ICoverageParser> mockParser = new();
 
-        string fileOnOtherDrive = "D:\\OtherDrive\\File1.cs";
+        string currentRoot = Path.GetPathRoot(Environment.CurrentDirectory) ?? string.Empty;
+        string otherRoot = currentRoot.StartsWith("C", StringComparison.OrdinalIgnoreCase) ? "D:\\" : "C:\\";
+
+        if (Path.DirectorySeparatorChar != '\\')
+        {
+            otherRoot = "/other-root/";
+        }
+
+        string fileOnOtherDrive = Path.Combine(otherRoot, "OtherDrive", "File1.cs");
+        
         mockFileFinder.Setup(f => f.FindFiles(ValidDirectory)).Returns(["coverage.xml"]);
         mockParserFactory.Setup(f => f.DetectFormat(It.IsAny<string>())).Returns(CoverageFormat.Cobertura);
 
@@ -296,10 +302,10 @@ public class CoverageAnalyserTests
                          })
                          .Returns(mockParser.Object);
 
+        // Include everything, but the different drive should still trigger exclusion
         CoverageAnalyserOptions options = CreateDefaultOptions() with { Include = ["**/*"] };
         CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
 
-        // Should not throw and should exclude the file because it's on a different drive than Environment.CurrentDirectory
         Coverage result = sut.AnalyseCoverage();
 
         Assert.That(result.Files, Is.Empty);
