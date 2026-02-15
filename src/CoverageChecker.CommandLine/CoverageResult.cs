@@ -2,7 +2,7 @@ using CoverageChecker.Results;
 
 namespace CoverageChecker.CommandLine;
 
-internal record CoverageResult(
+internal sealed record CoverageResult(
     Coverage OverallCoverage,
     double LineCoverage,
     double BranchCoverage,

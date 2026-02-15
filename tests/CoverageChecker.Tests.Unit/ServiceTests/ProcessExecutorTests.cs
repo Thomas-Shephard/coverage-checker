@@ -40,7 +40,7 @@ public class ProcessExecutorTests
     }
 
     [Test]
-    public void Execute_ShouldTimeout_WhenWaitForExitReturnsFalse()
+    public void ExecuteShouldTimeoutWhenWaitForExitReturnsFalse()
     {
         _mockProcess.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(false); // Simulate timeout
         string fileName = "git";
@@ -53,7 +53,7 @@ public class ProcessExecutorTests
     }
 
     [Test]
-    public void Execute_ShouldReturnOutput_WhenProcessFinishesInTime()
+    public void ExecuteShouldReturnOutputWhenProcessFinishesInTime()
     {
         _mockProcess.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(true);
         _mockProcess.SetupGet(p => p.ExitCode).Returns(0);
@@ -79,7 +79,7 @@ public class ProcessExecutorTests
     }
 
     [Test]
-    public void Execute_ShouldSetWorkingDirectory_WhenProvided()
+    public void ExecuteShouldSetWorkingDirectoryWhenProvided()
     {
         string workingDir = "C:\\Temp";
         _sut = new ProcessExecutor(() => _mockProcess.Object, workingDir);
@@ -92,17 +92,17 @@ public class ProcessExecutorTests
     }
 
     [Test]
-    public void Execute_ShouldLogWarning_WhenKillFailsAfterTimeout()
+    public void ExecuteShouldLogWarningWhenKillFailsAfterTimeout()
     {
         _mockProcess.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(false);
-        _mockProcess.Setup(p => p.Kill()).Throws(new Exception("Kill failed"));
+        _mockProcess.Setup(p => p.Kill()).Throws(new InvalidOperationException("Kill failed"));
 
         // Act
         Assert.Throws<ProcessExecutionException>(() => _sut.Execute("git", ["status"], TimeSpan.FromSeconds(1)));
     }
 
     [Test]
-    public void Execute_ShouldUsePluralSeconds_WhenTimeoutIsGreaterThanOne()
+    public void ExecuteShouldUsePluralSecondsWhenTimeoutIsGreaterThanOne()
     {
         _mockProcess.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(false);
         
@@ -111,7 +111,7 @@ public class ProcessExecutorTests
     }
 
     [Test]
-    public void Execute_ShouldUseDefaultTimeout_WhenTimeoutIsNull()
+    public void ExecuteShouldUseDefaultTimeoutWhenTimeoutIsNull()
     {
         _mockProcess.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(false);
 

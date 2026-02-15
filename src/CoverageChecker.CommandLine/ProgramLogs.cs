@@ -31,6 +31,15 @@ internal static partial class ProgramLogs
     [LoggerMessage(Level = LogLevel.Error, Message = "Delta branch coverage of {BranchCoverage:P2} is below the required threshold of {BranchThreshold:P2}")]
     public static partial void LogDeltaBranchCoverageBelowThreshold(this ILogger logger, double branchCoverage, double branchThreshold);
 
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Coverage gaps in {FilePath}:")]
+    public static partial void LogFileGapHeader(this ILogger logger, string filePath);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "  Uncovered lines: {Lines}")]
+    public static partial void LogUncoveredLines(this ILogger logger, string lines);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "  Partial branches: {Branches}")]
+    public static partial void LogPartialBranches(this ILogger logger, string branches);
+
     [LoggerMessage(Level = LogLevel.Information, Message = "The coverage threshold has been met.")]
     public static partial void LogThresholdMet(this ILogger logger);
 
@@ -45,4 +54,7 @@ internal static partial class ProgramLogs
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Failed to perform delta coverage analysis.")]
     public static partial void LogDeltaAnalysisFailed(this ILogger logger, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to write GitHub summary to {SummaryPath}")]
+    public static partial void LogGitHubSummaryWriteFailed(this ILogger logger, Exception exception, string summaryPath);
 }

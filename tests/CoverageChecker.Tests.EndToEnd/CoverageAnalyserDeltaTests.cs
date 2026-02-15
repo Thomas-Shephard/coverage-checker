@@ -85,7 +85,7 @@ public class CoverageAnalyserDeltaTests
     }
 
     [Test]
-    public void AnalyseDeltaCoverage_DetectsChangedLines()
+    public void AnalyseDeltaCoverageDetectsChangedLines()
     {
         string filePath = Path.Combine(_repoRoot, "Class1.cs");
         // Using \n for consistency with core.autocrlf=false
@@ -149,7 +149,13 @@ public class CoverageAnalyserDeltaTests
         string coverageFile = Path.Combine(_repoRoot, "coverage.cobertura.xml");
         File.WriteAllText(coverageFile, coverageXml);
 
-        CoverageAnalyser analyser = new(CoverageFormat.Cobertura, _repoRoot, "coverage.cobertura.xml", NullLoggerFactory.Instance);
+        CoverageAnalyserOptions options = new()
+        {
+            CoverageFormat = CoverageFormat.Cobertura,
+            Directory = _repoRoot,
+            GlobPatterns = ["coverage.cobertura.xml"]
+        };
+        CoverageAnalyser analyser = new(options, NullLoggerFactory.Instance);
         DeltaResult result = analyser.AnalyseDeltaCoverage(baseCommit);
 
         Assert.Multiple(() =>
@@ -161,5 +167,71 @@ public class CoverageAnalyserDeltaTests
         FileCoverage file = result.Coverage.Files[0];
         Assert.That(file.Lines, Has.Count.EqualTo(1), "Should only detect one changed line");
         Assert.That(file.Lines[0].LineNumber, Is.EqualTo(6), "Line 6 should be the changed line");
+    }
+
+    [Test]
+    public void AnalyseDeltaCoverageWithAutoFormatDetectsChangedLines()
+    {
+        string filePath = Path.Combine(_repoRoot, "Class1.cs");
+        File.WriteAllText(filePath, "public class Class1\n{\n    public void Method1()\n    {\n        Console.WriteLine(\"Old\");\n    }\n}\n");
+        RunGit("add .");
+        RunGit("commit -m \"Initial commit\"");
+        string baseCommit = GetCurrentCommit();
+
+        File.WriteAllText(filePath, "public class Class1\n{\n    public void Method1()\n    {\n        Console.WriteLine(\"Old\");\n        Console.WriteLine(\"New\");\n    }\n}\n");
+        RunGit("add .");
+        RunGit("commit -m \"Update\"");
+
+        string coverageXml = $"""
+            <?xml version="1.0" encoding="utf-8"?>
+            <coverage line-rate="1" branch-rate="1" version="1.9" timestamp="1600000000" lines-covered="6" lines-valid="6" branches-covered="0" branches-valid="0">
+              <sources>
+                <source>{_repoRoot}</source>
+              </sources>
+              <packages>
+                <package name="TestPackage" line-rate="1" branch-rate="1" complexity="1">
+                  <classes>
+                    <class name="Class1" filename="Class1.cs" line-rate="1" branch-rate="1" complexity="1">
+                      <methods>
+                        <method name="Method1" signature="()V" line-rate="1" branch-rate="1" complexity="1">
+                          <lines>
+                            <line number="5" hits="1" branch="false" />
+                            <line number="6" hits="1" branch="false" />
+                          </lines>
+                        </method>
+                      </methods>
+                      <lines>
+                        <line number="5" hits="1" branch="false" />
+                        <line number="6" hits="1" branch="false" />
+                      </lines>
+                    </class>
+                  </classes>
+                </package>
+              </packages>
+            </coverage>
+            """;
+
+        string coverageFile = Path.Combine(_repoRoot, "coverage.cobertura.xml");
+        File.WriteAllText(coverageFile, coverageXml);
+
+        // Using CoverageFormat.Auto here
+        CoverageAnalyserOptions options = new()
+        {
+            CoverageFormat = CoverageFormat.Auto,
+            Directory = _repoRoot,
+            GlobPatterns = ["coverage.cobertura.xml"]
+        };
+        CoverageAnalyser analyser = new(options, NullLoggerFactory.Instance);
+        DeltaResult result = analyser.AnalyseDeltaCoverage(baseCommit);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.HasChangedLines, Is.True);
+            Assert.That(result.Coverage.Files, Has.Count.EqualTo(1));
+        });
+
+        FileCoverage file = result.Coverage.Files[0];
+        Assert.That(file.Lines, Has.Count.EqualTo(1));
+        Assert.That(file.Lines[0].LineNumber, Is.EqualTo(6));
     }
 }

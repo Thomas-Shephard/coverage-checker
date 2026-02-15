@@ -25,12 +25,12 @@ jobs:
       - name: Check Coverage
         run: dotnet run --project src/CoverageChecker.CommandLine/CoverageChecker.CommandLine.csproj --configuration Release --framework net10.0 --no-build -- --format Cobertura --glob-patterns 'coverage/**/coverage.cobertura.xml' --line-threshold 100 --branch-threshold 100
       - name: Pack NuGet Packages
-        run: dotnet pack --configuration Release --no-build --output ./artifacts
+        run: dotnet pack --configuration Release --no-build
       - name: Upload NuGet Packages
         uses: actions/upload-artifact@v6
         with:
           name: nuget-packages
-          path: ./artifacts/*.nupkg
+          path: artifacts/**/*.nupkg
           if-no-files-found: error
   publish-nuget-package:
     if: startsWith(github.ref, 'refs/tags/v')
@@ -48,9 +48,10 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           name: nuget-packages
+          path: downloaded-packages
       - name: Add GitHub NuGet Source
         run: dotnet nuget add source "https://nuget.pkg.github.com/Thomas-Shephard/index.json" --name "github.com" --username "Thomas-Shephard" --password ${{ secrets.PUBLISH_TO_GITHUB_TOKEN }} --store-password-in-clear-text
       - name: Push to NuGet Sources
         run: |
-          dotnet nuget push **/*.nupkg --source "github.com"
-          dotnet nuget push **/*.nupkg --api-key ${{ secrets.PUBLISH_TO_NUGET_TOKEN }} --source "nuget.org"
+          dotnet nuget push downloaded-packages/**/*.nupkg --source "github.com" --skip-duplicate
+          dotnet nuget push downloaded-packages/**/*.nupkg --api-key ${{ secrets.PUBLISH_TO_NUGET_TOKEN }} --source "nuget.org" --skip-duplicate

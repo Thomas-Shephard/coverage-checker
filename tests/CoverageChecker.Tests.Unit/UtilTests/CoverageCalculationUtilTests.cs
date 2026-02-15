@@ -6,7 +6,7 @@ namespace CoverageChecker.Tests.Unit.UtilTests;
 public class CoverageCalculationUtilFileTests
 {
     [Test]
-    public void CoverageCalculationUtils_LineCoverageOnLines_FullCoverage_ReturnsFullCoverage()
+    public void CoverageCalculationUtilsLineCoverageOnLinesFullCoverageReturnsFullCoverage()
     {
         LineCoverage[] lines = CoverageTestData.Lines4Of4Covered;
 
@@ -16,7 +16,7 @@ public class CoverageCalculationUtilFileTests
     }
 
     [Test]
-    public void CoverageCalculationUtils_LineCoverageOnFiles_FullCoverage_ReturnsFullCoverage()
+    public void CoverageCalculationUtilsLineCoverageOnFilesFullCoverageReturnsFullCoverage()
     {
         FileCoverage[] files =
         [
@@ -31,7 +31,7 @@ public class CoverageCalculationUtilFileTests
     }
 
     [Test]
-    public void CoverageCalculationUtils_BranchCoverageOnLines_FullCoverage_ReturnsFullCoverage()
+    public void CoverageCalculationUtilsBranchCoverageOnLinesFullCoverageReturnsFullCoverage()
     {
         LineCoverage[] lines = CoverageTestData.Lines3Of3CoveredWith2Of2Branches;
 
@@ -41,7 +41,7 @@ public class CoverageCalculationUtilFileTests
     }
 
     [Test]
-    public void CoverageCalculationUtils_BranchCoverageOnFiles_FullCoverage_ReturnsFullCoverage()
+    public void CoverageCalculationUtilsBranchCoverageOnFilesFullCoverageReturnsFullCoverage()
     {
         FileCoverage[] files =
         [
@@ -55,7 +55,7 @@ public class CoverageCalculationUtilFileTests
     }
 
     [Test]
-    public void CoverageCalculationUtils_LineCoverageOnLines_PartialCoverage_ReturnsPartialCoverage()
+    public void CoverageCalculationUtilsLineCoverageOnLinesPartialCoverageReturnsPartialCoverage()
     {
         LineCoverage[] lines = CoverageTestData.Lines3Of5Covered;
 
@@ -65,7 +65,7 @@ public class CoverageCalculationUtilFileTests
     }
 
     [Test]
-    public void CoverageCalculationUtils_LineCoverageOnFiles_PartialCoverage_ReturnsPartialCoverage()
+    public void CoverageCalculationUtilsLineCoverageOnFilesPartialCoverageReturnsPartialCoverage()
     {
         FileCoverage[] files =
         [
@@ -80,7 +80,7 @@ public class CoverageCalculationUtilFileTests
     }
 
     [Test]
-    public void CoverageCalculationUtils_BranchCoverageOnLines_PartialCoverage_ReturnsPartialCoverage()
+    public void CoverageCalculationUtilsBranchCoverageOnLinesPartialCoverageReturnsPartialCoverage()
     {
         LineCoverage[] lines = CoverageTestData.Lines2Of3CoveredWith3Of4Branches;
 
@@ -90,7 +90,7 @@ public class CoverageCalculationUtilFileTests
     }
 
     [Test]
-    public void CoverageCalculationUtils_BranchCoverageOnFiles_PartialCoverage_ReturnsPartialCoverage()
+    public void CoverageCalculationUtilsBranchCoverageOnFilesPartialCoverageReturnsPartialCoverage()
     {
         FileCoverage[] files =
         [
@@ -106,7 +106,7 @@ public class CoverageCalculationUtilFileTests
     }
 
     [Test]
-    public void CoverageCalculationUtils_LineCoverageOnLines_NoCoverage_ReturnsNoCoverage()
+    public void CoverageCalculationUtilsLineCoverageOnLinesNoCoverageReturnsNoCoverage()
     {
         LineCoverage[] lines = CoverageTestData.Lines0Of3Covered;
 
@@ -116,7 +116,7 @@ public class CoverageCalculationUtilFileTests
     }
 
     [Test]
-    public void CoverageCalculationUtils_LineCoverageOnFiles_NoCoverage_ReturnsNoCoverage()
+    public void CoverageCalculationUtilsLineCoverageOnFilesNoCoverageReturnsNoCoverage()
     {
         FileCoverage[] files =
         [
@@ -131,7 +131,7 @@ public class CoverageCalculationUtilFileTests
     }
 
     [Test]
-    public void CoverageCalculationUtils_BranchCoverageOnLines_NoCoverage_ReturnsNoCoverage()
+    public void CoverageCalculationUtilsBranchCoverageOnLinesNoCoverageReturnsNoCoverage()
     {
         LineCoverage[] lines = CoverageTestData.Lines1Of1CoveredWith0Of4Branches;
 
@@ -141,7 +141,7 @@ public class CoverageCalculationUtilFileTests
     }
 
     [Test]
-    public void CoverageCalculationUtils_BranchCoverageOnFiles_NoCoverage_ReturnsNoCoverage()
+    public void CoverageCalculationUtilsBranchCoverageOnFilesNoCoverageReturnsNoCoverage()
     {
         FileCoverage[] files =
         [
@@ -155,7 +155,7 @@ public class CoverageCalculationUtilFileTests
     }
 
     [Test]
-    public void CoverageCalculationUtils_LineCoverageOnLines_EmptyCoverage_ReturnsNaNCoverage()
+    public void CoverageCalculationUtilsLineCoverageOnLinesEmptyCoverageReturnsNaNCoverage()
     {
         LineCoverage[] lines = CoverageTestData.LinesEmpty;
 
@@ -165,7 +165,7 @@ public class CoverageCalculationUtilFileTests
     }
 
     [Test]
-    public void CoverageCalculationUtils_LineCoverageOnFiles_EmptyCoverage1_ReturnsNaNCoverage()
+    public void CoverageCalculationUtilsLineCoverageOnFilesEmptyCoverage1ReturnsNaNCoverage()
     {
         FileCoverage[] files = CoverageTestData.FilesEmpty;
 
@@ -175,7 +175,7 @@ public class CoverageCalculationUtilFileTests
     }
 
     [Test]
-    public void CoverageCalculationUtils_LineCoverageOnFiles_EmptyCoverage2_ReturnsNaNCoverage()
+    public void CoverageCalculationUtilsLineCoverageOnFilesEmptyCoverage2ReturnsNaNCoverage()
     {
         FileCoverage[] files =
         [
@@ -189,7 +189,7 @@ public class CoverageCalculationUtilFileTests
     }
 
     [Test]
-    public void CoverageCalculationUtils_BranchCoverageOnLines_EmptyCoverage_ReturnsNaNCoverage()
+    public void CoverageCalculationUtilsBranchCoverageOnLinesEmptyCoverageReturnsNaNCoverage()
     {
         LineCoverage[] lines = CoverageTestData.Lines3Of5Covered;
 
@@ -200,7 +200,7 @@ public class CoverageCalculationUtilFileTests
 
 
     [Test]
-    public void CoverageCalculationUtils_BranchCoverageOnFiles_EmptyCoverage_ReturnsNaNCoverage()
+    public void CoverageCalculationUtilsBranchCoverageOnFilesEmptyCoverageReturnsNaNCoverage()
     {
         FileCoverage[] files =
         [
@@ -214,7 +214,7 @@ public class CoverageCalculationUtilFileTests
     }
 
     [Test]
-    public void CoverageCalculationUtils_InvalidCoverageOnLines_ThrowsException()
+    public void CoverageCalculationUtilsInvalidCoverageOnLinesThrowsException()
     {
         LineCoverage[] lines = CoverageTestData.Lines3Of5Covered;
 
@@ -223,7 +223,7 @@ public class CoverageCalculationUtilFileTests
     }
 
     [Test]
-    public void CoverageCalculationUtils_InvalidCoverageOnFiles_ThrowsException()
+    public void CoverageCalculationUtilsInvalidCoverageOnFilesThrowsException()
     {
         FileCoverage[] files =
         [

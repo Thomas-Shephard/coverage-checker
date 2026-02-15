@@ -1,4 +1,5 @@
 using CoverageChecker.Results;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CoverageChecker.Tests.EndToEnd;
@@ -7,10 +8,21 @@ public class CoverageAnalyserSonarQubeTests
 {
     private readonly string _directory = Path.Combine(TestContext.CurrentContext.TestDirectory, "CoverageFiles", "SonarQube");
 
-    [Test]
-    public void CoverageAnalyser_AnalyseSonarQubeCoverage_WithLogger_ReturnsCoverage()
+    private CoverageAnalyser CreateAnalyser(string globPattern, ILoggerFactory? loggerFactory = null)
     {
-        Coverage coverage = new CoverageAnalyser(CoverageFormat.SonarQube, _directory, "FullLineCoverage.xml", NullLoggerFactory.Instance).AnalyseCoverage();
+        CoverageAnalyserOptions options = new()
+        {
+            CoverageFormat = CoverageFormat.SonarQube,
+            Directory = _directory,
+            GlobPatterns = [globPattern]
+        };
+        return new CoverageAnalyser(options, loggerFactory);
+    }
+
+    [Test]
+    public void CoverageAnalyserAnalyseSonarQubeCoverageWithLoggerReturnsCoverage()
+    {
+        Coverage coverage = CreateAnalyser("FullLineCoverage.xml", NullLoggerFactory.Instance).AnalyseCoverage();
 
         Assert.Multiple(() =>
         {
@@ -25,9 +37,9 @@ public class CoverageAnalyserSonarQubeTests
     }
 
     [Test]
-    public void CoverageAnalyser_AnalyseSonarQubeCoverage_FullLineCoverage_ReturnsCoverage()
+    public void CoverageAnalyserAnalyseSonarQubeCoverageFullLineCoverageReturnsCoverage()
     {
-        Coverage coverage = new CoverageAnalyser(CoverageFormat.SonarQube, _directory, "FullLineCoverage.xml").AnalyseCoverage();
+        Coverage coverage = CreateAnalyser("FullLineCoverage.xml").AnalyseCoverage();
 
         Assert.Multiple(() =>
         {
@@ -42,9 +54,9 @@ public class CoverageAnalyserSonarQubeTests
     }
 
     [Test]
-    public void CoverageAnalyser_AnalyseSonarQubeCoverage_FullBranchCoverage_ReturnsCoverage()
+    public void CoverageAnalyserAnalyseSonarQubeCoverageFullBranchCoverageReturnsCoverage()
     {
-        Coverage coverage = new CoverageAnalyser(CoverageFormat.SonarQube, _directory, "FullBranchCoverage.xml").AnalyseCoverage();
+        Coverage coverage = CreateAnalyser("FullBranchCoverage.xml").AnalyseCoverage();
 
         Assert.Multiple(() =>
         {
@@ -58,9 +70,9 @@ public class CoverageAnalyserSonarQubeTests
     }
 
     [Test]
-    public void CoverageAnalyser_AnalyseSonarQubeCoverage_PartialLineCoverage_ReturnsCoverage()
+    public void CoverageAnalyserAnalyseSonarQubeCoveragePartialLineCoverageReturnsCoverage()
     {
-        Coverage coverage = new CoverageAnalyser(CoverageFormat.SonarQube, _directory, "PartialLineCoverage.xml").AnalyseCoverage();
+        Coverage coverage = CreateAnalyser("PartialLineCoverage.xml").AnalyseCoverage();
 
         Assert.Multiple(() =>
         {
@@ -73,9 +85,9 @@ public class CoverageAnalyserSonarQubeTests
     }
 
     [Test]
-    public void CoverageAnalyser_AnalyseSonarQubeCoverage_NoFiles_ReturnsCoverage()
+    public void CoverageAnalyserAnalyseSonarQubeCoverageNoFilesReturnsCoverage()
     {
-        Coverage coverage = new CoverageAnalyser(CoverageFormat.SonarQube, _directory, "NoFiles.xml").AnalyseCoverage();
+        Coverage coverage = CreateAnalyser("NoFiles.xml").AnalyseCoverage();
 
         Assert.Multiple(() =>
         {
@@ -86,9 +98,9 @@ public class CoverageAnalyserSonarQubeTests
     }
 
     [Test]
-    public void CoverageAnalyser_AnalyseSonarQubeCoverage_NoLines_ReturnsCoverage()
+    public void CoverageAnalyserAnalyseSonarQubeCoverageNoLinesReturnsCoverage()
     {
-        Coverage coverage = new CoverageAnalyser(CoverageFormat.SonarQube, _directory, "NoLines.xml").AnalyseCoverage();
+        Coverage coverage = CreateAnalyser("NoLines.xml").AnalyseCoverage();
 
         Assert.Multiple(() =>
         {
@@ -101,53 +113,53 @@ public class CoverageAnalyserSonarQubeTests
     }
 
     [Test]
-    public void CoverageAnalyser_AnalyseSonarQubeCoverage_InvalidVersion_ThrowsCoverageParseException()
+    public void CoverageAnalyserAnalyseSonarQubeCoverageInvalidVersionThrowsCoverageParseException()
     {
-        CoverageAnalyser coverageAnalyser = new(CoverageFormat.SonarQube, _directory, "InvalidVersion.xml");
+        CoverageAnalyser coverageAnalyser = CreateAnalyser("InvalidVersion.xml");
 
         Exception e = Assert.Throws<CoverageParseException>(() => coverageAnalyser.AnalyseCoverage());
         Assert.That(e.Message, Is.EqualTo("Attribute 'version' on element 'coverage' must be '1'"));
     }
 
     [Test]
-    public void CoverageAnalyser_AnalyseSonarQubeCoverage_EmptyFile_ThrowsCoverageParseException()
+    public void CoverageAnalyserAnalyseSonarQubeCoverageEmptyFileThrowsCoverageParseException()
     {
-        CoverageAnalyser coverageAnalyser = new(CoverageFormat.SonarQube, _directory, "EmptyFile.xml");
+        CoverageAnalyser coverageAnalyser = CreateAnalyser("EmptyFile.xml");
 
         Exception e = Assert.Throws<CoverageParseException>(() => coverageAnalyser.AnalyseCoverage());
         Assert.That(e.Message, Does.StartWith("Failed to load coverage file"));
     }
 
     [Test]
-    public void CoverageAnalyser_AnalyseSonarQubeCoverage_InvalidFileSetup1_ThrowsCoverageParseException()
+    public void CoverageAnalyserAnalyseSonarQubeCoverageInvalidFileSetup1ThrowsCoverageParseException()
     {
-        CoverageAnalyser coverageAnalyser = new(CoverageFormat.SonarQube, _directory, "InvalidFileSetup1.xml");
+        CoverageAnalyser coverageAnalyser = CreateAnalyser("InvalidFileSetup1.xml");
 
         Exception e = Assert.Throws<CoverageParseException>(() => coverageAnalyser.AnalyseCoverage());
         Assert.That(e.Message, Is.EqualTo("Expected coverage to be the root element"));
     }
 
     [Test]
-    public void CoverageAnalyser_AnalyseSonarQubeCoverage_InvalidFileSetup2_ThrowsCoverageParseException()
+    public void CoverageAnalyserAnalyseSonarQubeCoverageInvalidFileSetup2ThrowsCoverageParseException()
     {
-        CoverageAnalyser coverageAnalyser = new(CoverageFormat.SonarQube, _directory, "InvalidFileSetup2.xml");
+        CoverageAnalyser coverageAnalyser = CreateAnalyser("InvalidFileSetup2.xml");
 
         Exception e = Assert.Throws<CoverageParseException>(() => coverageAnalyser.AnalyseCoverage());
         Assert.That(e.Message, Is.EqualTo("Expected coverage to be the root element"));
     }
 
     [Test]
-    public void CoverageAnalyser_AnalyseSonarQubeCoverage_InvalidFile_ThrowsCoverageParseException()
+    public void CoverageAnalyserAnalyseSonarQubeCoverageInvalidFileThrowsCoverageParseException()
     {
-        CoverageAnalyser coverageAnalyser = new(CoverageFormat.SonarQube, _directory, "InvalidFile.xml");
+        CoverageAnalyser coverageAnalyser = CreateAnalyser("InvalidFile.xml");
 
         Assert.Throws<NoCoverageFilesFoundException>(() => coverageAnalyser.AnalyseCoverage());
     }
 
     [Test]
-    public void CoverageAnalyser_AnalyseSonarQubeCoverage_InconsistentBranches_ThrowsCoverageParseException()
+    public void CoverageAnalyserAnalyseSonarQubeCoverageInconsistentBranchesThrowsCoverageParseException()
     {
-        CoverageAnalyser coverageAnalyser = new(CoverageFormat.SonarQube, _directory, "InconsistentBranches.xml");
+        CoverageAnalyser coverageAnalyser = CreateAnalyser("InconsistentBranches.xml");
 
         Exception e = Assert.Throws<CoverageParseException>(() => coverageAnalyser.AnalyseCoverage());
         Assert.That(e.Message, Is.EqualTo("Both 'branchesToCover' and 'coveredBranches' attributes must be present if either is specified"));

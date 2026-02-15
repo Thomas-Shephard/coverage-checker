@@ -6,7 +6,7 @@ namespace CoverageChecker.Tests.Unit.ResultTests;
 public class CoverageTests
 {
     [Test]
-    public void Coverage_ConstructorWithFiles_ReturnsObject()
+    public void CoverageConstructorWithFilesReturnsObject()
     {
         FileCoverage[] files =
         [
@@ -24,7 +24,7 @@ public class CoverageTests
     }
 
     [Test]
-    public void Coverage_ConstructorWithEmptyFiles_ReturnsObject()
+    public void CoverageConstructorWithEmptyFilesReturnsObject()
     {
         FileCoverage[] files = [];
 
@@ -38,7 +38,7 @@ public class CoverageTests
     }
 
     [Test]
-    public void Coverage_GetOrCreateFile_ReturnsFileIfExists()
+    public void CoverageGetOrCreateFileReturnsFileIfExists()
     {
         Coverage coverage = new();
         CoverageMergeService service = new();
@@ -64,7 +64,7 @@ public class CoverageTests
     }
 
     [Test]
-    public void Coverage_CalculateOverallCoverage_LineCoverage_ReturnsCoverage()
+    public void CoverageCalculateOverallCoverageLineCoverageReturnsCoverage()
     {
         FileCoverage[] files =
         [
@@ -80,7 +80,7 @@ public class CoverageTests
     }
 
     [Test]
-    public void Coverage_CalculateOverallCoverage_BranchCoverage_ReturnsCoverage()
+    public void CoverageCalculateOverallCoverageBranchCoverageReturnsCoverage()
     {
         FileCoverage[] files =
         [
@@ -96,7 +96,7 @@ public class CoverageTests
     }
 
     [Test]
-    public void Coverage_CalculatePackageCoverage_LineCoverage_ReturnsCoverage()
+    public void CoverageCalculatePackageCoverageLineCoverageReturnsCoverage()
     {
         FileCoverage[] files =
         [
@@ -113,7 +113,7 @@ public class CoverageTests
     }
 
     [Test]
-    public void Coverage_CalculatePackageCoverage_BranchCoverage_ReturnsCoverage()
+    public void CoverageCalculatePackageCoverageBranchCoverageReturnsCoverage()
     {
         FileCoverage[] files =
         [
@@ -130,7 +130,7 @@ public class CoverageTests
     }
 
     [Test]
-    public void Coverage_CalculatePackageCoverage_UnknownPackage_ThrowsException()
+    public void CoverageCalculatePackageCoverageUnknownPackageThrowsException()
     {
         FileCoverage[] files =
         [

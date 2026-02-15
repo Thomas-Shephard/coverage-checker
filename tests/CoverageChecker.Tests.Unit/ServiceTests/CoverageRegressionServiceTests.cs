@@ -5,7 +5,7 @@ namespace CoverageChecker.Tests.Unit.ServiceTests;
 
 public class CoverageRegressionServiceTests
 {
-    private ICoverageRegressionService _service;
+    private CoverageRegressionService _service;
 
     [SetUp]
     public void Setup()
@@ -14,7 +14,7 @@ public class CoverageRegressionServiceTests
     }
 
     [Test]
-    public void CheckRegression_DeletedFile_ReturnsRegressionForAllTypes()
+    public void CheckRegressionDeletedFileReturnsRegressionForAllTypes()
     {
         // Line coverage: 100%, Branch coverage: 100%
         FileCoverage baselineFile = CoverageTestData.CreateFile(CoverageTestData.Lines3Of3CoveredWith2Of2Branches, "Service.cs");
@@ -39,7 +39,7 @@ public class CoverageRegressionServiceTests
     }
 
     [Test]
-    public void CheckRegression_WorseLineCoverage_ReturnsLineRegression()
+    public void CheckRegressionWorseLineCoverageReturnsLineRegression()
     {
         // Baseline: 100% (4/4) Line, NaN Branch (no branches)
         FileCoverage baselineFile = CoverageTestData.CreateFile(CoverageTestData.Lines4Of4Covered, "Service.cs");
@@ -59,7 +59,7 @@ public class CoverageRegressionServiceTests
     }
 
     [Test]
-    public void CheckRegression_WorseBranchCoverage_ReturnsBranchRegression()
+    public void CheckRegressionWorseBranchCoverageReturnsBranchRegression()
     {
         LineCoverage line = new(1, true, 4, 4); // 100% branch
         FileCoverage baselineFile = new("Service.cs");
@@ -82,7 +82,7 @@ public class CoverageRegressionServiceTests
     }
 
     [Test]
-    public void CheckRegression_BetterCoverage_ReturnsNoRegression()
+    public void CheckRegressionBetterCoverageReturnsNoRegression()
     {
         // Baseline: 60% (3/5)
         FileCoverage baselineFile = CoverageTestData.CreateFile(CoverageTestData.Lines3Of5Covered, "Service.cs");
@@ -101,7 +101,7 @@ public class CoverageRegressionServiceTests
     }
 
     [Test]
-    public void CheckRegression_MultipleFiles_IdentifiesRegressionsCorrectly()
+    public void CheckRegressionMultipleFilesIdentifiesRegressionsCorrectly()
     {
         FileCoverage baselineFile1 = CoverageTestData.CreateFile(CoverageTestData.Lines4Of4Covered, "File1.cs");
         FileCoverage baselineFile2 = CoverageTestData.CreateFile(CoverageTestData.Lines3Of5Covered, "File2.cs");
