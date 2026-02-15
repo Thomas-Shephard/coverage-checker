@@ -108,12 +108,9 @@ public partial class CoverageAnalyser
         string root = rootDirectory ?? Environment.CurrentDirectory;
         Matcher matcher = CreateMatcher();
 
-        foreach (FileCoverage file in coverage.Files.ToList())
+        foreach (FileCoverage file in coverage.Files.Where(f => IsFileExcluded(f, root, matcher)).ToList())
         {
-            if (IsFileExcluded(file, root, matcher))
-            {
-                coverage.RemoveFile(file);
-            }
+            coverage.RemoveFile(file);
         }
     }
 

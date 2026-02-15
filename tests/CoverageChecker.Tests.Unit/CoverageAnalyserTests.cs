@@ -282,16 +282,13 @@ public class CoverageAnalyserTests
         Mock<IGitService> mockGitService = new();
         Mock<ICoverageParser> mockParser = new();
 
-        string currentRoot = Path.GetPathRoot(Environment.CurrentDirectory) ?? string.Empty;
-        string otherRoot = currentRoot.StartsWith("C", StringComparison.OrdinalIgnoreCase) ? "D:\\" : "C:\\";
+        // Determine a path that will definitely have a different root than Environment.CurrentDirectory
+        // On Windows, use a different drive letter.
+        // On Linux/Unix, use a relative path. Path.GetPathRoot will return "" while the root (CurrentDirectory) will be "/".
+        string fileOnOtherDrive = Path.DirectorySeparatorChar == '\\'
+            ? (Path.GetPathRoot(Environment.CurrentDirectory)!.StartsWith("C", StringComparison.OrdinalIgnoreCase) ? "D:\\File.cs" : "C:\\File.cs")
+            : "RelativeFile.cs";
 
-        if (Path.DirectorySeparatorChar != '\\')
-        {
-            otherRoot = "/other-root/";
-        }
-
-        string fileOnOtherDrive = Path.Combine(otherRoot, "OtherDrive", "File1.cs");
-        
         mockFileFinder.Setup(f => f.FindFiles(ValidDirectory)).Returns(["coverage.xml"]);
         mockParserFactory.Setup(f => f.DetectFormat(It.IsAny<string>())).Returns(CoverageFormat.Cobertura);
 
@@ -302,7 +299,7 @@ public class CoverageAnalyserTests
                          })
                          .Returns(mockParser.Object);
 
-        // Include everything, but the different drive should still trigger exclusion
+        // Include everything, but the different drive/root should still trigger exclusion
         CoverageAnalyserOptions options = CreateDefaultOptions() with { Include = ["**/*"] };
         CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
 
