@@ -106,46 +106,53 @@ public partial class CoverageAnalyser
         if (_options.Include == null && _options.Exclude == null) return;
 
         string root = rootDirectory ?? Environment.CurrentDirectory;
+        Matcher matcher = CreateMatcher();
 
-        Matcher matcher = new();
-        if (_options.Include != null && _options.Include.Any(p => !p.StartsWith('!')))
+        foreach (FileCoverage file in coverage.Files.ToList())
         {
-            matcher.AddGlobPatterns(_options.Include);
+            if (IsFileExcluded(file, root, matcher))
+            {
+                coverage.RemoveFile(file);
+            }
+        }
+    }
+
+    private Matcher CreateMatcher()
+    {
+        Matcher matcher = new();
+        IEnumerable<string> include = _options.Include?.ToArray() ?? [];
+        IEnumerable<string> exclude = _options.Exclude?.ToArray() ?? [];
+
+        if (include.Any(p => !p.StartsWith('!')))
+        {
+            matcher.AddGlobPatterns(include);
         }
         else
         {
             matcher.AddInclude("**/*");
-            if (_options.Include != null && _options.Include.Any())
+            if (include.Any())
             {
-                matcher.AddGlobPatterns(_options.Include);
+                matcher.AddGlobPatterns(include);
             }
         }
 
-        if (_options.Exclude != null && _options.Exclude.Any())
+        if (exclude.Any())
         {
-            matcher.AddGlobPatterns(_options.Exclude.Select(e => e.StartsWith('!') ? e : $"!{e}"));
+            matcher.AddGlobPatterns(exclude.Select(e => e.StartsWith('!') ? e : $"!{e}"));
         }
 
-        List<FileCoverage> filesToRemove = [];
-        foreach (FileCoverage file in coverage.Files)
-        {
-            if (Path.GetPathRoot(root) != Path.GetPathRoot(file.Path))
-            {
-                filesToRemove.Add(file);
-                continue;
-            }
+        return matcher;
+    }
 
-            string relativePath = PathUtils.NormalizePath(Path.GetRelativePath(root, file.Path));
-            if (!matcher.Match(relativePath).HasMatches)
-            {
-                filesToRemove.Add(file);
-            }
+    private static bool IsFileExcluded(FileCoverage file, string root, Matcher matcher)
+    {
+        if (Path.GetPathRoot(root) != Path.GetPathRoot(file.Path))
+        {
+            return true;
         }
 
-        foreach (FileCoverage file in filesToRemove)
-        {
-            coverage.RemoveFile(file);
-        }
+        string relativePath = PathUtils.NormalizePath(Path.GetRelativePath(root, file.Path));
+        return !matcher.Match(relativePath).HasMatches;
     }
 
     /// <summary>
