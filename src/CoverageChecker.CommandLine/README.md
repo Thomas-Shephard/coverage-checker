@@ -23,13 +23,41 @@ The CoverageChecker.CommandLine tool can be invoked by running `coveragechecker`
 |----------------------------|-------------------------------------------------------------------------------|----------|-----------------------|
 | `-f`, `--format`           | The format of the coverage file(s). Options: `Auto`, `SonarQube`, `Cobertura` | No       | `Auto`                |
 | `-d`, `--directory`        | The directory to search for the coverage file(s) within.                      | No       | The current directory |
-| `-g`, `--glob-patterns`    | The glob pattern(s) to use to search for the coverage file(s).                | No       | `*.xml`               |
+| `-g`, `--glob-patterns`    | The glob pattern(s) to use to search for the coverage file(s).                | No       | `**/*.xml`            |
+| `-i`, `--include`          | Glob patterns of files to include in the coverage analysis.                   | No       |                       |
+| `-e`, `--exclude`          | Glob patterns of files to exclude from the coverage analysis.                 | No       |                       |
 | `-l`, `--line-threshold`   | The line coverage threshold. Default: 80                                      | No       | 80                    |
 | `-b`, `--branch-threshold` | The branch coverage threshold. Default: 80                                    | No       | 80                    |
 | `--delta`                  | Calculate coverage for changed lines only.                                    | No       | `false`               |
 | `--delta-base`             | Base branch or commit to compare against for delta coverage.                  | No       | `origin/main`         |
 
 The `--delta` and `--delta-base` options require Git to be installed and available on the system `PATH`.
+
+## Examples
+
+### Filtering Source Files
+
+Only analyze source files in the `src` directory and exclude any generated files:
+
+```bash
+coveragechecker --include "src/**" --exclude "**/Generated/**"
+```
+
+### Analyzing Delta Coverage
+
+Check coverage only for changed lines compared to the `develop` branch:
+
+```bash
+coveragechecker --delta --delta-base origin/develop
+```
+
+### Custom Thresholds and Search Patterns
+
+Search for Cobertura files in a specific directory with custom coverage thresholds:
+
+```bash
+coveragechecker -d ./coverage-results -g "**/cobertura-coverage.xml" -l 90 -b 85
+```
 
 ## Output
 

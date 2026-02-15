@@ -20,13 +20,22 @@ dotnet add package CoverageChecker
 
 The `CoverageAnalyser` class is the entry point for extracting code coverage metrics from a coverage file.
 
-The following example shows how to use the `CoverageAnalyser` class to extract code coverage metrics from a coverage
-file while automatically detecting its format:
+The following example shows how to use the `CoverageAnalyser` class to extract code coverage metrics from specific 
+coverage files while filtering the results to only include specific source files:
 
 ```csharp
 using CoverageChecker;
 
-CoverageAnalyser coverageAnalyser = new(CoverageFormat.Auto, ".", "**/coverage.xml");
+CoverageAnalyserOptions options = new()
+{
+    CoverageFormat = CoverageFormat.Auto,
+    Directory = ".",
+    GlobPatterns = ["**/coverage.xml"],
+    Include = ["src/**"],           // Only analyze source files under src/
+    Exclude = ["**/Generated/**"]    // Exclude any files in a "Generated" directory
+};
+
+CoverageAnalyser coverageAnalyser = new(options);
 Coverage coverage = coverageAnalyser.AnalyseCoverage();
 
 // Analyse only changed lines compared to origin/main
@@ -43,16 +52,20 @@ SonarQube format. You can also specify a specific format if it is known.
 
 ## Options
 
-The `CoverageAnalyser` class has the following options:
+The `CoverageAnalyserOptions` class has the following properties:
 
-- `coverageFormat`: The format of the coverage file. Options: `Auto`, `SonarQube`, `Cobertura`. Default: `Auto`.
-- `directory`: The directory to search for the coverage file(s) within.
+- `CoverageFormat`: The format of the coverage file. Options: `Auto`, `SonarQube`, `Cobertura`. Default: `Auto`.
+- `Directory`: The directory to search for the coverage file(s) within.
+- `GlobPatterns`: The glob patterns to use to search for the coverage report file(s). Default: `**/*.xml`.
+- `Include`: Optional glob patterns of **source files** to include in the analysis. 
+  - Patterns are matched relative to the Git repository root (or current directory fallback).
+  - Supports the `!` prefix for negative patterns (e.g., `!**/*Tests.cs`).
+  - If specified, only source files matching at least one include pattern will be processed.
+- `Exclude`: Optional glob patterns of **source files** to exclude from the analysis.
+  - Matches are removed from the set of included files.
+  - Useful for skipping generated code or third-party libraries.
 
-and either one of the following:
-
-- `globPattern`: The glob pattern to use to match the coverage file(s).
-- `globPatterns`: The glob patterns to use to match the coverage file(s).
-- `matcher`: The glob pattern matcher to use to match the coverage file(s).
+The `CoverageAnalyser` class can be initialized with either an instance of `CoverageAnalyserOptions` or with an options instance and a `Matcher`.
 
 ## Results
 
