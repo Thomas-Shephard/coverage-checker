@@ -14,37 +14,37 @@ public class LineCoverage : ICoverageResult
 
     /// <summary>
     /// Whether the line is covered.
-    /// If true, the line has been covered, otherwise, false.
+    /// If <see langword="true"/>, the line has been covered, otherwise, <see langword="false"/>.
     /// </summary>
     public bool IsCovered { get; internal set; }
 
     /// <summary>
     /// The number of branches in the line.
-    /// If null, the line does not have any branches.
+    /// If <see langword="null"/>, the line does not have any branches.
     /// </summary>
     public int? Branches { get; internal set; }
 
     /// <summary>
     /// The number of covered branches in the line.
-    /// If null, the line does not have any branches.
+    /// If <see langword="null"/>, the line does not have any branches.
     /// </summary>
     public int? CoveredBranches { get; internal set; }
 
     /// <summary>
     /// The name of the class the line is part of.
-    /// If null, the line is not part of a class.
+    /// If <see langword="null"/>, the line is not part of a class.
     /// </summary>
     public string? ClassName { get; internal set; }
 
     /// <summary>
     /// The name of the method the line is part of.
-    /// If null, the line is not part of a method.
+    /// If <see langword="null"/>, the line is not part of a method.
     /// </summary>
     public string? MethodName { get; internal set; }
 
     /// <summary>
     /// The method signature of the method the line is part of.
-    /// If null, the line is not part of a method or the method does not have a method signature.
+    /// If <see langword="null"/>, the line is not part of a method or the method does not have a method signature.
     /// </summary>
     public string? MethodSignature { get; internal set; }
 
