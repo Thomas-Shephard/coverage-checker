@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace CoverageChecker;
 
 /// <summary>
-/// Analyses coverage information
+/// Provides functionality to analyse and process code coverage reports.
 /// </summary>
 public partial class CoverageAnalyser
 {
