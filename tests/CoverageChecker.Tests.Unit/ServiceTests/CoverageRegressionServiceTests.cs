@@ -311,4 +311,89 @@ public class CoverageRegressionServiceTests
             Assert.That(result.RegressedFiles[0].NewCoverage, Is.EqualTo(0.6));
         });
     }
+
+    [Test]
+    public void CheckRegressionSetsPackageNameWhenInitiallyNull()
+    {
+        FileCoverage baselineFile = new("File.cs", "OldPackage");
+        baselineFile.AddOrMergeLine(new LineCoverage(1, true), new CoverageMergeService());
+        Coverage baseline = new([baselineFile]);
+
+        FileCoverage currentPart1 = new("File.cs");
+        currentPart1.AddOrMergeLine(new LineCoverage(1, false), new CoverageMergeService());
+        FileCoverage currentPart2 = new("File.cs", "NewPackage");
+        currentPart2.AddOrMergeLine(new LineCoverage(1, false), new CoverageMergeService());
+        
+        Coverage current = new([currentPart1, currentPart2]);
+
+        RegressionResult result = _service.CheckRegression(baseline, current);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.HasRegressions, Is.True);
+            Assert.That(result.RegressedFiles[0].PackageName, Is.EqualTo("NewPackage"));
+        });
+    }
+
+    [Test]
+    public void CheckRegressionThrowsWhenBranchesMismatchOnMerge()
+    {
+        FileCoverage baselineFile = new("File.cs");
+        Coverage baseline = new([baselineFile]);
+
+        FileCoverage currentFilePart1 = new("File.cs");
+        currentFilePart1.AddOrMergeLine(new LineCoverage(1, true, 2, 2), new CoverageMergeService());
+        FileCoverage currentFilePart2 = new("File.cs");
+        currentFilePart2.AddOrMergeLine(new LineCoverage(1, true, 4, 4), new CoverageMergeService());
+
+        Coverage current = new([currentFilePart1, currentFilePart2]);
+
+        Assert.Throws<CoverageParseException>(() => _service.CheckRegression(baseline, current));
+    }
+
+    [Test]
+    public void CheckRegressionMergesLinesWithoutBranchesCorrectly()
+    {
+        FileCoverage baselineFile = new("File.cs");
+        baselineFile.AddOrMergeLine(new LineCoverage(1, true, 2, 2), new CoverageMergeService());
+        Coverage baseline = new([baselineFile]);
+
+        FileCoverage currentFilePart1 = new("File.cs");
+        currentFilePart1.AddOrMergeLine(new LineCoverage(1, true, 2, 0), new CoverageMergeService());
+        FileCoverage currentFilePart2 = new("File.cs");
+        currentFilePart2.AddOrMergeLine(new LineCoverage(1, true), new CoverageMergeService()); // No branches
+
+        Coverage current = new([currentFilePart1, currentFilePart2]);
+
+        RegressionResult result = _service.CheckRegression(baseline, current);
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.HasRegressions, Is.True);
+            Assert.That(result.RegressedFiles[0].CoverageType, Is.EqualTo(CoverageType.Branch));
+            Assert.That(result.RegressedFiles[0].NewCoverage, Is.EqualTo(0.0));
+        });
+    }
+
+    [Test]
+    public void CheckRegressionMergesLinesWithBranchesCorrectly()
+    {
+        FileCoverage baselineFile = new("File.cs");
+        baselineFile.AddOrMergeLine(new LineCoverage(1, true, 4, 4), new CoverageMergeService());
+        Coverage baseline = new([baselineFile]);
+
+        FileCoverage currentFilePart1 = new("File.cs");
+        currentFilePart1.AddOrMergeLine(new LineCoverage(1, false), new CoverageMergeService()); // No branches, not covered
+        FileCoverage currentFilePart2 = new("File.cs");
+        currentFilePart2.AddOrMergeLine(new LineCoverage(1, true, 4, 2), new CoverageMergeService()); // Covered, 2/4 branches
+
+        Coverage current = new([currentFilePart1, currentFilePart2]);
+
+        RegressionResult result = _service.CheckRegression(baseline, current);
+        Assert.Multiple(() => {
+            Assert.That(result.HasRegressions, Is.True);
+            Assert.That(result.RegressedFiles, Has.Count.EqualTo(1));
+            Assert.That(result.RegressedFiles[0].CoverageType, Is.EqualTo(CoverageType.Branch));
+            Assert.That(result.RegressedFiles[0].NewCoverage, Is.EqualTo(0.5));
+        });
+    }
 }
