@@ -198,6 +198,38 @@ public class CoverageRegressionServiceTests
     }
 
     [Test]
+    public void CheckRegressionWithEmptyBaselineAndCurrentReturnsNoRegression()
+    {
+        Coverage baseline = new([]);
+        Coverage current = new([]);
+
+        RegressionResult result = _service.CheckRegression(baseline, current);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.HasRegressions, Is.False);
+            Assert.That(result.RegressedFiles, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void CheckRegressionWithNewFileInCurrentOnlyReturnsNoRegression()
+    {
+        Coverage baseline = new([]);
+
+        FileCoverage currentFile = CoverageTestData.CreateFile(CoverageTestData.Lines4Of4Covered, "NewFile.cs");
+        Coverage current = new([currentFile]);
+
+        RegressionResult result = _service.CheckRegression(baseline, current);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.HasRegressions, Is.False);
+            Assert.That(result.RegressedFiles, Is.Empty);
+        });
+    }
+
+    [Test]
     public void CheckRegressionWithRenamesIdentifiesRenamesCorrectly()
     {
         // Baseline: 100% (4/4)
