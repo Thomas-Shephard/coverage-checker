@@ -12,6 +12,7 @@ as a development dependency if you need to extract code coverage metrics as part
 - **Delta Coverage**: Analyze only the lines changed in your current branch compared to a base branch.
 - **CI/CD Ready**: Automatic integration with GitHub Actions for workflow commands and job summaries.
 - **Threshold enforcement**: Exit with non-zero codes if coverage targets aren't met.
+- **Integrated Workflow**: Use the `run` command to execute tests and check coverage in a single step with automatic temporary directory management.
 
 ## Projects
 

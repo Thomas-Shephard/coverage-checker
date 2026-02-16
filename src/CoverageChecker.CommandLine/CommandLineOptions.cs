@@ -3,9 +3,9 @@ using CommandLine;
 namespace CoverageChecker.CommandLine;
 
 /// <summary>
-/// Represents the command line options for the coverage checker.
+/// Base class for command line options.
 /// </summary>
-public class CommandLineOptions
+public abstract record BaseOptions
 {
     /// <summary>
     /// Gets or sets the format of coverage files.
@@ -78,7 +78,7 @@ public class CommandLineOptions
     /// <summary>
     /// Gets or sets the similarity threshold for rename detection. The setter expects a percentage (0-100), which is stored as a decimal (0.0-1.0).
     /// </summary>
-    [Option('r', "rename-threshold", Required = false, HelpText = "The similarity threshold for rename detection (percentage). Default: 50", Default = 50.0)]
+    [Option("rename-threshold", Required = false, HelpText = "The similarity threshold for rename detection (percentage). Default: 50", Default = 50.0)]
     public double RenameThreshold
     {
         get => _renameThreshold;
@@ -94,4 +94,31 @@ public class CommandLineOptions
 
         return value;
     }
+}
+
+/// <summary>
+/// Represents the command line options for the check command.
+/// </summary>
+[Verb("check", isDefault: true, HelpText = "Check coverage of existing files.")]
+public record CheckOptions : BaseOptions
+{
+}
+
+/// <summary>
+/// Represents the command line options for the run command.
+/// </summary>
+[Verb("run", HelpText = "Run a command and check the resulting coverage.")]
+public record RunOptions : BaseOptions
+{
+    /// <summary>
+    /// Gets or sets the command to run.
+    /// </summary>
+    [Option('c', "command", Required = true, HelpText = "The command to run.")]
+    public string Command { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the directory where coverage results will be stored. If not specified, a temporary directory will be used.
+    /// </summary>
+    [Option('o', "output", Required = false, HelpText = "The directory where coverage results will be stored. If not specified, a temporary directory will be used.")]
+    public string? Output { get; init; }
 }

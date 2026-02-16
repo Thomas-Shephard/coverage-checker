@@ -1,20 +1,25 @@
 using System.Globalization;
+using System.Runtime.InteropServices;
 using System.Text;
 using CommandLine;
 using CommandLine.Text;
 using CoverageChecker;
 using CoverageChecker.CommandLine;
 using CoverageChecker.Results;
+using CoverageChecker.Services;
 using CoverageChecker.Utils;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 
 Parser parser = new(with => with.HelpWriter = null);
-ParserResult<CommandLineOptions> parserResult = parser.ParseArguments<CommandLineOptions>(args);
+ParserResult<object> parserResult = parser.ParseArguments<CheckOptions, RunOptions>(args);
 
-return await parserResult.MapResult(Run, _ => Task.FromResult(DisplayHelp(parserResult)));
+return await parserResult.MapResult(
+    (CheckOptions options) => Run(options),
+    (RunOptions options) => RunCommandAndCheck(options),
+    _ => Task.FromResult(DisplayHelp(parserResult)));
 
-static async Task<int> Run(CommandLineOptions options)
+static async Task<int> Run(BaseOptions options)
 {
     bool isGitHubActions = Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true";
 
@@ -85,7 +90,66 @@ static async Task<int> Run(CommandLineOptions options)
     return CheckThresholds(result, options, logger, isGitHubActions);
 }
 
-static bool TryAnalyseDeltaCoverage(CoverageAnalyser analyser, Coverage coverage, CommandLineOptions options, ILogger logger, out Coverage? deltaCoverage, out bool hasChangedLines)
+static async Task<int> RunCommandAndCheck(RunOptions options)
+{
+    string? tempDir = null;
+    string outputDir = options.Output ?? (tempDir = Path.Combine(Path.GetTempPath(), "coverage-checker", Guid.NewGuid().ToString()));
+
+    if (!string.IsNullOrEmpty(tempDir))
+    {
+        Directory.CreateDirectory(tempDir);
+    }
+
+    try
+    {
+        bool isGitHubActions = Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true";
+        using ILoggerFactory loggerFactory = CreateLoggerFactory(isGitHubActions);
+        ILogger logger = loggerFactory.CreateLogger("CoverageChecker.CommandLine");
+
+        string command = options.Command.Replace("{output}", outputDir);
+        logger.LogRunningCommand(command);
+
+        ProcessExecutor executor = new();
+        (string fileName, IEnumerable<string> arguments) = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+            ? ("cmd.exe", new[] { "/c", command })
+            : ("sh", new[] { "-c", command });
+
+        (int exitCode, string stdout, string stderr) = executor.Execute(fileName, arguments, TimeSpan.FromMinutes(30));
+
+        if (!string.IsNullOrWhiteSpace(stdout)) logger.LogCommandStdout(stdout);
+        if (!string.IsNullOrWhiteSpace(stderr)) logger.LogCommandStderr(stderr);
+
+        if (exitCode != 0)
+        {
+            logger.LogCommandFailed(exitCode);
+            return exitCode;
+        }
+
+        BaseOptions effectiveOptions = options with { Directory = outputDir };
+        return await Run(effectiveOptions);
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"Error: {ex.Message}");
+        return 1;
+    }
+    finally
+    {
+        if (!string.IsNullOrEmpty(tempDir) && Directory.Exists(tempDir))
+        {
+            try
+            {
+                Directory.Delete(tempDir, true);
+            }
+            catch
+            {
+                // Ignore cleanup errors
+            }
+        }
+    }
+}
+
+static bool TryAnalyseDeltaCoverage(CoverageAnalyser analyser, Coverage coverage, BaseOptions options, ILogger logger, out Coverage? deltaCoverage, out bool hasChangedLines)
 {
     deltaCoverage = null;
     hasChangedLines = false;
@@ -103,7 +167,7 @@ static bool TryAnalyseDeltaCoverage(CoverageAnalyser analyser, Coverage coverage
     }
 }
 
-static int CheckThresholds(CoverageResult result, CommandLineOptions options, ILogger logger, bool isGitHubActions)
+static int CheckThresholds(CoverageResult result, BaseOptions options, ILogger logger, bool isGitHubActions)
 {
     bool failed = EvaluateOverallThresholds(result, options, logger);
 
@@ -129,7 +193,7 @@ static int CheckThresholds(CoverageResult result, CommandLineOptions options, IL
     return 1;
 }
 
-static bool EvaluateOverallThresholds(CoverageResult result, CommandLineOptions options, ILogger logger)
+static bool EvaluateOverallThresholds(CoverageResult result, BaseOptions options, ILogger logger)
 {
     bool failed = false;
     if (options.LineThreshold > result.LineCoverage)
@@ -147,7 +211,7 @@ static bool EvaluateOverallThresholds(CoverageResult result, CommandLineOptions 
     return failed;
 }
 
-static bool EvaluateDeltaThresholds(CoverageResult result, CommandLineOptions options, ILogger logger)
+static bool EvaluateDeltaThresholds(CoverageResult result, BaseOptions options, ILogger logger)
 {
     bool failed = false;
 
@@ -241,7 +305,7 @@ static bool TryAnalyseCoverage(CoverageAnalyser coverageAnalyser, ILogger logger
     return false;
 }
 
-static async Task WriteGitHubSummary(CoverageResult result, CommandLineOptions options, ILogger logger)
+static async Task WriteGitHubSummary(CoverageResult result, BaseOptions options, ILogger logger)
 {
     string? summaryPath = Environment.GetEnvironmentVariable("GITHUB_STEP_SUMMARY");
     if (string.IsNullOrEmpty(summaryPath)) return;
@@ -269,7 +333,7 @@ static async Task WriteGitHubSummary(CoverageResult result, CommandLineOptions o
     }
 }
 
-static string BuildGitHubSummary(CoverageResult result, CommandLineOptions options)
+static string BuildGitHubSummary(CoverageResult result, BaseOptions options)
 {
     StringBuilder summary = new();
     summary.AppendLine("### Coverage Report Summary");
@@ -299,7 +363,7 @@ static string BuildGitHubSummary(CoverageResult result, CommandLineOptions optio
     return summary.ToString();
 }
 
-static void AppendDeltaSummary(StringBuilder summary, CoverageResult result, CommandLineOptions options)
+static void AppendDeltaSummary(StringBuilder summary, CoverageResult result, BaseOptions options)
 {
     if (result.HasDeltaChangedLines)
     {
@@ -312,7 +376,7 @@ static void AppendDeltaSummary(StringBuilder summary, CoverageResult result, Com
     }
 }
 
-static bool IsAnyThresholdViolated(CoverageResult result, CommandLineOptions options)
+static bool IsAnyThresholdViolated(CoverageResult result, BaseOptions options)
 {
     if (options.LineThreshold > result.LineCoverage || options.BranchThreshold > result.BranchCoverage)
     {
