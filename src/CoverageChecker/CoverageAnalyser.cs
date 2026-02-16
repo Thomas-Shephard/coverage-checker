@@ -13,11 +13,17 @@ namespace CoverageChecker;
 /// </summary>
 public partial class CoverageAnalyser
 {
+    /// <summary>
+    /// The default epsilon value used for floating point comparisons (0.0001 = 0.01%).
+    /// </summary>
+    public const double DefaultEpsilon = 0.0001;
+
     private readonly CoverageAnalyserOptions _options;
     private readonly IFileFinder _fileFinder;
     private readonly IParserFactory _parserFactory;
     private readonly IGitService _gitService;
     private readonly IDeltaCoverageService _deltaCoverageService;
+    private readonly ICoverageRegressionService _coverageRegressionService;
     private readonly ILogger<CoverageAnalyser> _logger;
     private readonly ILoggerFactory _loggerFactory;
 
@@ -39,15 +45,16 @@ public partial class CoverageAnalyser
         : this(options, new FileFinder(matcher, loggerFactory?.CreateLogger<FileFinder>()), loggerFactory) { }
 
     internal CoverageAnalyser(CoverageAnalyserOptions options, IFileFinder fileFinder, ILoggerFactory? loggerFactory = null)
-        : this(options, fileFinder, new ParserFactory(new CoverageMergeService(loggerFactory?.CreateLogger<CoverageMergeService>())), new GitService(new ProcessExecutor(options.Directory)), new DeltaCoverageService(new CoverageMergeService(loggerFactory?.CreateLogger<CoverageMergeService>())), loggerFactory) { }
+        : this(options, fileFinder, new ParserFactory(new CoverageMergeService(loggerFactory?.CreateLogger<CoverageMergeService>())), new GitService(new ProcessExecutor(options.Directory)), new DeltaCoverageService(new CoverageMergeService(loggerFactory?.CreateLogger<CoverageMergeService>())), new CoverageRegressionService(), loggerFactory) { }
 
-    internal CoverageAnalyser(CoverageAnalyserOptions options, IFileFinder fileFinder, IParserFactory parserFactory, IGitService gitService, IDeltaCoverageService deltaCoverageService, ILoggerFactory? loggerFactory = null)
+    internal CoverageAnalyser(CoverageAnalyserOptions options, IFileFinder fileFinder, IParserFactory parserFactory, IGitService gitService, IDeltaCoverageService deltaCoverageService, ICoverageRegressionService coverageRegressionService, ILoggerFactory? loggerFactory = null)
     {
         _options = options;
         _fileFinder = fileFinder;
         _parserFactory = parserFactory;
         _gitService = gitService;
         _deltaCoverageService = deltaCoverageService;
+        _coverageRegressionService = coverageRegressionService;
         _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
         _logger = _loggerFactory.CreateLogger<CoverageAnalyser>();
     }
@@ -168,6 +175,37 @@ public partial class CoverageAnalyser
         coverage ??= AnalyseCoverage();
         IDictionary<string, HashSet<int>> changedLines = _gitService.GetChangedLines(baseBranch);
         return _deltaCoverageService.FilterCoverage(coverage, changedLines);
+    }
+
+    /// <summary>
+    /// Checks for regression between the baseline and current coverage.
+    /// </summary>
+    /// <param name="baseline">The baseline coverage to compare against.</param>
+    /// <param name="current">The current coverage.</param>
+    /// <param name="epsilon">The epsilon value to use for comparison.</param>
+    /// <returns>The regression result.</returns>
+    public RegressionResult CheckRegression(Coverage baseline, Coverage current, double epsilon = DefaultEpsilon)
+    {
+        ArgumentNullException.ThrowIfNull(baseline);
+        ArgumentNullException.ThrowIfNull(current);
+        return _coverageRegressionService.CheckRegression(baseline, current, null, epsilon);
+    }
+
+    /// <summary>
+    /// Checks for regression between the baseline and current coverage, using git to detect renames.
+    /// </summary>
+    /// <param name="baseline">The baseline coverage to compare against.</param>
+    /// <param name="current">The current coverage.</param>
+    /// <param name="baseRef">The base git reference (branch or commit) that represents the baseline state.</param>
+    /// <param name="headRef">The head git reference (branch or commit) that represents the current state. Defaults to "HEAD".</param>
+    /// <param name="epsilon">The epsilon value to use for comparison.</param>
+    /// <returns>The regression result.</returns>
+    public RegressionResult CheckRegression(Coverage baseline, Coverage current, string baseRef, string headRef = "HEAD", double epsilon = DefaultEpsilon)
+    {
+        ArgumentNullException.ThrowIfNull(baseline);
+        ArgumentNullException.ThrowIfNull(current);
+        IDictionary<string, string> renames = _gitService.GetRenames(baseRef, headRef, _options.RenameThreshold);
+        return _coverageRegressionService.CheckRegression(baseline, current, renames, epsilon);
     }
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Finding coverage files in {Directory}...")]

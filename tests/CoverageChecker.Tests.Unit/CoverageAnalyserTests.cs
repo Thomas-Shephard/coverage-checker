@@ -71,7 +71,7 @@ public class CoverageAnalyserTests
         mockGitService.Setup(s => s.GetChangedLines("main", "HEAD")).Returns(changedLines);
         mockDeltaService.Setup(s => s.FilterCoverage(coverage, changedLines)).Returns(deltaResult);
 
-        CoverageAnalyser sut = new(CreateDefaultOptions(), mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, mockDeltaService.Object);
+        CoverageAnalyser sut = new(CreateDefaultOptions(), mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, mockDeltaService.Object, Mock.Of<ICoverageRegressionService>());
 
         DeltaResult result = sut.AnalyseDeltaCoverage("main", coverage);
 
@@ -95,7 +95,7 @@ public class CoverageAnalyserTests
             .Returns(mockParser.Object);
 
         CoverageAnalyserOptions options = new() { CoverageFormat = CoverageFormat.Auto, Directory = ValidDirectory };
-        CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
+        CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>(), Mock.Of<ICoverageRegressionService>());
 
         sut.AnalyseCoverage();
 
@@ -129,7 +129,7 @@ public class CoverageAnalyserTests
 
         // Filter: include only src/**
         CoverageAnalyserOptions options = CreateDefaultOptions() with { CoverageFormat = CoverageFormat.Auto, Include = ["src/**"] };
-        CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
+        CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>(), Mock.Of<ICoverageRegressionService>());
 
         Coverage result = sut.AnalyseCoverage();
 
@@ -162,7 +162,7 @@ public class CoverageAnalyserTests
 
         // Filter: include src/** but exclude src/Internal/**
         CoverageAnalyserOptions options = CreateDefaultOptions() with { CoverageFormat = CoverageFormat.Auto, Include = ["src/**"], Exclude = ["src/Internal/**"] };
-        CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
+        CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>(), Mock.Of<ICoverageRegressionService>());
 
         Coverage result = sut.AnalyseCoverage();
 
@@ -195,7 +195,7 @@ public class CoverageAnalyserTests
 
         // Filter: ONLY negative pattern in Include list
         CoverageAnalyserOptions options = CreateDefaultOptions() with { CoverageFormat = CoverageFormat.Auto, Include = ["!tests/**"] };
-        CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
+        CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>(), Mock.Of<ICoverageRegressionService>());
 
         Coverage result = sut.AnalyseCoverage();
 
@@ -229,7 +229,7 @@ public class CoverageAnalyserTests
 
         // Filter: exclude tests/** using ! prefix in Exclude list (which should be handled correctly)
         CoverageAnalyserOptions options = CreateDefaultOptions() with { CoverageFormat = CoverageFormat.Auto, Exclude = ["!tests/**"] };
-        CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
+        CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>(), Mock.Of<ICoverageRegressionService>());
 
         Coverage result = sut.AnalyseCoverage();
 
@@ -266,7 +266,7 @@ public class CoverageAnalyserTests
             Directory = coverageDir,
             Include = ["src/**"] 
         };
-        CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
+        CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>(), Mock.Of<ICoverageRegressionService>());
 
         Coverage result = sut.AnalyseCoverage();
 
@@ -302,7 +302,7 @@ public class CoverageAnalyserTests
 
         // Include everything, but the different drive/root should still trigger exclusion
         CoverageAnalyserOptions options = CreateDefaultOptions() with { Include = ["**/*"] };
-        CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
+        CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>(), Mock.Of<ICoverageRegressionService>());
 
         Coverage result = sut.AnalyseCoverage();
 
@@ -325,7 +325,7 @@ public class CoverageAnalyserTests
         mockParserFactory.Setup(f => f.CreateParser(ValidCoverageFormat, It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()))
             .Returns(mockParser.Object);
 
-        CoverageAnalyser sut = new(CreateDefaultOptions(), mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
+        CoverageAnalyser sut = new(CreateDefaultOptions(), mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>(), Mock.Of<ICoverageRegressionService>());
 
         Assert.DoesNotThrow(() => sut.AnalyseCoverage());
 
@@ -354,7 +354,7 @@ public class CoverageAnalyserTests
         mockParserFactory.Setup(f => f.CreateParser(ValidCoverageFormat, It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()))
             .Returns(mockParser.Object);
 
-        CoverageAnalyser sut = new(CreateDefaultOptions(), mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, mockDeltaService.Object);
+        CoverageAnalyser sut = new(CreateDefaultOptions(), mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, mockDeltaService.Object, Mock.Of<ICoverageRegressionService>());
 
         sut.AnalyseDeltaCoverage("main");
 
@@ -379,7 +379,7 @@ public class CoverageAnalyserTests
         mockParserFactory.Setup(f => f.CreateParser(ValidCoverageFormat, It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()))
             .Returns(mockParser.Object);
 
-        CoverageAnalyser sut = new(CreateDefaultOptions(), mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>(), mockLoggerFactory.Object);
+        CoverageAnalyser sut = new(CreateDefaultOptions(), mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>(), Mock.Of<ICoverageRegressionService>(), mockLoggerFactory.Object);
 
         sut.AnalyseCoverage();
 
@@ -400,7 +400,7 @@ public class CoverageAnalyserTests
 
         mockFileFinder.Setup(f => f.FindFiles(ValidDirectory)).Returns([]);
 
-        CoverageAnalyser sut = new(CreateDefaultOptions(), mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
+        CoverageAnalyser sut = new(CreateDefaultOptions(), mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>(), Mock.Of<ICoverageRegressionService>());
 
         Assert.Throws<NoCoverageFilesFoundException>(() => sut.AnalyseCoverage());
     }
@@ -427,7 +427,7 @@ public class CoverageAnalyserTests
 
         // Filter: include only src/** (relative to repo_root)
         CoverageAnalyserOptions options = CreateDefaultOptions() with { Include = ["src/**"] };
-        CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
+        CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>(), Mock.Of<ICoverageRegressionService>());
 
         Coverage result = sut.AnalyseCoverage();
 
@@ -457,7 +457,7 @@ public class CoverageAnalyserTests
 
         // Filter: exclude tests/**
         CoverageAnalyserOptions options = CreateDefaultOptions() with { Exclude = ["tests/**"] };
-        CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
+        CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>(), Mock.Of<ICoverageRegressionService>());
 
         Coverage result = sut.AnalyseCoverage();
 
@@ -486,10 +486,52 @@ public class CoverageAnalyserTests
 
         // Filter with empty lists
         CoverageAnalyserOptions options = CreateDefaultOptions() with { Include = [], Exclude = [] };
-        CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>());
+        CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>(), Mock.Of<ICoverageRegressionService>());
 
         Coverage result = sut.AnalyseCoverage();
 
         Assert.That(result.Files, Has.Count.EqualTo(1));
+    }
+
+    [Test]
+    public void CheckRegressionCallsServiceWithCorrectParameters()
+    {
+        Mock<ICoverageRegressionService> mockRegressionService = new();
+        Coverage baseline = new();
+        Coverage current = new();
+        RegressionResult regressionResult = new([]);
+        double epsilon = 0.001;
+
+        mockRegressionService.Setup(s => s.CheckRegression(baseline, current, null, epsilon)).Returns(regressionResult);
+
+        CoverageAnalyser sut = new(CreateDefaultOptions(), Mock.Of<IFileFinder>(), Mock.Of<IParserFactory>(), Mock.Of<IGitService>(), Mock.Of<IDeltaCoverageService>(), mockRegressionService.Object);
+
+        RegressionResult result = sut.CheckRegression(baseline, current, epsilon);
+
+        Assert.That(result, Is.EqualTo(regressionResult));
+        mockRegressionService.Verify(s => s.CheckRegression(baseline, current, null, epsilon), Times.Once);
+    }
+
+    [Test]
+    public void CheckRegressionWithBaseRefCallsServiceWithRenames()
+    {
+        Mock<ICoverageRegressionService> mockRegressionService = new();
+        Mock<IGitService> mockGitService = new();
+        Coverage baseline = new();
+        Coverage current = new();
+        RegressionResult regressionResult = new([]);
+        string baseRef = "main";
+        Dictionary<string, string> renames = new() { { "old", "new" } };
+
+        mockGitService.Setup(s => s.GetRenames(baseRef, "HEAD")).Returns(renames);
+        mockRegressionService.Setup(s => s.CheckRegression(baseline, current, renames, CoverageAnalyser.DefaultEpsilon)).Returns(regressionResult);
+
+        CoverageAnalyser sut = new(CreateDefaultOptions(), Mock.Of<IFileFinder>(), Mock.Of<IParserFactory>(), mockGitService.Object, Mock.Of<IDeltaCoverageService>(), mockRegressionService.Object);
+
+        RegressionResult result = sut.CheckRegression(baseline, current, baseRef);
+
+        Assert.That(result, Is.EqualTo(regressionResult));
+        mockGitService.Verify(s => s.GetRenames(baseRef, "HEAD"), Times.Once);
+        mockRegressionService.Verify(s => s.CheckRegression(baseline, current, renames, CoverageAnalyser.DefaultEpsilon), Times.Once);
     }
 }

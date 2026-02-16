@@ -28,6 +28,7 @@ The CoverageChecker.CommandLine tool can be invoked by running `coveragechecker`
 | `-e`, `--exclude`          | Glob patterns of files to exclude from the coverage analysis.                 | No       |                       |
 | `-l`, `--line-threshold`   | The line coverage threshold. Default: 80                                      | No       | 80                    |
 | `-b`, `--branch-threshold` | The branch coverage threshold. Default: 80                                    | No       | 80                    |
+| `-r`, `--rename-threshold` | The similarity threshold for rename detection (percentage). Default: 50       | No       | 50                    |
 | `--delta`                  | Calculate coverage for changed lines only.                                    | No       | `false`               |
 | `--delta-base`             | Base branch or commit to compare against for delta coverage.                  | No       | `origin/main`         |
 

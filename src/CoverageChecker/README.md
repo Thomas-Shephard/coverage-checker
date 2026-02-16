@@ -40,15 +40,17 @@ Coverage coverage = coverageAnalyser.AnalyseCoverage();
 
 // Analyse only changed lines compared to origin/main
 DeltaResult delta = coverageAnalyser.AnalyseDeltaCoverage("origin/main", coverage);
+
+// Check for regressions between two coverage runs, detecting renames via git
+Coverage baselineCoverage = ...; 
+RegressionResult regression = coverageAnalyser.CheckRegression(baselineCoverage, coverage, "origin/main", "HEAD");
 ```
 
 By using `CoverageFormat.Auto`, the library will attempt to detect whether each coverage file is in Cobertura or 
 SonarQube format. You can also specify a specific format if it is known.
 
-> **Note:** Delta coverage analysis requires Git to be installed and available on the system `PATH`.  
-> The `AnalyseDeltaCoverage` method interacts with the underlying Git repository and may throw a
-> `GitException` if Git is not installed, not on the `PATH`, the current directory is not a Git
-> repository, or if Git commands fail.
+> **Note:** Delta coverage analysis and rename detection require Git to be installed and available on the system `PATH`.  
+> These methods interact with the underlying Git repository and may throw a `GitException` if Git is not installed, not on the `PATH`, the current directory is not a Git repository, or if Git commands fail.
 
 ## Options
 
@@ -64,18 +66,31 @@ The `CoverageAnalyserOptions` class has the following properties:
 - `Exclude`: Optional glob patterns of **source files** to exclude from the analysis.
   - Matches are removed from the set of included files.
   - Useful for skipping generated code or third-party libraries.
+- `RenameThreshold`: The similarity threshold for rename detection (0.0 to 1.0). Default: 0.5 (50%).
 
 The `CoverageAnalyser` class can be initialized with either an instance of `CoverageAnalyserOptions` or with an options instance and a `Matcher`.
 
 ## Results
 
-The `CoverageAnalyser` class returns a `Coverage` object, which contains all the code coverage metrics. The `Coverage`
-object can contain multiple `FileCoverage` objects, which can each contain multiple `LineCoverage` objects.
+The `CoverageAnalyser` class returns objects like `Coverage`, `DeltaResult`, or `RegressionResult` which contain the code coverage metrics.
 
 ### DeltaResult Object
 
 - `Coverage` property: A `Coverage` object containing only the filtered changed lines.
 - `HasChangedLines` property: Whether any changed lines were found in the coverage report.
+
+### RegressionResult Object
+
+- `RegressedFiles` property: A collection of `RegressedFile` objects identifying where coverage dropped.
+- `HasRegressions` property: Whether any regressions were detected.
+
+### RegressedFile Object
+
+- `Path` property: The path to the file.
+- `BaselineCoverage` property: The coverage percentage in the baseline.
+- `NewCoverage` property: The coverage percentage in the current run.
+- `CoverageDiff` property: The amount of regression (drop in coverage).
+- `CoverageType` property: The type of coverage that regressed (`Line` or `Branch`).
 
 ### Coverage Object
 

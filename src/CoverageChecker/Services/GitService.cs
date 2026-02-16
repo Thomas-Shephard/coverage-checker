@@ -27,8 +27,65 @@ internal partial class GitService : IGitService
         return ParseGitDiff(diffOutput, repoRoot);
     }
 
+    public IDictionary<string, string> GetRenames(string @base, string head = "HEAD", double renameThreshold = 0.5)
+    {
+        ValidateGitReferences(@base, head);
+        Guard.ValidateThreshold(renameThreshold, nameof(renameThreshold));
+
+        string repoRoot = GetRepoRoot();
+
+        // -c core.quotepath=false: Ensure non-ASCII chars are output as UTF-8 bytes, not octal escapes.
+        // --name-status: Show only names and status of changed files.
+        // -M: Detect renames.
+        int thresholdPercentage = Math.Clamp((int)Math.Round(renameThreshold * 100), 0, 100);
+        if (renameThreshold > 0 && thresholdPercentage == 0)
+        {
+            thresholdPercentage = 1;
+        }
+
+        string renameLimit = $"-M{thresholdPercentage}%";
+        string[] arguments = ["-c", "core.quotepath=false", "diff", "--name-status", "--no-color", "--no-ext-diff", renameLimit, @base, head, "--"];
+
+        (int exitCode, string stdout, string stderr) result;
+        try
+        {
+            result = _executor.Execute("git", arguments);
+        }
+        catch (Win32Exception ex)
+        {
+            throw new GitException("Failed to execute 'git'. Ensure Git is installed and in your PATH.", ex);
+        }
+
+        if (result.exitCode != 0)
+        {
+            throw new GitException($"Git diff for renames failed with code {result.exitCode}: {result.stderr}");
+        }
+
+        Dictionary<string, string> renames = new(PathUtils.PathComparer);
+        using StringReader reader = new(result.stdout);
+        while (reader.ReadLine() is { } line)
+        {
+            string[] parts = line.Split('\t', 3);
+            if (parts.Length < 3 || !parts[0].StartsWith('R'))
+                continue;
+
+            string oldRelativePath = UnescapeGitPath(TrimQuotes(parts[1]));
+            string newRelativePath = UnescapeGitPath(TrimQuotes(parts[2]));
+            string oldPath = PathUtils.GetNormalizedFullPath(Path.Combine(repoRoot, oldRelativePath));
+            string newPath = PathUtils.GetNormalizedFullPath(Path.Combine(repoRoot, newRelativePath));
+            renames[oldPath] = newPath;
+        }
+
+        return renames;
+    }
+
+    private static string TrimQuotes(string path) => path.Trim('"');
+
     private static void ValidateGitReferences(string @base, string head)
     {
+        ArgumentException.ThrowIfNullOrEmpty(@base);
+        ArgumentException.ThrowIfNullOrEmpty(head);
+
         if (@base.StartsWith('-'))
         {
             throw new ArgumentException("Base reference cannot start with '-'.", nameof(@base));

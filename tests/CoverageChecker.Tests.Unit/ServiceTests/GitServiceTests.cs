@@ -6,6 +6,50 @@ namespace CoverageChecker.Tests.Unit.ServiceTests;
 
 public class GitServiceTests
 {
+    [Test]
+    public void GetRenamesShouldParseRenameOutputCorrectly()
+    {
+        _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
+        _mockExecutor.DiffOutput = "R100\told_file.cs\tnew_file.cs\n";
+
+        IDictionary<string, string> result = _sut.GetRenames("main");
+
+        string oldPath = PathUtils.GetNormalizedFullPath(Path.Combine(_mockExecutor.RepoRoot, "old_file.cs"));
+        string newPath = PathUtils.GetNormalizedFullPath(Path.Combine(_mockExecutor.RepoRoot, "new_file.cs"));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result, Has.Count.EqualTo(1));
+            Assert.That(result[oldPath], Is.EqualTo(newPath));
+        });
+    }
+
+    [Test]
+    public void GetRenamesShouldHandleRenamesWithSpaces()
+    {
+        _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
+        _mockExecutor.DiffOutput = "R090\told file.cs\tnew file.cs\n";
+
+        IDictionary<string, string> result = _sut.GetRenames("main");
+
+        string oldPath = PathUtils.GetNormalizedFullPath(Path.Combine(_mockExecutor.RepoRoot, "old file.cs"));
+        string newPath = PathUtils.GetNormalizedFullPath(Path.Combine(_mockExecutor.RepoRoot, "new file.cs"));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result, Has.Count.EqualTo(1));
+            Assert.That(result[oldPath], Is.EqualTo(newPath));
+        });
+    }
+
+    [TestCase(-0.1)]
+    [TestCase(1.1)]
+    [TestCase(double.NaN)]
+    public void GetRenamesShouldThrowOnInvalidThreshold(double threshold)
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => _sut.GetRenames("main", "HEAD", threshold));
+    }
+
     private sealed class MockProcessExecutor : IProcessExecutor
     {
         public string RepoRoot { get; set; } = "/repo";
@@ -21,6 +65,11 @@ public class GitServiceTests
             if (argsList.Contains("rev-parse") && argsList.Contains("--show-toplevel"))
             {
                 return (RepoRootExitCode, RepoRoot, Stderr);
+            }
+
+            if (argsList.Contains("diff") && argsList.Contains("--name-status") && argsList.Any(a => a.StartsWith("-M", StringComparison.Ordinal)))
+            {
+                return (DiffExitCode, DiffOutput, Stderr);
             }
 
             // Updated check to match the robust command arguments
@@ -536,6 +585,28 @@ public class GitServiceTests
     }
 
     [Test]
+    public void GetRenamesShouldThrowGitExceptionWhenGitDiffFailsWithWin32Exception()
+    {
+        Mock<IProcessExecutor> mockExecutor = new();
+        // Setup GetRepoRoot to succeed
+        mockExecutor.Setup(e => e.Execute("git", It.Is<IEnumerable<string>>(a => a.Contains("rev-parse")), It.IsAny<TimeSpan?>()))
+                    .Returns((0, "/repo", ""));
+        
+        // Setup diff to throw Win32Exception
+        mockExecutor.Setup(e => e.Execute("git", It.Is<IEnumerable<string>>(a => a.Contains("--name-status")), It.IsAny<TimeSpan?>()))
+                    .Throws(new System.ComponentModel.Win32Exception(2, "The system cannot find the file specified"));
+
+        GitService sut = new(mockExecutor.Object);
+
+        GitException? ex = Assert.Throws<GitException>(() => sut.GetRenames("main"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(ex.Message, Does.Contain("Failed to execute 'git'"));
+            Assert.That(ex.InnerException, Is.TypeOf<System.ComponentModel.Win32Exception>());
+        });
+    }
+
+    [Test]
     public void GetChangedLinesShouldThrowGitExceptionWhenGitDiffFailsWithWin32Exception()
     {
         Mock<IProcessExecutor> mockExecutor = new();
@@ -544,7 +615,7 @@ public class GitServiceTests
                     .Returns((0, "/repo", ""));
         
         // Setup diff to throw Win32Exception
-        mockExecutor.Setup(e => e.Execute("git", It.Is<IEnumerable<string>>(a => a.Contains("diff")), It.IsAny<TimeSpan?>()))
+        mockExecutor.Setup(e => e.Execute("git", It.Is<IEnumerable<string>>(a => a.Contains("-U0")), It.IsAny<TimeSpan?>()))
                     .Throws(new System.ComponentModel.Win32Exception(2, "The system cannot find the file specified"));
 
         GitService sut = new(mockExecutor.Object);
@@ -555,5 +626,40 @@ public class GitServiceTests
             Assert.That(ex.Message, Does.Contain("Failed to execute 'git'"));
             Assert.That(ex.InnerException, Is.TypeOf<System.ComponentModel.Win32Exception>());
         });
+    }
+
+    [Test]
+    public void GetRenamesShouldHandleSmallThreshold()
+    {
+        _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
+        _mockExecutor.DiffOutput = "R100\told_file.cs\tnew_file.cs\n";
+
+        // threshold 0.001 should be rounded to 0 but clamped to 1
+        IDictionary<string, string> result = _sut.GetRenames("main", "HEAD", 0.001);
+
+        Assert.That(result, Has.Count.EqualTo(1));
+    }
+
+    [Test]
+    public void GetRenamesShouldThrowGitExceptionWhenGitDiffFails()
+    {
+        _mockExecutor.DiffExitCode = 1;
+        _mockExecutor.Stderr = "fatal: some git error";
+
+        GitException? ex = Assert.Throws<GitException>(() => _sut.GetRenames("main"));
+        Assert.That(ex.Message, Does.Contain("Git diff for renames failed with code 1"));
+    }
+
+    [Test]
+    public void GetRenamesShouldThrowGitExceptionWhenGitNotFoundForRenames()
+    {
+        Mock<IProcessExecutor> mockExecutor = new();
+        mockExecutor.Setup(e => e.Execute(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<TimeSpan?>()))
+                    .Throws(new System.ComponentModel.Win32Exception(2, "The system cannot find the file specified"));
+
+        GitService sut = new(mockExecutor.Object);
+
+        GitException? ex = Assert.Throws<GitException>(() => sut.GetRenames("main"));
+        Assert.That(ex.Message, Does.Contain("Failed to execute 'git'"));
     }
 }

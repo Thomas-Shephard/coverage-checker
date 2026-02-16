@@ -40,41 +40,25 @@ public class CommandLineOptions
     private readonly double _lineThreshold = 0.8;
 
     /// <summary>
-    /// Gets or sets the line coverage threshold (as a decimal representation of the percentage).
+    /// Gets or sets the line coverage threshold. The setter expects a percentage (0-100), which is stored as a decimal (0.0-1.0).
     /// </summary>
     [Option('l', "line-threshold", Required = false, HelpText = "Line coverage threshold (percentage). Default: 80", Default = 80d)]
     public double LineThreshold
     {
         get => _lineThreshold;
-        init
-        {
-            if (value is < 0 or > 100)
-            {
-                throw new ArgumentOutOfRangeException(nameof(LineThreshold), "Line threshold must be between 0 and 100");
-            }
-
-            _lineThreshold = value / 100;
-        }
+        init => _lineThreshold = ValidateThreshold(value, nameof(LineThreshold)) / 100;
     }
 
     private readonly double _branchThreshold = 0.8;
 
     /// <summary>
-    /// Gets or sets the branch coverage threshold (as a decimal representation of the percentage).
+    /// Gets or sets the branch coverage threshold. The setter expects a percentage (0-100), which is stored as a decimal (0.0-1.0).
     /// </summary>
     [Option('b', "branch-threshold", Required = false, HelpText = "Branch coverage threshold (percentage). Default: 80", Default = 80d)]
     public double BranchThreshold
     {
         get => _branchThreshold;
-        init
-        {
-            if (value is < 0 or > 100)
-            {
-                throw new ArgumentOutOfRangeException(nameof(BranchThreshold), "Branch threshold must be between 0 and 100");
-            }
-
-            _branchThreshold = value / 100;
-        }
+        init => _branchThreshold = ValidateThreshold(value, nameof(BranchThreshold)) / 100;
     }
 
     /// <summary>
@@ -88,4 +72,26 @@ public class CommandLineOptions
     /// </summary>
     [Option("delta-base", Required = false, HelpText = "Base branch or commit to compare against for delta coverage. Default: origin/main", Default = "origin/main")]
     public string DeltaBase { get; init; } = "origin/main";
+
+    private readonly double _renameThreshold = 0.5;
+
+    /// <summary>
+    /// Gets or sets the similarity threshold for rename detection. The setter expects a percentage (0-100), which is stored as a decimal (0.0-1.0).
+    /// </summary>
+    [Option('r', "rename-threshold", Required = false, HelpText = "The similarity threshold for rename detection (percentage). Default: 50", Default = 50.0)]
+    public double RenameThreshold
+    {
+        get => _renameThreshold;
+        init => _renameThreshold = ValidateThreshold(value, nameof(RenameThreshold)) / 100;
+    }
+
+    private static double ValidateThreshold(double value, string paramName)
+    {
+        if (double.IsNaN(value) || value is < 0 or > 100)
+        {
+            throw new ArgumentOutOfRangeException(paramName, $"{paramName} must be between 0 and 100");
+        }
+
+        return value;
+    }
 }
