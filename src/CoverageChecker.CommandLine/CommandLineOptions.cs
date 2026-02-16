@@ -40,7 +40,7 @@ public class CommandLineOptions
     private readonly double _lineThreshold = 0.8;
 
     /// <summary>
-    /// Gets or sets the line coverage threshold (as a decimal representation of the percentage).
+    /// Gets or sets the line coverage threshold. The setter expects a percentage (0-100), which is stored as a decimal (0.0-1.0).
     /// </summary>
     [Option('l', "line-threshold", Required = false, HelpText = "Line coverage threshold (percentage). Default: 80", Default = 80d)]
     public double LineThreshold
@@ -52,7 +52,7 @@ public class CommandLineOptions
     private readonly double _branchThreshold = 0.8;
 
     /// <summary>
-    /// Gets or sets the branch coverage threshold (as a decimal representation of the percentage).
+    /// Gets or sets the branch coverage threshold. The setter expects a percentage (0-100), which is stored as a decimal (0.0-1.0).
     /// </summary>
     [Option('b', "branch-threshold", Required = false, HelpText = "Branch coverage threshold (percentage). Default: 80", Default = 80d)]
     public double BranchThreshold
@@ -76,7 +76,7 @@ public class CommandLineOptions
     private readonly double _renameThreshold = 0.5;
 
     /// <summary>
-    /// Gets or sets the similarity threshold for rename detection (as a decimal representation of the percentage).
+    /// Gets or sets the similarity threshold for rename detection. The setter expects a percentage (0-100), which is stored as a decimal (0.0-1.0).
     /// </summary>
     [Option('r', "rename-threshold", Required = false, HelpText = "The similarity threshold for rename detection (percentage). Default: 50", Default = 50.0)]
     public double RenameThreshold

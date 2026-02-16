@@ -35,7 +35,13 @@ internal partial class GitService : IGitService
         // -c core.quotepath=false: Ensure non-ASCII chars are output as UTF-8 bytes, not octal escapes.
         // --name-status: Show only names and status of changed files.
         // -M: Detect renames.
-        string renameLimit = $"-M{Math.Max(1, (int)Math.Round(renameThreshold * 100))}%";
+        int thresholdPercentage = (int)Math.Round(renameThreshold * 100);
+        if (renameThreshold > 0 && thresholdPercentage == 0)
+        {
+            thresholdPercentage = 1;
+        }
+
+        string renameLimit = $"-M{thresholdPercentage}%";
         string[] arguments = ["-c", "core.quotepath=false", "diff", "--name-status", "--no-color", "--no-ext-diff", renameLimit, @base, head, "--"];
 
         (int exitCode, string stdout, string stderr) result;
