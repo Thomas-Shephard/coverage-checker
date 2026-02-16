@@ -75,6 +75,9 @@ public class CommandLineOptions
 
     private readonly double _renameThreshold = 0.5;
 
+    /// <summary>
+    /// Gets or sets the similarity threshold for rename detection (as a decimal representation of the percentage).
+    /// </summary>
     [Option('r', "rename-threshold", Required = false, HelpText = "The similarity threshold for rename detection (percentage). Default: 50", Default = 50.0)]
     public double RenameThreshold
     {
