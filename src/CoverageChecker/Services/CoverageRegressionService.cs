@@ -5,7 +5,18 @@ namespace CoverageChecker.Services;
 
 internal class CoverageRegressionService : ICoverageRegressionService
 {
-    private static readonly CoverageType[] CoverageTypes = Enum.GetValues<CoverageType>();
+    private sealed record CoverageStrategy(
+        CoverageType Type,
+        Func<LineStats, int> GetCovered,
+        Func<LineStats, int> GetTotal,
+        Func<LineStats, bool> IsApplicable
+    );
+
+    private static readonly CoverageStrategy[] Strategies =
+    [
+        new(CoverageType.Line, s => s.IsCovered ? 1 : 0, _ => 1, _ => true),
+        new(CoverageType.Branch, s => s.CoveredBranches ?? 0, s => s.Branches ?? 0, s => s.Branches.HasValue)
+    ];
 
     public RegressionResult CheckRegression(Coverage baseline, Coverage current, IDictionary<string, string>? renames = null, double epsilon = CoverageAnalyser.DefaultEpsilon)
     {
@@ -13,10 +24,10 @@ internal class CoverageRegressionService : ICoverageRegressionService
         ArgumentNullException.ThrowIfNull(current);
 
         // Aggregate current coverage stats by path to handle files split across packages.
-        Dictionary<string, FileStats> currentStats = CoverageRegressionService.AggregateStats(current.Files);
+        Dictionary<string, FileStats> currentStats = AggregateStats(current.Files);
 
         // Aggregate baseline coverage stats by path, applying renames to the lookup key.
-        Dictionary<string, FileStats> baselineStats = CoverageRegressionService.AggregateStats(baseline.Files, renames);
+        Dictionary<string, FileStats> baselineStats = AggregateStats(baseline.Files, renames);
 
         List<RegressedFile> regressedFiles = [];
         foreach (KeyValuePair<string, FileStats> baselinePair in baselineStats)
@@ -28,10 +39,10 @@ internal class CoverageRegressionService : ICoverageRegressionService
             }
 
             FileStats baselineFileStats = baselinePair.Value;
-            foreach (CoverageType type in CoverageTypes)
+            foreach (CoverageStrategy strategy in Strategies)
             {
-                double baselineCoverage = baselineFileStats.Calculate(type);
-                double currentCoverage = currentFileStats.Calculate(type);
+                double baselineCoverage = baselineFileStats.Calculate(strategy);
+                double currentCoverage = currentFileStats.Calculate(strategy);
 
                 if (double.IsNaN(baselineCoverage) || double.IsNaN(currentCoverage))
                     continue;
@@ -44,7 +55,7 @@ internal class CoverageRegressionService : ICoverageRegressionService
                         baselineCoverage,
                         currentCoverage,
                         baselineCoverage - currentCoverage,
-                        type
+                        strategy.Type
                     ));
                 }
             }
@@ -88,8 +99,12 @@ internal class CoverageRegressionService : ICoverageRegressionService
                 existing.IsCovered |= line.IsCovered;
                 if (!line.Branches.HasValue)
                     return;
-                // If existing has no branches, take them from incoming.
-                // If both have branches, they should match (mergeService would throw if they didn't).
+
+                if (existing.Branches.HasValue && existing.Branches != line.Branches)
+                {
+                    throw new CoverageParseException($"Cannot merge line {line.LineNumber} due to a branches mismatch");
+                }
+
                 existing.Branches ??= line.Branches;
                 existing.CoveredBranches = Math.Max(existing.CoveredBranches ?? 0, line.CoveredBranches ?? 0);
             }
@@ -104,31 +119,23 @@ internal class CoverageRegressionService : ICoverageRegressionService
             }
         }
 
-        public double Calculate(CoverageType type)
+        public double Calculate(CoverageStrategy strategy)
         {
             int covered = 0, total = 0;
-            foreach (LineStats line in _lines.Values)
+            foreach (LineStats line in _lines.Values.Where(line => strategy.IsApplicable(line)))
             {
-                if (type == CoverageType.Line)
-                {
-                    covered += line.IsCovered ? 1 : 0;
-                    total++;
-                }
-                else if (type == CoverageType.Branch && line.Branches.HasValue)
-                {
-                    covered += line.CoveredBranches ?? 0;
-                    total += line.Branches.Value;
-                }
+                covered += strategy.GetCovered(line);
+                total += strategy.GetTotal(line);
             }
 
             return total == 0 ? double.NaN : (double)covered / total;
         }
+    }
 
-        private sealed class LineStats
-        {
-            public bool IsCovered { get; set; }
-            public int? Branches { get; set; }
-            public int? CoveredBranches { get; set; }
-        }
+    private sealed class LineStats
+    {
+        public bool IsCovered { get; set; }
+        public int? Branches { get; set; }
+        public int? CoveredBranches { get; set; }
     }
 }
