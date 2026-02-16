@@ -375,7 +375,7 @@ static void EmitBranchGaps(FileCoverage file, string relativePath, string escape
         if (totalAnnotations >= maxTotalAnnotations) return;
 
         string title = GitHubWorkflowFormatter.EscapeProperty("Partial Branch Coverage");
-        string message = GitHubWorkflowFormatter.EscapeMessage($"[{relativePath} : {gap.LineNumber}] Only {gap.Covered} out of {gap.Total} branches are covered.");
+        string message = GitHubWorkflowFormatter.EscapeMessage($"[{relativePath} : {gap.LineNumber}] {gap.Covered} / {gap.Total} branches covered.");
         Console.WriteLine($"::warning file={escapedPath},line={gap.LineNumber},title={title}::{message}");
         totalAnnotations++;
     }
