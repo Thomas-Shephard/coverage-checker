@@ -6,7 +6,7 @@ namespace CoverageChecker.Tests.Unit.UtilTests.CoverageFileParseUtilTests;
 public class GetRequiredAttributeTests
 {
     [Test]
-    public void CoverageFileParseUtils_GetRequiredAttribute_StringAttributeFound_ReturnsValue()
+    public void CoverageFileParseUtilsGetRequiredAttributeStringAttributeFoundReturnsValue()
     {
         const string attributeValue = "attributeValue";
         const string xml = $"""<{XmlReaderTestUtils.ElementName} {XmlReaderTestUtils.AttributeName}="{attributeValue}"/>""";
@@ -21,7 +21,7 @@ public class GetRequiredAttributeTests
     }
 
     [Test]
-    public void CoverageFileParseUtils_GetRequiredAttribute_StringAttributeNotFound_ThrowsCoverageParseException()
+    public void CoverageFileParseUtilsGetRequiredAttributeStringAttributeNotFoundThrowsCoverageParseException()
     {
         const string xml = $"<{XmlReaderTestUtils.ElementName}/>";
 

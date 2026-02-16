@@ -21,19 +21,33 @@ internal sealed class GitHubWorkflowFormatter() : ConsoleFormatter("github")
         {
             LogLevel.Error or LogLevel.Critical => "error",
             LogLevel.Warning                    => "warning",
-            LogLevel.Information                => logEntry.Category.StartsWith("CoverageChecker.CommandLine") ? "notice" : "debug",
+            LogLevel.Information                => logEntry.Category.StartsWith("CoverageChecker.CommandLine", StringComparison.Ordinal) ? null : "debug",
             LogLevel.Debug                      => "debug",
             _                                   => null
         };
 
         if (command is not null)
         {
-            message = message.Replace("%", "%25").Replace("\n", "%0A").Replace("\r", "%0D");
+            message = EscapeMessage(message);
             textWriter.WriteLine($"::{command}::{message}");
         }
         else
         {
             textWriter.WriteLine(message);
         }
+    }
+
+    public static string EscapeMessage(string message)
+    {
+        return message.Replace("%", "%25").Replace("\n", "%0A").Replace("\r", "%0D");
+    }
+
+    public static string EscapeProperty(string value)
+    {
+        return value.Replace("%", "%25")
+                    .Replace("\n", "%0A")
+                    .Replace("\r", "%0D")
+                    .Replace(":", "%3A")
+                    .Replace(",", "%2C");
     }
 }

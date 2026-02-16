@@ -6,7 +6,7 @@ namespace CoverageChecker.Tests.Unit.UtilTests.CoverageFileParseUtilTests;
 public class TryEnterElementTests
 {
     [Test]
-    public void CoverageFileParseUtils_TryEnterElement_ElementFound_EntersElement()
+    public void CoverageFileParseUtilsTryEnterElementElementFoundEntersElement()
     {
         const string xml = $"""
                             <{XmlReaderTestUtils.ElementName}>
@@ -29,7 +29,7 @@ public class TryEnterElementTests
     }
 
     [Test]
-    public void CoverageFileParseUtils_TryEnterElement_NestedElementFound_EntersElement()
+    public void CoverageFileParseUtilsTryEnterElementNestedElementFoundEntersElement()
     {
         const string xml = $"""
                             <{XmlReaderTestUtils.ElementName}>
@@ -62,7 +62,7 @@ public class TryEnterElementTests
     }
 
     [Test]
-    public void CoverageFileParseUtils_TryEnterElement_EmptyElementFound1_EntersElement()
+    public void CoverageFileParseUtilsTryEnterElementEmptyElementFound1EntersElement()
     {
         const string xml = $"<{XmlReaderTestUtils.ElementName}/>";
 
@@ -81,7 +81,7 @@ public class TryEnterElementTests
     }
 
     [Test]
-    public void CoverageFileParseUtils_TryEnterElement_EmptyElementFound2_EntersElement()
+    public void CoverageFileParseUtilsTryEnterElementEmptyElementFound2EntersElement()
     {
         const string xml = $"<{XmlReaderTestUtils.ElementName}></{XmlReaderTestUtils.ElementName}>";
 
@@ -100,7 +100,7 @@ public class TryEnterElementTests
     }
 
     [Test]
-    public void CoverageFileParseUtils_TryEnterElement_UnknownElementName_ThrowsCoverageParseException()
+    public void CoverageFileParseUtilsTryEnterElementUnknownElementNameThrowsCoverageParseException()
     {
         const string xml = $"<{XmlReaderTestUtils.ElementName}/>";
 
@@ -120,7 +120,7 @@ public class TryEnterElementTests
     }
 
     [Test]
-    public void CoverageFileParseUtils_TryEnterElement_ElementEndType_ThrowsCoverageParseException()
+    public void CoverageFileParseUtilsTryEnterElementElementEndTypeThrowsCoverageParseException()
     {
         const string xml = $"<{XmlReaderTestUtils.ElementName}></{XmlReaderTestUtils.ElementName}>";
 
@@ -140,7 +140,7 @@ public class TryEnterElementTests
     }
 
     [Test]
-    public void CoverageFileParseUtils_TryEnterElement_UnknownElementName_ReturnsFalse()
+    public void CoverageFileParseUtilsTryEnterElementUnknownElementNameReturnsFalse()
     {
         const string xml = $"<{XmlReaderTestUtils.ElementName}/>";
 
@@ -159,7 +159,7 @@ public class TryEnterElementTests
     }
 
     [Test]
-    public void CoverageFileParseUtils_TryEnterElement_ElementEndType_ReturnsFalse()
+    public void CoverageFileParseUtilsTryEnterElementElementEndTypeReturnsFalse()
     {
         const string xml = $"<{XmlReaderTestUtils.ElementName}></{XmlReaderTestUtils.ElementName}>";
 

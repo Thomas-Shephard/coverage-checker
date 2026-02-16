@@ -7,6 +7,7 @@ You are an expert code reviewer and software engineer assisting with the `Covera
 *   **Type:** CLI Tool (`CoverageChecker.CommandLine`) and Library (`CoverageChecker`).
 *   **Frameworks:** .NET 8.0, .NET 9.0, .NET 10.0.
 *   **Versioning:** [MinVer](https://github.com/adamralph/minver). Do NOT manually set versions in `.csproj` files. Use Git tags (`vX.Y.Z`).
+*   **Dependency Management:** Central Package Management (CPM) is enabled. Define package versions in `Directory.Packages.props`. Do NOT set `Version` attributes in `.csproj` `PackageReference` items.
 *   **Key Libraries:** `CommandLineParser`, `Microsoft.Extensions.FileSystemGlobbing`, `Microsoft.Extensions.Logging` (Source Gen), `NUnit`, `Moq`.
 
 ## 2. Build and Validate
@@ -28,6 +29,11 @@ Always verify changes using these commands.
 *   **Dependency Injection:** Use constructor injection. Avoid static state to ensure testability.
 *   **Logging:** Use `Microsoft.Extensions.Logging` with **compile-time source generators** (`[LoggerMessage]`) for performance. Avoid standard `LogInformation`.
 *   **Namespaces:** Use **file-scoped namespaces** (e.g., `namespace CoverageChecker;`).
+*   **Path Consistency:**
+    *   **Project Root:** Always resolve source file paths relative to the project root. Use `IGitService.GetRepoRoot()` (which uses `git rev-parse --show-toplevel`) with a fallback to `Environment.CurrentDirectory`.
+    *   **Filtering:** Filtering logic (include/exclude) **MUST** be performed against relative paths calculated from this Project Root. Do NOT use the coverage report directory (`-d`) as the base for filtering, as it breaks glob matching.
+    *   **Normalization:** Use `PathUtils.NormalizePath` (which enforces `/` separators) to ensure consistency across Windows and Unix-like environments.
+    *   **Cross-Drive Safety:** When calculating relative paths on Windows, verify that the base path and target file share the same drive root (`Path.GetPathRoot`) to prevent crashes.
 
 ## 5. Security Guidelines (Critical)
 *   **XML Parsing:** PREVENT XXE. Always use `DtdProcessing = DtdProcessing.Ignore` (see `ParserBase.cs`).

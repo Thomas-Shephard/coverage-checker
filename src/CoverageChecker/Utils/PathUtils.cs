@@ -1,7 +1,16 @@
+using System.Runtime.InteropServices;
+
 namespace CoverageChecker.Utils;
 
 internal static class PathUtils
 {
+    /// <summary>
+    /// Gets a string comparer that is appropriate for the current operating system's file system.
+    /// </summary>
+    public static StringComparer PathComparer { get; } = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
+        ? StringComparer.OrdinalIgnoreCase
+        : StringComparer.Ordinal;
+
     /// <summary>
     /// Normalizes a path to use the universal '/' separator and removes trailing slashes.
     /// This ensures consistency across different operating systems and when merging reports.

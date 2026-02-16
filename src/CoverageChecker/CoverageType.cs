@@ -5,6 +5,13 @@ namespace CoverageChecker;
 /// </summary>
 public enum CoverageType
 {
+    /// <summary>
+    /// Line coverage.
+    /// </summary>
     Line,
+
+    /// <summary>
+    /// Branch coverage.
+    /// </summary>
     Branch
 }

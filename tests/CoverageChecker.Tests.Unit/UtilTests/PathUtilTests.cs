@@ -14,7 +14,7 @@ public class PathUtilTests
     [TestCase(@"C:\", "C:/")]
     [TestCase(@"\\server\share\", "//server/share")]
     [TestCase("", "")]
-    public void NormalizePath_NormalizesSeparatorsAndRemovesTrailingSlashes(string input, string expected)
+    public void NormalizePathNormalizesSeparatorsAndRemovesTrailingSlashes(string input, string expected)
     {
         string result = PathUtils.NormalizePath(input);
 
@@ -22,14 +22,14 @@ public class PathUtilTests
     }
 
     [Test]
-    public void NormalizePath_ThrowsIfNull()
+    public void NormalizePathThrowsIfNull()
     {
         // ReSharper disable once NullableWarningSuppressionIsUsed
         Assert.That(() => PathUtils.NormalizePath(null!), Throws.TypeOf<ArgumentNullException>());
     }
 
     [Test]
-    public void GetNormalizedFullPath_ReturnsNormalizedPath()
+    public void GetNormalizedFullPathReturnsNormalizedPath()
     {
         string path = "test/path";
         string result = PathUtils.GetNormalizedFullPath(path);
@@ -38,7 +38,7 @@ public class PathUtilTests
     }
 
     [Test]
-    public void GetNormalizedFullPath_ResolvesRelativePathAgainstBase()
+    public void GetNormalizedFullPathResolvesRelativePathAgainstBase()
     {
         bool isWindows = Path.DirectorySeparatorChar == '\\';
         string basePath = isWindows ? @"C:\base" : "/base";
@@ -51,7 +51,7 @@ public class PathUtilTests
     }
 
     [Test]
-    public void GetNormalizedFullPath_ThrowsArgumentException_WhenPathIsInvalid()
+    public void GetNormalizedFullPathThrowsArgumentExceptionWhenPathIsInvalid()
     {
         string invalidPath = "invalid\0path";
         

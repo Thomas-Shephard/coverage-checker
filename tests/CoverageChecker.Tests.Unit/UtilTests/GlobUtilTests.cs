@@ -11,7 +11,7 @@ public class GlobUtilTests
     [TestCase("!**/obj/**", "!**/obj/**", "**/*.cs", "!**/bin/**")]
     [TestCase("**/*.cs", "!**/obj/**", "!**/bin/**")]
     [TestCase("!**/obj/**", "**/*.cs", "**/*.csproj", "!**/bin/**", "!**/obj/**")]
-    public void GlobUtils_AddGlobPatterns_AddsPatterns(params string[] globPatterns)
+    public void GlobUtilsAddGlobPatternsAddsPatterns(params string[] globPatterns)
     {
         Mock<Matcher> matcher = new();
         matcher.Object.AddGlobPatterns(globPatterns);
@@ -36,7 +36,7 @@ public class GlobUtilTests
     }
 
     [Test]
-    public void GlobUtils_AddGlobPatterns_AddsPatterns_List()
+    public void GlobUtilsAddGlobPatternsAddsPatternsList()
     {
         List<string> globPatterns = ["**/*.cs", "!**/obj/**"];
         Mock<Matcher> matcher = new();
@@ -49,7 +49,7 @@ public class GlobUtilTests
     }
 
     [Test]
-    public void GlobUtils_AddGlobPatterns_EmptyPatterns_ThrowsException()
+    public void GlobUtilsAddGlobPatternsEmptyPatternsThrowsException()
     {
         Matcher matcher = new();
         Exception e = Assert.Throws<ArgumentException>(() => matcher.AddGlobPatterns([]));

@@ -5,6 +5,18 @@ namespace CoverageChecker;
 /// </summary>
 public enum CoverageFormat
 {
+    /// <summary>
+    /// Automatically detect the coverage format.
+    /// </summary>
+    Auto,
+
+    /// <summary>
+    /// The Cobertura coverage format.
+    /// </summary>
     Cobertura,
+
+    /// <summary>
+    /// The SonarQube coverage format.
+    /// </summary>
     SonarQube
 }

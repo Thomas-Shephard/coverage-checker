@@ -16,7 +16,7 @@ public class FileCoverage : ICoverageResult
 
     /// <summary>
     /// The name of the package the file is part of.
-    /// If null, the file is not part of a package.
+    /// If <see langword="null"/>, the file is not part of a package.
     /// </summary>
     public string? PackageName { get; }
 
@@ -80,7 +80,7 @@ public class FileCoverage : ICoverageResult
     /// </summary>
     /// <param name="methodName">The name of the method to filter by.</param>
     /// <param name="methodSignature">
-    /// Optionally, the signature of the method to filter by. If null, only the method name is
+    /// Optionally, the signature of the method to filter by. If <see langword="null"/>, only the method name is
     /// checked.
     /// </param>
     /// <param name="coverageType">The type of coverage to calculate. Defaults to <see cref="CoverageType.Line"/>.</param>

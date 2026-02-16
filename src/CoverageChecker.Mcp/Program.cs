@@ -14,8 +14,14 @@ using ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
 });
 
 var logger = loggerFactory.CreateLogger("Program");
-logger.LogInformation("Coverage Checker MCP Server starting...");
+Log.ServerStarting(logger);
 
 var server = new McpServer(loggerFactory);
 await server.RunAsync(Console.In, Console.Out);
 return 0;
+
+internal static partial class Log
+{
+    [LoggerMessage(Level = LogLevel.Information, Message = "Coverage Checker MCP Server starting...")]
+    public static partial void ServerStarting(ILogger logger);
+}

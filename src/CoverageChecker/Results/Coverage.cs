@@ -25,7 +25,7 @@ public class Coverage : ICoverageResult
 
     internal FileCoverage GetOrCreateFile(string filePath, string? packageName = null)
     {
-        FileCoverage? file = _files.Find(file => file.Path == filePath && file.PackageName == packageName);
+        FileCoverage? file = _files.Find(file => PathUtils.PathComparer.Equals(file.Path, filePath) && file.PackageName == packageName);
 
         if (file is not null) return file;
 
@@ -33,6 +33,11 @@ public class Coverage : ICoverageResult
         _files.Add(file);
 
         return file;
+    }
+
+    internal bool RemoveFile(FileCoverage file)
+    {
+        return _files.Remove(file);
     }
 
     /// <summary>

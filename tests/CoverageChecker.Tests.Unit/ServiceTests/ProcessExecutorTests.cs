@@ -40,20 +40,20 @@ public class ProcessExecutorTests
     }
 
     [Test]
-    public void Execute_ShouldTimeout_WhenWaitForExitReturnsFalse()
+    public void ExecuteShouldTimeoutWhenWaitForExitReturnsFalse()
     {
         _mockProcess.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(false); // Simulate timeout
         string fileName = "git";
         string[] arguments = ["status"];
         TimeSpan timeout = TimeSpan.FromSeconds(1);
 
-        ProcessExecutionException? ex = Assert.Throws<ProcessExecutionException>(() => _sut.Execute(fileName, arguments, null, timeout));
+        ProcessExecutionException? ex = Assert.Throws<ProcessExecutionException>(() => _sut.Execute(fileName, arguments, (string?)null, timeout));
         Assert.That(ex.Message, Does.Contain("timed out after 1 second"));
         _mockProcess.Verify(p => p.Kill(), Times.Once);
     }
 
     [Test]
-    public void Execute_ShouldReturnOutput_WhenProcessFinishesInTime()
+    public void ExecuteShouldReturnOutputWhenProcessFinishesInTime()
     {
         // Arrange
         _mockProcess.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(true); // Simulate success
@@ -71,7 +71,7 @@ public class ProcessExecutorTests
         TimeSpan timeout = TimeSpan.FromSeconds(5);
 
         // Act
-        (int ExitCode, string StandardOutput, string StandardError) result = _sut.Execute(fileName, arguments, null, timeout);
+        (int ExitCode, string StandardOutput, string StandardError) result = _sut.Execute(fileName, arguments, (string?)null, timeout);
 
         // Assert
         Assert.Multiple(() =>
@@ -82,7 +82,7 @@ public class ProcessExecutorTests
     }
 
     [Test]
-    public void Execute_ShouldSetWorkingDirectory_WhenProvided()
+    public void ExecuteShouldSetWorkingDirectoryWhenProvided()
     {
         // Arrange
         string workingDir = "C:\\Temp";
@@ -98,7 +98,7 @@ public class ProcessExecutorTests
     }
 
     [Test]
-    public void Execute_ShouldPrioritizeMethodWorkingDirectory()
+    public void ExecuteShouldPrioritizeMethodWorkingDirectory()
     {
         // Arrange
         string constructorDir = "C:\\Old";
@@ -114,30 +114,30 @@ public class ProcessExecutorTests
     }
 
     [Test]
-    public void Execute_ShouldLogWarning_WhenKillFailsAfterTimeout()
+    public void ExecuteShouldLogWarningWhenKillFailsAfterTimeout()
     {
         _mockProcess.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(false);
-        _mockProcess.Setup(p => p.Kill()).Throws(new Exception("Kill failed"));
+        _mockProcess.Setup(p => p.Kill()).Throws(new InvalidOperationException("Kill failed"));
 
         // Act
-        Assert.Throws<ProcessExecutionException>(() => _sut.Execute("git", ["status"], null, TimeSpan.FromSeconds(1)));
+        Assert.Throws<ProcessExecutionException>(() => _sut.Execute("git", ["status"], (string?)null, TimeSpan.FromSeconds(1)));
     }
 
     [Test]
-    public void Execute_ShouldUsePluralSeconds_WhenTimeoutIsGreaterThanOne()
+    public void ExecuteShouldUsePluralSecondsWhenTimeoutIsGreaterThanOne()
     {
         _mockProcess.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(false);
         
-        ProcessExecutionException? ex = Assert.Throws<ProcessExecutionException>(() => _sut.Execute("git", ["status"], null, TimeSpan.FromSeconds(2)));
+        ProcessExecutionException? ex = Assert.Throws<ProcessExecutionException>(() => _sut.Execute("git", ["status"], (string?)null, TimeSpan.FromSeconds(2)));
         Assert.That(ex.Message, Does.Contain("2 seconds"));
     }
 
     [Test]
-    public void Execute_ShouldUseDefaultTimeout_WhenTimeoutIsNull()
+    public void ExecuteShouldUseDefaultTimeoutWhenTimeoutIsNull()
     {
         _mockProcess.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(false);
 
-        ProcessExecutionException? ex = Assert.Throws<ProcessExecutionException>(() => _sut.Execute("git", ["status"], null, null));
+        ProcessExecutionException? ex = Assert.Throws<ProcessExecutionException>(() => _sut.Execute("git", ["status"], (string?)null, (TimeSpan?)null));
         Assert.That(ex.Message, Does.Contain("30 seconds"));
     }
 }

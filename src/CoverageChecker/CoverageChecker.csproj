@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <PackageId>CoverageChecker</PackageId>
@@ -6,6 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <InternalsVisibleTo Include="CoverageChecker.CommandLine"/>
         <InternalsVisibleTo Include="CoverageChecker.Mcp"/>
         <InternalsVisibleTo Include="CoverageChecker.Mcp.Tests"/>
         <InternalsVisibleTo Include="CoverageChecker.Tests.Unit"/>
@@ -14,8 +15,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="8.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.1"/>
+        <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions"/>
     </ItemGroup>
 
 </Project>

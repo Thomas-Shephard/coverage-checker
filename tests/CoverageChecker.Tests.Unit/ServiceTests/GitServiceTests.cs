@@ -6,7 +6,51 @@ namespace CoverageChecker.Tests.Unit.ServiceTests;
 
 public class GitServiceTests
 {
-    private class MockProcessExecutor : IProcessExecutor
+    [Test]
+    public void GetRenamesShouldParseRenameOutputCorrectly()
+    {
+        _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
+        _mockExecutor.DiffOutput = "R100\told_file.cs\tnew_file.cs\n";
+
+        IDictionary<string, string> result = _sut.GetRenames("main");
+
+        string oldPath = PathUtils.GetNormalizedFullPath(Path.Combine(_mockExecutor.RepoRoot, "old_file.cs"));
+        string newPath = PathUtils.GetNormalizedFullPath(Path.Combine(_mockExecutor.RepoRoot, "new_file.cs"));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result, Has.Count.EqualTo(1));
+            Assert.That(result[oldPath], Is.EqualTo(newPath));
+        });
+    }
+
+    [Test]
+    public void GetRenamesShouldHandleRenamesWithSpaces()
+    {
+        _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
+        _mockExecutor.DiffOutput = "R090\told file.cs\tnew file.cs\n";
+
+        IDictionary<string, string> result = _sut.GetRenames("main");
+
+        string oldPath = PathUtils.GetNormalizedFullPath(Path.Combine(_mockExecutor.RepoRoot, "old file.cs"));
+        string newPath = PathUtils.GetNormalizedFullPath(Path.Combine(_mockExecutor.RepoRoot, "new file.cs"));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result, Has.Count.EqualTo(1));
+            Assert.That(result[oldPath], Is.EqualTo(newPath));
+        });
+    }
+
+    [TestCase(-0.1)]
+    [TestCase(1.1)]
+    [TestCase(double.NaN)]
+    public void GetRenamesShouldThrowOnInvalidThreshold(double threshold)
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => _sut.GetRenames("main", "HEAD", threshold));
+    }
+
+    private sealed class MockProcessExecutor : IProcessExecutor
     {
         public string RepoRoot { get; set; } = "/repo";
         public string DiffOutput { get; set; } = "";
@@ -14,13 +58,21 @@ public class GitServiceTests
         public int DiffExitCode { get; set; }
         public string Stderr { get; set; } = "";
 
-        public (int ExitCode, string StandardOutput, string StandardError) Execute(string fileName, IEnumerable<string> arguments, string? workingDirectory = null, TimeSpan? timeout = null)
+        public (int ExitCode, string StandardOutput, string StandardError) Execute(string fileName, IEnumerable<string> arguments, TimeSpan? timeout = null)
+            => Execute(fileName, arguments, null, timeout);
+
+        public (int ExitCode, string StandardOutput, string StandardError) Execute(string fileName, IEnumerable<string> arguments, string? workingDirectory, TimeSpan? timeout = null)
         {
             List<string> argsList = arguments.ToList();
 
             if (argsList.Contains("rev-parse") && argsList.Contains("--show-toplevel"))
             {
                 return (RepoRootExitCode, RepoRoot, Stderr);
+            }
+
+            if (argsList.Contains("diff") && argsList.Contains("--name-status") && argsList.Any(a => a.StartsWith("-M", StringComparison.Ordinal)))
+            {
+                return (DiffExitCode, DiffOutput, Stderr);
             }
 
             // Updated check to match the robust command arguments
@@ -41,7 +93,7 @@ public class GitServiceTests
     }
 
     [Test]
-    public void GetChangedLines_ShouldHandleDeletedFiles_Correctly()
+    public void GetChangedLinesShouldHandleDeletedFilesCorrectly()
     {
         _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
         // Simulating:
@@ -89,7 +141,7 @@ public class GitServiceTests
     }
 
     [Test]
-    public void GetChangedLines_ShouldParseSingleLineChange()
+    public void GetChangedLinesShouldParseSingleLineChange()
     {
         _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
         _mockExecutor.DiffOutput = """
@@ -109,7 +161,7 @@ public class GitServiceTests
     }
 
     [Test]
-    public void GetChangedLines_ShouldParseMultiLineChange()
+    public void GetChangedLinesShouldParseMultiLineChange()
     {
         _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
         _mockExecutor.DiffOutput = """
@@ -126,7 +178,7 @@ public class GitServiceTests
     }
 
     [Test]
-    public void GetChangedLines_ShouldHandleFilesWithSpaces()
+    public void GetChangedLinesShouldHandleFilesWithSpaces()
     {
         _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
         _mockExecutor.DiffOutput = """
@@ -143,7 +195,7 @@ public class GitServiceTests
     }
 
     [Test]
-    public void GetChangedLines_ShouldHandleEscapedFilenames()
+    public void GetChangedLinesShouldHandleEscapedFilenames()
     {
         _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
         // Git escapes quotes with backslashes when filenames are quoted
@@ -161,7 +213,7 @@ public class GitServiceTests
     }
 
     [Test]
-    public void GetChangedLines_ShouldHandleMultipleFiles()
+    public void GetChangedLinesShouldHandleMultipleFiles()
     {
         _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
         _mockExecutor.DiffOutput = """
@@ -186,7 +238,7 @@ public class GitServiceTests
     }
 
     [Test]
-    public void GetChangedLines_ShouldHandleEmptyDiff()
+    public void GetChangedLinesShouldHandleEmptyDiff()
     {
         _mockExecutor.DiffOutput = "";
 
@@ -196,7 +248,7 @@ public class GitServiceTests
     }
 
     [Test]
-    public void GetChangedLines_ShouldNotParseInvalidOctalSequences()
+    public void GetChangedLinesShouldNotParseInvalidOctalSequences()
     {
         _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
         // \080 is not a valid octal sequence (8 is invalid).
@@ -215,10 +267,10 @@ public class GitServiceTests
     }
 
     [Test]
-    public void GetChangedLines_ShouldThrowGitException_WhenGitNotFound()
+    public void GetChangedLinesShouldThrowGitExceptionWhenGitNotFound()
     {
         Mock<IProcessExecutor> mockExecutor = new();
-        mockExecutor.Setup(e => e.Execute(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string?>(), It.IsAny<TimeSpan?>()))
+        mockExecutor.Setup(e => e.Execute(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<TimeSpan?>()))
                     .Throws(new System.ComponentModel.Win32Exception(2, "The system cannot find the file specified"));
 
         GitService sut = new(mockExecutor.Object);
@@ -232,10 +284,10 @@ public class GitServiceTests
     }
 
     [Test]
-    public void GetRepoRoot_ShouldThrowGitException_WhenGitNotFound()
+    public void GetRepoRootShouldThrowGitExceptionWhenGitNotFound()
     {
         Mock<IProcessExecutor> mockExecutor = new();
-        mockExecutor.Setup(e => e.Execute(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string?>(), It.IsAny<TimeSpan?>()))
+        mockExecutor.Setup(e => e.Execute(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<TimeSpan?>()))
                     .Throws(new System.ComponentModel.Win32Exception(2, "The system cannot find the file specified"));
 
         GitService sut = new(mockExecutor.Object);
@@ -249,13 +301,13 @@ public class GitServiceTests
     }
 
     [Test]
-    public void DefaultConstructor_ShouldNotThrow()
+    public void DefaultConstructorShouldNotThrow()
     {
         Assert.DoesNotThrow(() => _ = new GitService());
     }
 
     [Test]
-    public void GetChangedLines_ShouldThrowOnGitDiffError()
+    public void GetChangedLinesShouldThrowOnGitDiffError()
     {
         _mockExecutor.DiffExitCode = 1;
         _mockExecutor.Stderr = "fatal: some git error";
@@ -265,7 +317,7 @@ public class GitServiceTests
     }
 
     [Test]
-    public void GetChangedLines_ShouldThrowOnGetRepoRootError()
+    public void GetChangedLinesShouldThrowOnGetRepoRootError()
     {
         _mockExecutor.RepoRootExitCode = 1;
         _mockExecutor.Stderr = "fatal: not a git repository";
@@ -275,19 +327,19 @@ public class GitServiceTests
     }
 
     [Test]
-    public void GetChangedLines_ShouldThrow_WhenBaseStartsWithDash()
+    public void GetChangedLinesShouldThrowWhenBaseStartsWithDash()
     {
         Assert.Throws<ArgumentException>(() => _sut.GetChangedLines("-malicious-flag"));
     }
 
     [Test]
-    public void GetChangedLines_ShouldThrow_WhenHeadStartsWithDash()
+    public void GetChangedLinesShouldThrowWhenHeadStartsWithDash()
     {
         Assert.Throws<ArgumentException>(() => _sut.GetChangedLines("main", "-malicious-flag"));
     }
 
     [Test]
-    public void GetChangedLines_ShouldHandleMultiByteOctalEscapes()
+    public void GetChangedLinesShouldHandleMultiByteOctalEscapes()
     {
         _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
         // snowman is \342\230\203 in octal (UTF-8)
@@ -304,7 +356,7 @@ public class GitServiceTests
     }
 
     [Test]
-    public void GetChangedLines_ShouldHandleTabsAndTimestampsInHeader()
+    public void GetChangedLinesShouldHandleTabsAndTimestampsInHeader()
     {
         _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
         // Some git setups output: +++ b/file.cs       2023-01-01 12:00:00.000000000 +0100
@@ -321,7 +373,7 @@ public class GitServiceTests
     }
 
     [Test]
-    public void GetChangedLines_ShouldHandleComplexQuotes()
+    public void GetChangedLinesShouldHandleComplexQuotes()
     {
         _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
         // Git escapes quotes with backslashes.
@@ -341,7 +393,7 @@ public class GitServiceTests
     }
 
     [Test]
-    public void GetChangedLines_ShouldHandleUnicodeFileNames()
+    public void GetChangedLinesShouldHandleUnicodeFileNames()
     {
         _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
         // unicode snow man: ☃
@@ -360,7 +412,7 @@ public class GitServiceTests
     }
 
     [Test]
-    public void GetChangedLines_ShouldHandleFileNamesWithGitPrefixPath()
+    public void GetChangedLinesShouldHandleFileNamesWithGitPrefixPath()
     {
         _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
         // File named "b/file.cs" inside the repo
@@ -378,7 +430,7 @@ public class GitServiceTests
     }
 
     [Test]
-    public void GetChangedLines_ShouldHandleFileNamesStartingWithPlus()
+    public void GetChangedLinesShouldHandleFileNamesStartingWithPlus()
     {
         _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
         string filename = "+file.cs";
@@ -395,7 +447,7 @@ public class GitServiceTests
     }
 
     [Test]
-    public void GetChangedLines_ShouldAllowValidGitReferences()
+    public void GetChangedLinesShouldAllowValidGitReferences()
     {
         Assert.DoesNotThrow(() => _sut.GetChangedLines("HEAD^"));
         Assert.DoesNotThrow(() => _sut.GetChangedLines("feature/branch-name"));
@@ -403,7 +455,7 @@ public class GitServiceTests
     }
 
     [Test]
-    public void GetChangedLines_ShouldHandleTrailingBackslashInFilename()
+    public void GetChangedLinesShouldHandleTrailingBackslashInFilename()
     {
         _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
         // Filename ending with a backslash
@@ -420,7 +472,7 @@ public class GitServiceTests
     }
 
     [Test]
-    public void GetChangedLines_ShouldHandleBinaryFiles()
+    public void GetChangedLinesShouldHandleBinaryFiles()
     {
         _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
         _mockExecutor.DiffOutput = """
@@ -436,13 +488,13 @@ public class GitServiceTests
     }
 
     [Test]
-    public void GetChangedLines_ShouldThrow_WhenBaseIsJustDash()
+    public void GetChangedLinesShouldThrowWhenBaseIsJustDash()
     {
         Assert.Throws<ArgumentException>(() => _sut.GetChangedLines("-"));
     }
 
     [Test]
-    public void GetChangedLines_ShouldHandleTightSpacingInHunkHeader()
+    public void GetChangedLinesShouldHandleTightSpacingInHunkHeader()
     {
         _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
         _mockExecutor.DiffOutput = """
@@ -459,7 +511,7 @@ public class GitServiceTests
     }
 
     [Test]
-    public void GetChangedLines_ShouldHandleVariousEscapeSequences()
+    public void GetChangedLinesShouldHandleVariousEscapeSequences()
     {
         _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
         // Git escapes: \t, \n, \b, \f, \r, \v, \a, \e (escape), \\, invalid \z, non-octal \8, partial octal \3 (end), partial octal \34z
@@ -490,7 +542,7 @@ public class GitServiceTests
     }
 
     [Test]
-    public void GetChangedLines_ShouldHandleCompactHunkHeader()
+    public void GetChangedLinesShouldHandleCompactHunkHeader()
     {
         _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
         // Compact header @@ -1 +1 @@ implies 1 line context/change
@@ -508,14 +560,14 @@ public class GitServiceTests
     }
 
     [Test]
-    public void DefaultConstructor_ShouldInitializeCorrectly()
+    public void DefaultConstructorShouldInitializeCorrectly()
     {
         GitService sut = new();
         Assert.That(sut, Is.Not.Null);
     }
 
     [Test]
-    public void GetChangedLines_ShouldHandleSameFileAppearingTwice()
+    public void GetChangedLinesShouldHandleSameFileAppearingTwice()
     {
         _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
         // Same file appearing twice
@@ -536,15 +588,37 @@ public class GitServiceTests
     }
 
     [Test]
-    public void GetChangedLines_ShouldThrowGitException_WhenGitDiffFailsWithWin32Exception()
+    public void GetRenamesShouldThrowGitExceptionWhenGitDiffFailsWithWin32Exception()
     {
         Mock<IProcessExecutor> mockExecutor = new();
         // Setup GetRepoRoot to succeed
-        mockExecutor.Setup(e => e.Execute("git", It.Is<IEnumerable<string>>(a => a.Contains("rev-parse")), It.IsAny<string?>(), It.IsAny<TimeSpan?>()))
+        mockExecutor.Setup(e => e.Execute("git", It.Is<IEnumerable<string>>(a => a.Contains("rev-parse")), It.IsAny<TimeSpan?>()))
                     .Returns((0, "/repo", ""));
         
         // Setup diff to throw Win32Exception
-        mockExecutor.Setup(e => e.Execute("git", It.Is<IEnumerable<string>>(a => a.Contains("diff")), It.IsAny<string?>(), It.IsAny<TimeSpan?>()))
+        mockExecutor.Setup(e => e.Execute("git", It.Is<IEnumerable<string>>(a => a.Contains("--name-status")), It.IsAny<TimeSpan?>()))
+                    .Throws(new System.ComponentModel.Win32Exception(2, "The system cannot find the file specified"));
+
+        GitService sut = new(mockExecutor.Object);
+
+        GitException? ex = Assert.Throws<GitException>(() => sut.GetRenames("main"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(ex.Message, Does.Contain("Failed to execute 'git'"));
+            Assert.That(ex.InnerException, Is.TypeOf<System.ComponentModel.Win32Exception>());
+        });
+    }
+
+    [Test]
+    public void GetChangedLinesShouldThrowGitExceptionWhenGitDiffFailsWithWin32Exception()
+    {
+        Mock<IProcessExecutor> mockExecutor = new();
+        // Setup GetRepoRoot to succeed
+        mockExecutor.Setup(e => e.Execute("git", It.Is<IEnumerable<string>>(a => a.Contains("rev-parse")), It.IsAny<TimeSpan?>()))
+                    .Returns((0, "/repo", ""));
+        
+        // Setup diff to throw Win32Exception
+        mockExecutor.Setup(e => e.Execute("git", It.Is<IEnumerable<string>>(a => a.Contains("-U0")), It.IsAny<TimeSpan?>()))
                     .Throws(new System.ComponentModel.Win32Exception(2, "The system cannot find the file specified"));
 
         GitService sut = new(mockExecutor.Object);
@@ -555,5 +629,40 @@ public class GitServiceTests
             Assert.That(ex.Message, Does.Contain("Failed to execute 'git'"));
             Assert.That(ex.InnerException, Is.TypeOf<System.ComponentModel.Win32Exception>());
         });
+    }
+
+    [Test]
+    public void GetRenamesShouldHandleSmallThreshold()
+    {
+        _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
+        _mockExecutor.DiffOutput = "R100\told_file.cs\tnew_file.cs\n";
+
+        // threshold 0.001 should be rounded to 0 but clamped to 1
+        IDictionary<string, string> result = _sut.GetRenames("main", "HEAD", 0.001);
+
+        Assert.That(result, Has.Count.EqualTo(1));
+    }
+
+    [Test]
+    public void GetRenamesShouldThrowGitExceptionWhenGitDiffFails()
+    {
+        _mockExecutor.DiffExitCode = 1;
+        _mockExecutor.Stderr = "fatal: some git error";
+
+        GitException? ex = Assert.Throws<GitException>(() => _sut.GetRenames("main"));
+        Assert.That(ex.Message, Does.Contain("Git diff for renames failed with code 1"));
+    }
+
+    [Test]
+    public void GetRenamesShouldThrowGitExceptionWhenGitNotFoundForRenames()
+    {
+        Mock<IProcessExecutor> mockExecutor = new();
+        mockExecutor.Setup(e => e.Execute(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<TimeSpan?>()))
+                    .Throws(new System.ComponentModel.Win32Exception(2, "The system cannot find the file specified"));
+
+        GitService sut = new(mockExecutor.Object);
+
+        GitException? ex = Assert.Throws<GitException>(() => sut.GetRenames("main"));
+        Assert.That(ex.Message, Does.Contain("Failed to execute 'git'"));
     }
 }

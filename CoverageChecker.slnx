@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CoverageChecker/CoverageChecker.csproj" />
+    <Project Path="src/CoverageChecker.CommandLine/CoverageChecker.CommandLine.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CoverageChecker.Tests.EndToEnd/CoverageChecker.Tests.EndToEnd.csproj" />
+    <Project Path="tests/CoverageChecker.Tests.Unit/CoverageChecker.Tests.Unit.csproj" />
+  </Folder>
+</Solution>
