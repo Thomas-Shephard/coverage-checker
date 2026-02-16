@@ -30,12 +30,14 @@ internal partial class GitService : IGitService
     public IDictionary<string, string> GetRenames(string @base, string head = "HEAD", double renameThreshold = 0.5)
     {
         ValidateGitReferences(@base, head);
+        Guard.ValidateThreshold(renameThreshold, nameof(renameThreshold));
+
         string repoRoot = GetRepoRoot();
 
         // -c core.quotepath=false: Ensure non-ASCII chars are output as UTF-8 bytes, not octal escapes.
         // --name-status: Show only names and status of changed files.
         // -M: Detect renames.
-        int thresholdPercentage = (int)Math.Round(renameThreshold * 100);
+        int thresholdPercentage = Math.Clamp((int)Math.Round(renameThreshold * 100), 0, 100);
         if (renameThreshold > 0 && thresholdPercentage == 0)
         {
             thresholdPercentage = 1;

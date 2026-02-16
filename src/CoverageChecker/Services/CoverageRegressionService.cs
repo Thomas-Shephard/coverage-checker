@@ -75,6 +75,10 @@ internal class CoverageRegressionService : ICoverageRegressionService
                 stats = new FileStats(file.PackageName);
                 statsByPath[lookupPath] = stats;
             }
+            else
+            {
+                stats.MergePackageName(file.PackageName);
+            }
 
             foreach (LineCoverage line in file.Lines)
             {
@@ -87,10 +91,22 @@ internal class CoverageRegressionService : ICoverageRegressionService
 
     private sealed class FileStats(string? packageName)
     {
-        public string? PackageName { get; } = packageName;
+        public string? PackageName { get; private set; } = packageName;
 
         // Using a dictionary to merge lines by line number correctly.
         private readonly Dictionary<int, LineStats> _lines = [];
+
+        public void MergePackageName(string? otherPackageName)
+        {
+            if (PackageName != null && otherPackageName != null && PackageName != otherPackageName)
+            {
+                PackageName = null; // Ambiguous
+            }
+            else if (PackageName == null && otherPackageName != null)
+            {
+                PackageName = otherPackageName;
+            }
+        }
 
         public void AddOrMergeLine(LineCoverage line)
         {

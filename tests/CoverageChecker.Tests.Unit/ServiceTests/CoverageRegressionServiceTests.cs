@@ -79,6 +79,35 @@ public class CoverageRegressionServiceTests
     }
 
     [Test]
+    public void CheckRegressionWithSplitFileInDifferentPackagesNullifiesPackageNameOnRegression()
+    {
+        // Baseline: 100% coverage
+        FileCoverage baselineFile = CoverageTestData.CreateFile(CoverageTestData.Lines4Of4Covered, "SplitFile.cs", "OriginalPackage");
+        Coverage baseline = new([baselineFile]);
+
+        // Current: Regressed coverage (3/4 lines) split across two DIFFERENT packages.
+        FileCoverage currentFilePart1 = new("SplitFile.cs", "Package1");
+        currentFilePart1.AddOrMergeLine(new LineCoverage(1, true), new CoverageMergeService());
+        currentFilePart1.AddOrMergeLine(new LineCoverage(2, true), new CoverageMergeService());
+
+        FileCoverage currentFilePart2 = new("SplitFile.cs", "Package2");
+        currentFilePart2.AddOrMergeLine(new LineCoverage(3, true), new CoverageMergeService());
+        currentFilePart2.AddOrMergeLine(new LineCoverage(4, false), new CoverageMergeService());
+
+        Coverage current = new([currentFilePart1, currentFilePart2]);
+
+        RegressionResult result = _service.CheckRegression(baseline, current);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.HasRegressions, Is.True);
+            Assert.That(result.RegressedFiles, Has.Count.EqualTo(1));
+            // PackageName should be null because it's ambiguous (Package1 and Package2)
+            Assert.That(result.RegressedFiles[0].PackageName, Is.Null);
+        });
+    }
+
+    [Test]
     public void CheckRegressionDeletedFileReturnsNoRegression()
     {
         // Line coverage: 100%, Branch coverage: 100%

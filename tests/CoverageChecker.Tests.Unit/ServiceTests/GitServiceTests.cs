@@ -42,6 +42,14 @@ public class GitServiceTests
         });
     }
 
+    [TestCase(-0.1)]
+    [TestCase(1.1)]
+    [TestCase(double.NaN)]
+    public void GetRenamesShouldThrowOnInvalidThreshold(double threshold)
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => _sut.GetRenames("main", "HEAD", threshold));
+    }
+
     private sealed class MockProcessExecutor : IProcessExecutor
     {
         public string RepoRoot { get; set; } = "/repo";

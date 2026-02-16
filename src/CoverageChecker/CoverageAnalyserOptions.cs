@@ -1,3 +1,5 @@
+using CoverageChecker.Utils;
+
 namespace CoverageChecker;
 
 /// <summary>
@@ -33,5 +35,11 @@ public record CoverageAnalyserOptions
     /// <summary>
     /// The similarity threshold for rename detection (0.0 to 1.0). Default is 0.5 (50%).
     /// </summary>
-    public double RenameThreshold { get; init; } = 0.5;
+    public double RenameThreshold
+    {
+        get => _renameThreshold;
+        init => _renameThreshold = Guard.ValidateThreshold(value, nameof(RenameThreshold));
+    }
+
+    private readonly double _renameThreshold = 0.5;
 }
