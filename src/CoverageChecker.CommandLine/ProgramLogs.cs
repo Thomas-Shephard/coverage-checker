@@ -57,4 +57,7 @@ internal static partial class ProgramLogs
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to write GitHub summary to {SummaryPath}")]
     public static partial void LogGitHubSummaryWriteFailed(this ILogger logger, Exception exception, string summaryPath);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to parse .runsettings file: {Path}")]
+    public static partial void LogRunSettingsParseFailed(this ILogger logger, Exception exception, string path);
 }

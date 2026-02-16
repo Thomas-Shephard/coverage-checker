@@ -29,12 +29,32 @@ The CoverageChecker.CommandLine tool can be invoked by running `coveragechecker`
 | `-l`, `--line-threshold`   | The line coverage threshold. Default: 80                                      | No       | 80                    |
 | `-b`, `--branch-threshold` | The branch coverage threshold. Default: 80                                    | No       | 80                    |
 | `-r`, `--rename-threshold` | The similarity threshold for rename detection (percentage). Default: 50       | No       | 50                    |
+| `--runsettings`           | Path to a .runsettings file to use for include/exclude patterns.              | No       | `.runsettings`        |
 | `--delta`                  | Calculate coverage for changed lines only.                                    | No       | `false`               |
 | `--delta-base`             | Base branch or commit to compare against for delta coverage.                  | No       | `origin/main`         |
 
 The `--delta` and `--delta-base` options require Git to be installed and available on the system `PATH`.
 
+## Default Exclusions
+
+By default, the following patterns are excluded from the analysis:
+- `**/bin/**`
+- `**/obj/**`
+- `**/.git/**`
+- `**/.vs/**`
+- `**/.idea/**`
+- `**/artifacts/**`
+- `**/TestResults/**`
+
 ## Examples
+
+### Using .runsettings for exclusions
+
+You can specify a `.runsettings` file to load exclusion patterns (specifically from the `ExcludeByFile` configuration of the `XPlat Code Coverage` collector):
+
+```bash
+coveragechecker --runsettings MyProject.runsettings
+```
 
 ### Filtering Source Files
 

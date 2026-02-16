@@ -72,6 +72,12 @@ public class CommandLineOptions
     /// </summary>
     [Option("delta-base", Required = false, HelpText = "Base branch or commit to compare against for delta coverage. Default: origin/main", Default = "origin/main")]
     public string DeltaBase { get; init; } = "origin/main";
+    
+    /// <summary>
+    /// Gets or sets the path to a .runsettings file to use for include/exclude patterns.
+    /// </summary>
+    [Option("runsettings", Required = false, HelpText = "Path to a .runsettings file to use for include/exclude patterns. Default: .runsettings", Default = ".runsettings")]
+    public string RunSettings { get; init; } = ".runsettings";
 
     private readonly double _renameThreshold = 0.5;
 

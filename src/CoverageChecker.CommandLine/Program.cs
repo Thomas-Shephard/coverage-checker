@@ -21,13 +21,25 @@ static async Task<int> Run(CommandLineOptions options)
     using ILoggerFactory loggerFactory = CreateLoggerFactory(isGitHubActions);
     ILogger logger = loggerFactory.CreateLogger("CoverageChecker.CommandLine");
 
+    IEnumerable<string>? include;
+    IEnumerable<string>? exclude;
+    try
+    {
+        RunSettingsUtils.ApplyRunSettings(options, logger, out include, out exclude);
+    }
+    catch (Exception)
+    {
+        // Exception already logged in ApplyRunSettings
+        return 1;
+    }
+
     CoverageAnalyserOptions analyserOptions = new()
     {
         CoverageFormat = options.CoverageFormat,
         Directory = options.Directory,
         GlobPatterns = options.GlobPatterns,
-        Include = options.Include,
-        Exclude = options.Exclude,
+        Include = include,
+        Exclude = exclude,
         RenameThreshold = options.RenameThreshold
     };
 

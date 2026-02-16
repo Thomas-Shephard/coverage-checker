@@ -494,6 +494,45 @@ public class CoverageAnalyserTests
     }
 
     [Test]
+    public void FilterFilesShouldExcludeBinAndObjByDefault()
+    {
+        Mock<IFileFinder> mockFileFinder = new();
+        Mock<IParserFactory> mockParserFactory = new();
+        Mock<IGitService> mockGitService = new();
+        Mock<ICoverageParser> mockParser = new();
+
+        string currentDir = Environment.CurrentDirectory;
+        string binFile = Path.Combine(currentDir, "bin/Debug/net10.0/App.dll");
+        string objFile = Path.Combine(currentDir, "obj/Debug/net10.0/App.pdb");
+        string srcFile = Path.Combine(currentDir, "src/App.cs");
+        
+        mockFileFinder.Setup(f => f.FindFiles(ValidDirectory)).Returns(["coverage.xml"]);
+        mockParserFactory.Setup(f => f.DetectFormat(It.IsAny<string>())).Returns(CoverageFormat.Cobertura);
+
+        mockParserFactory.Setup(f => f.CreateParser(It.IsAny<CoverageFormat>(), It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()))
+                         .Callback<CoverageFormat, Coverage, Microsoft.Extensions.Logging.ILoggerFactory>((_, c, _) =>
+                         {
+                             c.GetOrCreateFile(binFile);
+                             c.GetOrCreateFile(objFile);
+                             c.GetOrCreateFile(srcFile);
+                         })
+                         .Returns(mockParser.Object);
+
+        // No explicit include/exclude
+        CoverageAnalyserOptions options = CreateDefaultOptions();
+        CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>(), Mock.Of<ICoverageRegressionService>());
+
+        Coverage result = sut.AnalyseCoverage();
+
+        // Should only contain srcFile
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Files, Has.Count.EqualTo(1));
+            Assert.That(result.Files[0].Path, Is.EqualTo(srcFile));
+        });
+    }
+
+    [Test]
     public void CheckRegressionCallsServiceWithCorrectParameters()
     {
         Mock<ICoverageRegressionService> mockRegressionService = new();

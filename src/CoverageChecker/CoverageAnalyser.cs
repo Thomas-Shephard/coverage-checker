@@ -110,8 +110,6 @@ public partial class CoverageAnalyser
 
     private void FilterFiles(Coverage coverage, string? rootDirectory)
     {
-        if (_options.Include == null && _options.Exclude == null) return;
-
         string root = rootDirectory ?? Environment.CurrentDirectory;
         Matcher matcher = CreateMatcher();
 
@@ -120,6 +118,17 @@ public partial class CoverageAnalyser
             coverage.RemoveFile(file);
         }
     }
+
+    private static readonly string[] DefaultExcludes =
+    [
+        "**/bin/**",
+        "**/obj/**",
+        "**/.git/**",
+        "**/.vs/**",
+        "**/.idea/**",
+        "**/artifacts/**",
+        "**/TestResults/**"
+    ];
 
     private Matcher CreateMatcher()
     {
@@ -139,6 +148,8 @@ public partial class CoverageAnalyser
                 matcher.AddGlobPatterns(include);
             }
         }
+
+        matcher.AddExcludePatterns(DefaultExcludes);
 
         if (exclude.Length > 0)
         {

@@ -49,6 +49,17 @@ RegressionResult regression = coverageAnalyser.CheckRegression(baselineCoverage,
 By using `CoverageFormat.Auto`, the library will attempt to detect whether each coverage file is in Cobertura or 
 SonarQube format. You can also specify a specific format if it is known.
 
+## Default Exclusions
+
+When `AnalyseCoverage()` is called, the library automatically filters out files matching the following patterns:
+- `**/bin/**`
+- `**/obj/**`
+- `**/.git/**`
+- `**/.vs/**`
+- `**/.idea/**`
+- `**/artifacts/**`
+- `**/TestResults/**`
+
 > **Note:** Delta coverage analysis and rename detection require Git to be installed and available on the system `PATH`.  
 > These methods interact with the underlying Git repository and may throw a `GitException` if Git is not installed, not on the `PATH`, the current directory is not a Git repository, or if Git commands fail.
 

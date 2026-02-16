@@ -28,4 +28,14 @@ internal static class GlobUtils
 
         return matcher;
     }
+
+    internal static Matcher AddExcludePatterns(this Matcher matcher, IEnumerable<string> excludePatterns)
+    {
+        foreach (string pattern in excludePatterns)
+        {
+            matcher.AddExclude(pattern);
+        }
+
+        return matcher;
+    }
 }
