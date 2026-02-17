@@ -1,5 +1,4 @@
 using System.Text.Json;
-using CoverageChecker.Mcp;
 using CoverageChecker.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -14,17 +13,21 @@ public class McpServerTests
     private StringReader? _reader;
     private StringWriter? _writer;
 
+    private static readonly string[] FullLineCoverageGlob = ["FullLineCoverage.xml"];
+    private static readonly string[] AnyCoverageGlob = ["*Coverage.xml"];
+
     [SetUp]
     public void Setup()
     {
         _mockExecutor = new Mock<IProcessExecutor>();
         _mockFinder = new Mock<IFileFinder>();
-        _sut = new McpServer(NullLoggerFactory.Instance, _mockExecutor.Object, _ => _mockFinder.Object);
+        _sut = new McpServer(NullLoggerFactory.Instance, _mockExecutor.Object);
     }
 
     [TearDown]
     public void TearDown()
     {
+        _sut.Dispose();
         _reader?.Dispose();
         _writer?.Dispose();
     }
@@ -35,73 +38,74 @@ public class McpServerTests
         _writer = new StringWriter();
     }
 
-    private string GetRepoRoot()
+    private static string GetRepoRoot()
     {
-        var current = AppContext.BaseDirectory;
+        string? current = AppContext.BaseDirectory;
         while (current != null && !Directory.Exists(Path.Combine(current, ".git")))
         {
             current = Path.GetDirectoryName(current);
         }
-        return current?.Replace('\\', '/') ?? throw new Exception("Could not find repo root");
+        return current?.Replace('\\', '/') ?? throw new InvalidOperationException("Could not find repo root");
+    }
+
+    private McpServer CreateSutWithMockFinder()
+    {
+        return new McpServer(NullLoggerFactory.Instance, _mockExecutor.Object, _ => _mockFinder.Object);
     }
 
     [Test]
-    public async Task RunAsync_ShouldHandleInitialize()
+    public async Task RunAsyncShouldHandleInitialize()
     {
-        // Arrange
         var request = new { jsonrpc = "2.0", method = "initialize", id = 1 };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        // Act
         await _sut.RunAsync(_reader!, _writer!);
 
-        // Assert
-        var responseJson = _writer!.ToString();
+        string responseJson = _writer!.ToString();
         Assert.That(responseJson, Is.Not.Empty);
-        var response = JsonSerializer.Deserialize<JsonElement>(responseJson);
-        Assert.That(response.GetProperty("id").GetInt32(), Is.EqualTo(1));
-        Assert.That(response.GetProperty("result").GetProperty("serverInfo").GetProperty("name").GetString(), Is.EqualTo("coverage-checker"));
+        JsonElement response = JsonSerializer.Deserialize<JsonElement>(responseJson);
+        Assert.Multiple(() =>
+        {
+            Assert.That(response.GetProperty("id").GetInt32(), Is.EqualTo(1));
+            Assert.That(response.GetProperty("result").GetProperty("serverInfo").GetProperty("name").GetString(), Is.EqualTo("coverage-checker"));
+        });
     }
 
     [Test]
-    public async Task RunAsync_ShouldHandleToolsList()
+    public async Task RunAsyncShouldHandleToolsList()
     {
-        // Arrange
         var request = new { jsonrpc = "2.0", method = "tools/list", id = 2 };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        // Act
         await _sut.RunAsync(_reader!, _writer!);
 
-        // Assert
-        var responseJson = _writer!.ToString();
-        var response = JsonSerializer.Deserialize<JsonElement>(responseJson);
+        string responseJson = _writer!.ToString();
+        JsonElement response = JsonSerializer.Deserialize<JsonElement>(responseJson);
         Assert.That(response.GetProperty("id").GetInt32(), Is.EqualTo(2));
-        var tools = response.GetProperty("result").GetProperty("tools");
+        JsonElement tools = response.GetProperty("result").GetProperty("tools");
         Assert.That(tools.GetArrayLength(), Is.GreaterThanOrEqualTo(3));
     }
 
     [Test]
-    public async Task RunAsync_ShouldReturnError_ForUnknownMethod()
+    public async Task RunAsyncShouldReturnErrorForUnknownMethod()
     {
-        // Arrange
         var request = new { jsonrpc = "2.0", method = "unknown", id = 3 };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        // Act
         await _sut.RunAsync(_reader!, _writer!);
 
-        // Assert
-        var responseJson = _writer!.ToString();
-        var response = JsonSerializer.Deserialize<JsonElement>(responseJson);
-        Assert.That(response.TryGetProperty("error", out var error), Is.True);
-        Assert.That(error.GetProperty("code").GetInt32(), Is.EqualTo(-32601));
+        string responseJson = _writer!.ToString();
+        JsonElement response = JsonSerializer.Deserialize<JsonElement>(responseJson);
+        Assert.Multiple(() =>
+        {
+            Assert.That(response.TryGetProperty("error", out JsonElement error), Is.True);
+            Assert.That(error.GetProperty("code").GetInt32(), Is.EqualTo(-32601));
+        });
     }
 
     [Test]
-    public async Task RunAsync_ShouldHandleCallTool_UnknownTool()
+    public async Task RunAsyncShouldHandleCallToolUnknownTool()
     {
-        // Arrange
         var request = new
         {
             jsonrpc = "2.0",
@@ -111,21 +115,21 @@ public class McpServerTests
         };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        // Act
         await _sut.RunAsync(_reader!, _writer!);
 
-        // Assert
-        var responseJson = _writer!.ToString();
-        var response = JsonSerializer.Deserialize<JsonElement>(responseJson);
-        var result = response.GetProperty("result");
-        Assert.That(result.GetProperty("isError").GetBoolean(), Is.True);
-        Assert.That(result.GetProperty("content")[0].GetProperty("text").GetString(), Does.Contain("Unknown tool"));
+        string responseJson = _writer!.ToString();
+        JsonElement response = JsonSerializer.Deserialize<JsonElement>(responseJson);
+        JsonElement result = response.GetProperty("result");
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.GetProperty("isError").GetBoolean(), Is.True);
+            Assert.That(result.GetProperty("content")[0].GetProperty("text").GetString(), Does.Contain("Unknown tool"));
+        });
     }
 
     [Test]
-    public async Task RunAsync_ShouldHandleCallTool_AnalyzeDelta_InvalidArgs()
+    public async Task RunAsyncShouldHandleCallToolAnalyzeDeltaInvalidArgs()
     {
-        // Arrange
         var request = new
         {
             jsonrpc = "2.0",
@@ -135,21 +139,22 @@ public class McpServerTests
         };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        // Act
         await _sut.RunAsync(_reader!, _writer!);
 
-        // Assert
-        var responseJson = _writer!.ToString();
-        var response = JsonSerializer.Deserialize<JsonElement>(responseJson);
-        var result = response.GetProperty("result");
-        Assert.That(result.GetProperty("isError").GetBoolean(), Is.True);
-        Assert.That(result.GetProperty("content")[0].GetProperty("text").GetString(), Does.Contain("Error executing tool"));
+        string responseJson = _writer!.ToString();
+        JsonElement response = JsonSerializer.Deserialize<JsonElement>(responseJson);
+        JsonElement result = response.GetProperty("result");
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.GetProperty("isError").GetBoolean(), Is.True);
+            Assert.That(result.GetProperty("content")[0].GetProperty("text").GetString(), Does.Contain("Error executing tool"));
+        });
     }
 
     [Test]
-    public async Task RunAsync_ShouldExecuteRunTestsAndAnalyze_WithCleanup()
+    public async Task RunAsyncShouldExecuteRunTestsAndAnalyzeWithCleanup()
     {
-        // Arrange
+        McpServer sut = CreateSutWithMockFinder();
         var request = new
         {
             jsonrpc = "2.0",
@@ -170,23 +175,50 @@ public class McpServerTests
         };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        _mockExecutor.Setup(e => e.Execute(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<TimeSpan?>()))
+        _mockExecutor.Setup(e => e.ExecuteShell(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan?>()))
                      .Returns((0, "Test Output", ""));
         
         _mockFinder.Setup(f => f.FindFiles(It.IsAny<string>())).Returns(["/repo/coverage.xml"]);
 
-        // Act
-        await _sut.RunAsync(_reader!, _writer!);
+        await sut.RunAsync(_reader!, _writer!);
 
-        // Assert
-        _mockExecutor.Verify(e => e.Execute("dotnet", It.Is<IEnumerable<string>>(a => a.Contains("test")), "/repo", It.IsAny<TimeSpan?>()), Times.Once);
-        _mockFinder.Verify(f => f.FindFiles("/repo"), Times.Once);
+        _mockExecutor.Verify(e => e.ExecuteShell(It.Is<string>(c => c.Contains("dotnet test")), "/repo", It.IsAny<TimeSpan?>()), Times.Once);
+        _mockFinder.Verify(f => f.FindFiles("/repo"), Times.AtLeastOnce);
     }
 
     [Test]
-    public async Task RunAsync_ShouldHandleCallTool_GetSummary_InvalidArgs()
+    public async Task RunAsyncShouldExecuteRunTestsAndAnalyzeWithPlaceholder()
     {
-        // Arrange
+        var request = new
+        {
+            jsonrpc = "2.0",
+            method = "tools/call",
+            @params = new
+            {
+                name = "run_tests_and_analyze",
+                arguments = new Dictionary<string, object>
+                {
+                    { "testCommand", "run --out {output}" },
+                    { "format", "Cobertura" },
+                    { "directory", "/repo" },
+                    { "reportPath", "{output}/coverage.xml" }
+                }
+            },
+            id = 200
+        };
+        SetupCommunication(JsonSerializer.Serialize(request) + "\n");
+
+        _mockExecutor.Setup(e => e.ExecuteShell(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan?>()))
+                     .Returns((0, "Test Output", ""));
+
+        await _sut.RunAsync(_reader!, _writer!);
+
+        _mockExecutor.Verify(e => e.ExecuteShell(It.Is<string>(c => c.Contains("run --out") && c.Contains(".coverage-checker-mcp")), "/repo", It.IsAny<TimeSpan?>()), Times.Once);
+    }
+
+    [Test]
+    public async Task RunAsyncShouldHandleCallToolGetSummaryInvalidArgs()
+    {
         var request = new
         {
             jsonrpc = "2.0",
@@ -196,22 +228,22 @@ public class McpServerTests
         };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        // Act
         await _sut.RunAsync(_reader!, _writer!);
 
-        // Assert
-        var responseJson = _writer!.ToString();
-        var response = JsonSerializer.Deserialize<JsonElement>(responseJson);
-        var result = response.GetProperty("result");
-        Assert.That(result.GetProperty("isError").GetBoolean(), Is.True);
-        Assert.That(result.GetProperty("content")[0].GetProperty("text").GetString(), Does.Contain("Error executing tool"));
+        string responseJson = _writer!.ToString();
+        JsonElement response = JsonSerializer.Deserialize<JsonElement>(responseJson);
+        JsonElement result = response.GetProperty("result");
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.GetProperty("isError").GetBoolean(), Is.True);
+            Assert.That(result.GetProperty("content")[0].GetProperty("text").GetString(), Does.Contain("Error executing tool"));
+        });
     }
 
     [Test]
-    public async Task RunAsync_ShouldExecuteAnalyzeDelta_WithValidArgs()
+    public async Task RunAsyncShouldExecuteAnalyzeDeltaWithValidArgs()
     {
-        // Arrange
-        var coverageDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CoverageFiles", "Cobertura");
+        string coverageDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CoverageFiles", "Cobertura");
         var request = new
         {
             jsonrpc = "2.0",
@@ -223,7 +255,7 @@ public class McpServerTests
                 {
                     { "format", "Cobertura" },
                     { "directory", coverageDir },
-                    { "globPatterns", new[] { "FullLineCoverage.xml" } },
+                    { "globPatterns", FullLineCoverageGlob },
                     { "baseBranch", "main" }
                 }
             },
@@ -231,23 +263,20 @@ public class McpServerTests
         };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        // Act
         await _sut.RunAsync(_reader!, _writer!);
 
-        // Assert
-        var responseJson = _writer!.ToString();
-        var response = JsonSerializer.Deserialize<JsonElement>(responseJson);
-        var result = response.GetProperty("result");
+        string responseJson = _writer!.ToString();
+        JsonElement response = JsonSerializer.Deserialize<JsonElement>(responseJson);
+        JsonElement result = response.GetProperty("result");
         Assert.That(result.TryGetProperty("content", out _), Is.True);
-        var text = result.GetProperty("content")[0].GetProperty("text").GetString();
+        string? text = result.GetProperty("content")[0].GetProperty("text").GetString();
         Assert.That(text, Does.Contain("Delta Coverage Results").Or.Contain("No changed lines found"));
     }
 
     [Test]
-    public async Task RunAsync_ShouldExecuteGetSummary_WithValidArgs()
+    public async Task RunAsyncShouldExecuteGetSummaryWithValidArgs()
     {
-        // Arrange
-        var coverageDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CoverageFiles", "Cobertura");
+        string coverageDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CoverageFiles", "Cobertura");
         var request = new
         {
             jsonrpc = "2.0",
@@ -259,31 +288,28 @@ public class McpServerTests
                 {
                     { "format", "Cobertura" },
                     { "directory", coverageDir },
-                    { "globPatterns", new[] { "FullLineCoverage.xml" } }
+                    { "globPatterns", FullLineCoverageGlob }
                 }
             },
             id = 9
         };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        // Act
         await _sut.RunAsync(_reader!, _writer!);
 
-        // Assert
-        var responseJson = _writer!.ToString();
-        var response = JsonSerializer.Deserialize<JsonElement>(responseJson);
-        var result = response.GetProperty("result");
+        string responseJson = _writer!.ToString();
+        JsonElement response = JsonSerializer.Deserialize<JsonElement>(responseJson);
+        JsonElement result = response.GetProperty("result");
         Assert.That(result.TryGetProperty("content", out _), Is.True);
-        var text = result.GetProperty("content")[0].GetProperty("text").GetString();
+        string? text = result.GetProperty("content")[0].GetProperty("text").GetString();
         Assert.That(text, Does.Contain("Overall Coverage Summary"));
         Assert.That(text, Does.Contain("Total Files: 3"));
     }
 
     [Test]
-    public async Task RunAsync_ShouldExecuteGetSummary_WithDefaultGlobPatterns()
+    public async Task RunAsyncShouldExecuteGetSummaryWithDefaultGlobPatterns()
     {
-        // Arrange
-        var coverageDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CoverageFiles", "Cobertura");
+        string coverageDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CoverageFiles", "Cobertura");
         var request = new
         {
             jsonrpc = "2.0",
@@ -295,30 +321,27 @@ public class McpServerTests
                 {
                     { "format", "Cobertura" },
                     { "directory", coverageDir },
-                    { "globPatterns", new[] { "*Coverage.xml" } } // use a specific glob that doesn't include EmptyFile.xml
+                    { "globPatterns", AnyCoverageGlob } // use a specific glob that doesn't include EmptyFile.xml
                 }
             },
             id = 10
         };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        // Act
         await _sut.RunAsync(_reader!, _writer!);
 
-        // Assert
-        var responseJson = _writer!.ToString();
-        var response = JsonSerializer.Deserialize<JsonElement>(responseJson);
-        var result = response.GetProperty("result");
+        string responseJson = _writer!.ToString();
+        JsonElement response = JsonSerializer.Deserialize<JsonElement>(responseJson);
+        JsonElement result = response.GetProperty("result");
         Assert.That(result.TryGetProperty("content", out _), Is.True);
-        var text = result.GetProperty("content")[0].GetProperty("text").GetString();
+        string? text = result.GetProperty("content")[0].GetProperty("text").GetString();
         Assert.That(text, Does.Contain("Overall Coverage Summary"));
     }
 
     [Test]
-    public async Task RunAsync_ShouldExecuteGetSummary_WithNonArrayGlobPatterns()
+    public async Task RunAsyncShouldExecuteGetSummaryWithNonArrayGlobPatterns()
     {
-        // Arrange
-        var coverageDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CoverageFiles", "Cobertura");
+        string coverageDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CoverageFiles", "Cobertura");
         var request = new
         {
             jsonrpc = "2.0",
@@ -337,28 +360,25 @@ public class McpServerTests
         };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        // Act
         await _sut.RunAsync(_reader!, _writer!);
 
-        // Assert
-        var responseJson = _writer!.ToString();
-        var response = JsonSerializer.Deserialize<JsonElement>(responseJson);
-        var result = response.GetProperty("result");
+        string responseJson = _writer!.ToString();
+        JsonElement response = JsonSerializer.Deserialize<JsonElement>(responseJson);
+        JsonElement result = response.GetProperty("result");
         Assert.That(result.TryGetProperty("content", out _), Is.True);
     }
 
     [Test]
-    public async Task RunAsync_ShouldExecuteAnalyzeDelta_WithRealGaps()
+    public async Task RunAsyncShouldExecuteAnalyzeDeltaWithRealGaps()
     {
-        // Arrange
-        var repoRoot = GetRepoRoot();
-        var tempDir = Path.Combine(repoRoot, "src", "CoverageChecker.Mcp");
-        var coverageFile = Path.Combine(tempDir, "temp_delta_coverage.xml");
+        string repoRoot = GetRepoRoot();
+        string tempDir = Path.Combine(repoRoot, "src", "CoverageChecker.Mcp");
+        string coverageFile = Path.Combine(tempDir, $"temp_delta_{Path.GetRandomFileName()}.xml");
         
-        var xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-                  "<coverage>\n" +
-                  "    <sources>\n" +
-                  "<source>" + repoRoot + "</source>\n    </sources>\n    <packages>\n        <package name=\"Mcp\">\n            <classes>\n                <class name=\"McpServer\" filename=\"src/CoverageChecker.Mcp/McpServer.cs\">\n                    <lines>\n                        <line number=\"226\" hits=\"0\"/>\n                    </lines>\n                </class>\n            </classes>\n        </package>\n    </packages>\n</coverage>";
+        string xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+                     "<coverage>\n" +
+                     "    <sources>\n" +
+                     "<source>" + repoRoot + "</source>\n    </sources>\n    <packages>\n        <package name=\"Mcp\">\n            <classes>\n                <class name=\"McpServer\" filename=\"src/CoverageChecker.Mcp/McpServer.cs\">\n                    <lines>\n                        <line number=\"226\" hits=\"0\"/>\n                    </lines>\n                </class>\n            </classes>\n        </package>\n    </packages>\n</coverage>";
         await File.WriteAllTextAsync(coverageFile, xml);
 
         var request = new
@@ -372,7 +392,7 @@ public class McpServerTests
                 {
                     { "format", "Cobertura" },
                     { "directory", tempDir },
-                    { "globPatterns", new[] { "temp_delta_coverage.xml" } },
+                    { "globPatterns", new[] { Path.GetFileName(coverageFile) } },
                     { "baseBranch", "main" }
                 }
             },
@@ -380,25 +400,22 @@ public class McpServerTests
         };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        // Act
         await _sut.RunAsync(_reader!, _writer!);
 
-        // Assert
-        var responseJson = _writer!.ToString();
-        var response = JsonSerializer.Deserialize<JsonElement>(responseJson);
-        var result = response.GetProperty("result");
-        var text = result.GetProperty("content")[0].GetProperty("text").GetString();
+        string responseJson = _writer!.ToString();
+        JsonElement response = JsonSerializer.Deserialize<JsonElement>(responseJson);
+        JsonElement result = response.GetProperty("result");
+        string? text = result.GetProperty("content")[0].GetProperty("text").GetString();
         
         Assert.That(text, Does.Contain("Delta Coverage Results"));
-        
-        // Cleanup
+
         File.Delete(coverageFile);
     }
 
     [Test]
-    public async Task RunAsync_ShouldHandleCleanup()
+    public async Task RunAsyncShouldHandleCleanup()
     {
-        // Arrange
+        McpServer sut = CreateSutWithMockFinder();
         var request = new
         {
             jsonrpc = "2.0",
@@ -419,29 +436,22 @@ public class McpServerTests
         };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        _mockExecutor.Setup(e => e.Execute(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<TimeSpan?>()))
+        _mockExecutor.Setup(e => e.ExecuteShell(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan?>()))
                      .Returns((0, "OK", ""));
-        
-        // Mock finder to return a file that we can "delete"
-        var tempFile = Path.GetTempFileName();
+
+        string tempFile = Path.GetTempFileName();
         _mockFinder.Setup(f => f.FindFiles(It.IsAny<string>())).Returns([tempFile]);
 
-        // Act
-        await _sut.RunAsync(_reader!, _writer!);
+        await sut.RunAsync(_reader!, _writer!);
 
-        // Assert
         Assert.That(File.Exists(tempFile), Is.False);
     }
 
     [Test]
-    public async Task RunAsync_ShouldHandleCleanupError()
+    public async Task RunAsyncShouldHandleCleanupError()
     {
-        // Arrange
-        var sutWithFailingFinder = new McpServer(NullLoggerFactory.Instance, _mockExecutor.Object, _ => {
-            var mock = new Mock<IFileFinder>();
-            mock.Setup(f => f.FindFiles(It.IsAny<string>())).Throws(new Exception("Finder failed"));
-            return mock.Object;
-        });
+        _mockFinder.Setup(f => f.FindFiles(It.IsAny<string>())).Throws(new InvalidOperationException("Finder failed"));
+        McpServer sut = CreateSutWithMockFinder();
 
         var request = new
         {
@@ -464,50 +474,41 @@ public class McpServerTests
         _reader = new StringReader(JsonSerializer.Serialize(request) + "\n");
         _writer = new StringWriter();
 
-        _mockExecutor.Setup(e => e.Execute(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<TimeSpan?>()))
+        _mockExecutor.Setup(e => e.ExecuteShell(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan?>()))
                      .Returns((0, "OK", ""));
 
-        // Act
-        await sutWithFailingFinder.RunAsync(_reader!, _writer!);
+        await sut.RunAsync(_reader, _writer);
 
-        // Assert
-        var responseJson = _writer!.ToString();
+        string responseJson = _writer.ToString();
         Assert.That(responseJson, Is.Not.Empty);
     }
 
     [Test]
-    public async Task RunAsync_ShouldHandleNotifications()
+    public async Task RunAsyncShouldHandleNotifications()
     {
-        // Arrange
         var request = new { jsonrpc = "2.0", method = "initialized" };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        // Act
         await _sut.RunAsync(_reader!, _writer!);
 
-        // Assert
         Assert.That(_writer!.ToString(), Is.Empty);
     }
 
     [Test]
-    public async Task RunAsync_ShouldWorkWithDefaultDependencies()
+    public async Task RunAsyncShouldWorkWithDefaultDependencies()
     {
-        // Arrange
-        var sut = new McpServer(NullLoggerFactory.Instance);
+        McpServer sut = new(NullLoggerFactory.Instance);
         var request = new { jsonrpc = "2.0", method = "tools/list", id = 100 };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        // Act
         await sut.RunAsync(_reader!, _writer!);
 
-        // Assert
         Assert.That(_writer!.ToString(), Is.Not.Empty);
     }
 
     [Test]
-    public async Task RunAsync_ShouldHandleCallTool_AnalyzeDelta_NullArguments()
+    public async Task RunAsyncShouldHandleCallToolAnalyzeDeltaNullArguments()
     {
-        // Arrange
         var request = new
         {
             jsonrpc = "2.0",
@@ -517,22 +518,22 @@ public class McpServerTests
         };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        // Act
         await _sut.RunAsync(_reader!, _writer!);
 
-        // Assert
-        var responseJson = _writer!.ToString();
-        var response = JsonSerializer.Deserialize<JsonElement>(responseJson);
-        var result = response.GetProperty("result");
-        Assert.That(result.GetProperty("isError").GetBoolean(), Is.True);
-        Assert.That(result.GetProperty("content")[0].GetProperty("text").GetString(), Does.Contain("Arguments are required"));
+        string responseJson = _writer!.ToString();
+        JsonElement response = JsonSerializer.Deserialize<JsonElement>(responseJson);
+        JsonElement result = response.GetProperty("result");
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.GetProperty("isError").GetBoolean(), Is.True);
+            Assert.That(result.GetProperty("content")[0].GetProperty("text").GetString(), Does.Contain("Arguments are required"));
+        });
     }
 
     [Test]
-    public async Task RunAsync_ShouldExecuteAnalyzeDelta_WithOmittedBaseBranch()
+    public async Task RunAsyncShouldExecuteAnalyzeDeltaWithOmittedBaseBranch()
     {
-        // Arrange
-        var coverageDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CoverageFiles", "Cobertura");
+        string coverageDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CoverageFiles", "Cobertura");
         var request = new
         {
             jsonrpc = "2.0",
@@ -544,29 +545,26 @@ public class McpServerTests
                 {
                     { "format", "Cobertura" },
                     { "directory", coverageDir },
-                    { "globPatterns", new[] { "FullLineCoverage.xml" } }
+                    { "globPatterns", FullLineCoverageGlob }
                 }
             },
             id = 102
         };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        // Act
         await _sut.RunAsync(_reader!, _writer!);
 
-        // Assert
-        var responseJson = _writer!.ToString();
-        var response = JsonSerializer.Deserialize<JsonElement>(responseJson);
-        var result = response.GetProperty("result");
-        var text = result.GetProperty("content")[0].GetProperty("text").GetString();
+        string responseJson = _writer!.ToString();
+        JsonElement response = JsonSerializer.Deserialize<JsonElement>(responseJson);
+        JsonElement result = response.GetProperty("result");
+        string? text = result.GetProperty("content")[0].GetProperty("text").GetString();
         Assert.That(text, Does.Contain("Target: main").Or.Contain("No changed lines found"));
     }
 
     [Test]
-    public async Task RunAsync_ShouldExecuteGetSummary_WithNullGlobPatterns()
+    public async Task RunAsyncShouldExecuteGetSummaryWithNullGlobPatterns()
     {
-        // Arrange
-        var coverageDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CoverageFiles", "Cobertura");
+        string coverageDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CoverageFiles", "Cobertura");
         var request = new
         {
             jsonrpc = "2.0",
@@ -585,13 +583,11 @@ public class McpServerTests
         };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        // Act
         await _sut.RunAsync(_reader!, _writer!);
 
-        // Assert
-        var responseJson = _writer!.ToString();
-        var response = JsonSerializer.Deserialize<JsonElement>(responseJson);
-        var result = response.GetProperty("result");
+        string responseJson = _writer!.ToString();
+        JsonElement response = JsonSerializer.Deserialize<JsonElement>(responseJson);
+        JsonElement result = response.GetProperty("result");
         Assert.That(result.TryGetProperty("content", out _), Is.True);
     }
 }

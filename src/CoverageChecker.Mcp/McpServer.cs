@@ -2,9 +2,9 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
 using CoverageChecker.Results;
 using CoverageChecker.Services;
+using CoverageChecker.Utils;
 using Microsoft.Extensions.Logging;
 
 namespace CoverageChecker.Mcp;
@@ -12,7 +12,7 @@ namespace CoverageChecker.Mcp;
 internal partial class McpServer(
     ILoggerFactory loggerFactory,
     IProcessExecutor? processExecutor = null,
-    Func<IEnumerable<string>, IFileFinder>? fileFinderFactory = null)
+    Func<IEnumerable<string>, IFileFinder>? fileFinderFactory = null) : IDisposable
 {
     private readonly ILogger _logger = loggerFactory.CreateLogger<McpServer>();
     private readonly IProcessExecutor _processExecutor = processExecutor ?? new ProcessExecutor();
@@ -20,31 +20,53 @@ internal partial class McpServer(
     private readonly JsonSerializerOptions _jsonOptions = new() 
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-        PropertyNameCaseInsensitive = true
+        PropertyNameCaseInsensitive = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
-    private static readonly string[] DeltaRequiredArgs = ["format", "directory", "globPatterns", "baseBranch"];
-    private static readonly string[] SummaryRequiredArgs = ["format", "directory", "globPatterns"];
+    private static readonly string[] CoverageFormats = ["SonarQube", "Cobertura"];
+    private static readonly string[] FormatRequiredArgs = ["format"];
     private static readonly string[] RunTestsRequiredArgs = ["testCommand", "format", "directory", "reportPath"];
 
-    public async Task RunAsync(TextReader reader, TextWriter writer)
+    private readonly SemaphoreSlim _writeLock = new(1, 1);
+
+    public void Dispose()
     {
-        while (await reader.ReadLineAsync() is { } line)
+        _writeLock.Dispose();
+    }
+
+    public async Task RunAsync(TextReader reader, TextWriter writer)
         {
-            LogReceivedLine(line);
+            while (await reader.ReadLineAsync() is { } line)
+            {
+                LogReceivedLine(line);
+                _ = HandleRequestAsync(line, writer);
+            }
+        }
+    
+        private async Task HandleRequestAsync(string line, TextWriter writer)
+        {
             try
             {
                 McpRequest? request = JsonSerializer.Deserialize<McpRequest>(line, _jsonOptions);
-                if (request == null) continue;
-
+                if (request == null) return;
+    
                 McpResponse? response = await HandleRequest(request);
-                
+    
                 // Only respond to requests with an ID (notifications have null ID and don't get a response)
                 if (response != null && request.Id != null)
                 {
                     string responseJson = JsonSerializer.Serialize(response, _jsonOptions);
-                    await writer.WriteLineAsync(responseJson);
-                    await writer.FlushAsync();
+                    await _writeLock.WaitAsync();
+                    try
+                    {
+                        await writer.WriteLineAsync(responseJson);
+                        await writer.FlushAsync();
+                    }
+                    finally
+                    {
+                        _writeLock.Release();
+                    }
                 }
             }
             catch (Exception ex)
@@ -52,9 +74,7 @@ internal partial class McpServer(
                 LogMcpRequestProcessingError(ex);
             }
         }
-    }
-
-    private async Task<McpResponse?> HandleRequest(McpRequest request)
+        private async Task<McpResponse?> HandleRequest(McpRequest request)
     {
         switch (request.Method)
         {
@@ -90,12 +110,12 @@ internal partial class McpServer(
                 new {
                     type = "object",
                     properties = new {
-                        format = new { type = "string", @enum = new[] { "SonarQube", "Cobertura" }, description = "The coverage file format." },
+                        format = new { type = "string", @enum = CoverageFormats, description = "The coverage file format." },
                         directory = new { type = "string", description = "The directory to search for coverage files." },
                         globPatterns = new { type = "array", items = new { type = "string" }, description = "Glob patterns to find coverage files (e.g. ['**/*.xml'])" },
                         baseBranch = new { type = "string", description = "The base branch/commit to compare against (e.g. 'main')." }
                     },
-                    required = DeltaRequiredArgs
+                    required = FormatRequiredArgs
                 }
             ),
             new McpTool(
@@ -104,11 +124,11 @@ internal partial class McpServer(
                 new {
                     type = "object",
                     properties = new {
-                        format = new { type = "string", @enum = new[] { "SonarQube", "Cobertura" } },
+                        format = new { type = "string", @enum = CoverageFormats },
                         directory = new { type = "string" },
                         globPatterns = new { type = "array", items = new { type = "string" } }
                     },
-                    required = SummaryRequiredArgs
+                    required = FormatRequiredArgs
                 }
             ),
             new McpTool(
@@ -117,12 +137,12 @@ internal partial class McpServer(
                 new {
                     type = "object",
                     properties = new {
-                        testCommand = new { type = "string", description = "The command to run tests (e.g., 'dotnet test --collect:\"XPlat Code Coverage\"')." },
-                        format = new { type = "string", @enum = new[] { "SonarQube", "Cobertura" } },
+                        testCommand = new { type = "string", description = "The command to run tests. Use '{output}' as a placeholder for the results directory (e.g., 'dotnet test --collect:\"XPlat Code Coverage\" --results-directory {output}')." },
+                        format = new { type = "string", @enum = CoverageFormats },
                         directory = new { type = "string", description = "The root directory of the project." },
-                        reportPath = new { type = "string", description = "The path or glob pattern to the coverage report generated by the test command." },
+                        reportPath = new { type = "string", description = "The path or glob pattern to the coverage report generated by the test command. Often includes the '{output}' directory (e.g. '{output}/**/*.xml')." },
                         baseBranch = new { type = "string", description = "The base branch/commit for delta analysis. Default: 'main'." },
-                        cleanup = new { type = "boolean", description = "Whether to delete the coverage reports after analysis. Default: false." },
+                        cleanup = new { type = "boolean", description = "Whether to delete the coverage reports after analysis. Default: true." },
                         timeoutMinutes = new { type = "number", description = "Timeout for the test command in minutes. Default: 5." }
                     },
                     required = RunTestsRequiredArgs
@@ -137,7 +157,7 @@ internal partial class McpServer(
         
         McpCallToolRequest? callRequest = paramsObj is JsonElement element
             ? element.Deserialize<McpCallToolRequest>(_jsonOptions)
-            : JsonSerializer.Deserialize<McpCallToolRequest>(paramsObj?.ToString() ?? string.Empty, _jsonOptions);
+            : JsonSerializer.Deserialize<McpCallToolRequest>(paramsObj.ToString() ?? string.Empty, _jsonOptions);
 
         if (callRequest == null) return new McpCallToolResponse([new McpContent("text", "Invalid tool call request")], true);
 
@@ -162,128 +182,165 @@ internal partial class McpServer(
         if (args == null || 
             !args.TryGetValue("testCommand", out object? tc) ||
             !args.TryGetValue("format", out object? f) ||
-            !args.TryGetValue("directory", out var d) || 
-            !args.TryGetValue("reportPath", out var rp))
+            !args.TryGetValue("directory", out object? d) ||
+            !args.TryGetValue("reportPath", out object? rp))
         {
             throw new ArgumentException("Missing required arguments: testCommand, format, directory, reportPath");
         }
 
-        string testCommand = tc.ToString()!;
-        string formatStr = f.ToString()!;
-        string directory = d.ToString()!;
-        string reportPath = rp.ToString()!;
-        string baseBranch = args.TryGetValue("baseBranch", out var bb) ? bb.ToString()! : "main";
-        bool cleanup = args.TryGetValue("cleanup", out var c) && c is JsonElement ce && ce.ValueKind == JsonValueKind.True;
+        string testCommandTemplate = tc is JsonElement etc ? etc.GetString()! : tc.ToString()!;
+        string formatStr = f is JsonElement ef ? ef.GetString()! : f.ToString()!;
+        string directory = d is JsonElement ed ? ed.GetString()! : d.ToString()!;
+        string reportPathTemplate = rp is JsonElement erp ? erp.GetString()! : rp.ToString()!;
+        string baseBranch = args.TryGetValue("baseBranch", out object? bb) ? (bb is JsonElement ebb ? ebb.GetString()! : bb.ToString()!) : "main";
         
-        var timeout = args.TryGetValue("timeoutMinutes", out var t) && t is JsonElement te && te.TryGetDouble(out var mins) 
+        bool cleanup = true;
+        if (args.TryGetValue("cleanup", out object? c))
+        {
+            cleanup = c switch
+            {
+                JsonElement ce => ce.ValueKind != JsonValueKind.False,
+                bool b         => b,
+                _              => cleanup
+            };
+        }
+        
+        TimeSpan timeout = args.TryGetValue("timeoutMinutes", out object? t) && t is JsonElement te && te.TryGetDouble(out double mins)
             ? TimeSpan.FromMinutes(mins) 
             : TimeSpan.FromMinutes(5);
 
-        var format = Enum.Parse<CoverageFormat>(formatStr, true);
+        CoverageFormat format = Enum.Parse<CoverageFormat>(formatStr, true);
 
-        // 1. Run Tests
-        var (fileName, cmdArgs) = ParseCommand(testCommand);
+        // 1. Prepare Paths and Command
+        string outputDir = Path.Combine(directory, ".coverage-checker-mcp", Guid.NewGuid().ToString());
+        string testCommand = CommandUtils.PrepareCommand(testCommandTemplate, outputDir, _logger);
+        string reportPath = reportPathTemplate.Replace("{output}", outputDir);
+        if (Path.IsPathRooted(reportPath) && reportPath.StartsWith(directory, StringComparison.OrdinalIgnoreCase))
+        {
+            reportPath = Path.GetRelativePath(directory, reportPath);
+        }
 
-        var (exitCode, stdout, stderr) = _processExecutor.Execute(fileName, cmdArgs, directory, timeout);
-
-        var outputBuilder = new StringBuilder();
-        outputBuilder.AppendLine(CultureInfo.CurrentCulture, $"Test Command Exited with code {exitCode}");
-        if (!string.IsNullOrEmpty(stdout)) outputBuilder.AppendLine(CultureInfo.CurrentCulture, $"Stdout:\n{stdout}");
-        if (!string.IsNullOrEmpty(stderr)) outputBuilder.AppendLine(CultureInfo.CurrentCulture, $"Stderr:\n{stderr}");
+        if (!Directory.Exists(outputDir))
+        {
+            Directory.CreateDirectory(outputDir);
+        }
 
         try
         {
-            // 2. Analyze Coverage
-            var options = new CoverageAnalyserOptions
-            {
-                CoverageFormat = format,
-                Directory = directory,
-                GlobPatterns = [reportPath]
-            };
-            var analyser = new CoverageAnalyser(options, _fileFinderFactory(options.GlobPatterns), loggerFactory);
-            var delta = analyser.AnalyseDeltaCoverage(baseBranch);
+            // 2. Run Tests
+            (int exitCode, string stdout, string stderr) = _processExecutor.ExecuteShell(testCommand, directory, timeout);
 
-            outputBuilder.AppendLine(CultureInfo.CurrentCulture, "\n--- Delta Coverage Analysis ---");
-            if (!delta.HasChangedLines)
+            StringBuilder outputBuilder = new();
+            outputBuilder.AppendLine(CultureInfo.InvariantCulture, $"Test Command Exited with code {exitCode}");
+            if (!string.IsNullOrEmpty(stdout))
             {
-                outputBuilder.AppendLine(CultureInfo.CurrentCulture, "No changed lines found in the current delta.");
+                outputBuilder.AppendLine("Stdout:");
+                outputBuilder.AppendLine(stdout);
             }
-            else
+            if (!string.IsNullOrEmpty(stderr))
             {
-                var line = delta.Coverage.CalculateOverallCoverage();
-                var branch = delta.Coverage.CalculateOverallCoverage(CoverageType.Branch);
-                outputBuilder.AppendLine(CultureInfo.CurrentCulture, $"- Line Coverage: {line:P2}");
-                outputBuilder.AppendLine(CultureInfo.CurrentCulture, $"- Branch Coverage: {branch:P2}");
-                outputBuilder.AppendLine(CultureInfo.CurrentCulture, "\nMissing Lines in Delta:");
-                outputBuilder.Append(GetGaps(delta.Coverage));
-                outputBuilder.AppendLine();
+                outputBuilder.AppendLine("Stderr:");
+                outputBuilder.AppendLine(stderr);
             }
-        }
-        catch (Exception ex)
-        {
-            outputBuilder.AppendLine(CultureInfo.CurrentCulture, $"\n--- Delta Coverage Analysis Failed ---\n{ex.Message}");
+
+            try
+            {
+                // 3. Analyze Coverage
+                CoverageAnalyserOptions options = new()
+                {
+                    CoverageFormat = format,
+                    Directory = directory,
+                    GlobPatterns = [reportPath]
+                };
+                CoverageAnalyser analyser = new(options, _fileFinderFactory(options.GlobPatterns), loggerFactory);
+                DeltaResult delta = analyser.AnalyseDeltaCoverage(baseBranch);
+
+                outputBuilder.AppendLine("\n--- Delta Coverage Analysis ---");
+                if (!delta.HasChangedLines)
+                {
+                    outputBuilder.AppendLine("No changed lines found in the current delta.");
+                }
+                else
+                {
+                    double line = delta.Coverage.CalculateOverallCoverage();
+                    double branch = delta.Coverage.CalculateOverallCoverage(CoverageType.Branch);
+                    outputBuilder.AppendLine(CultureInfo.InvariantCulture, $"- Line Coverage: {line:P2}");
+                    outputBuilder.AppendLine(CultureInfo.InvariantCulture, $"- Branch Coverage: {branch:P2}");
+                    outputBuilder.AppendLine("\nMissing Lines in Delta:");
+                    outputBuilder.Append(GetGaps(delta.Coverage));
+                    outputBuilder.AppendLine();
+                }
+            }
+            catch (Exception ex)
+            {
+                outputBuilder.AppendLine(CultureInfo.InvariantCulture, $"\n--- Delta Coverage Analysis Failed ---\n{ex.Message}");
+            }
+
+            return Task.FromResult(new McpCallToolResponse([new McpContent("text", outputBuilder.ToString())], exitCode != 0));
         }
         finally
         {
-            // 3. Optional Cleanup
+            // 4. Cleanup
             if (cleanup)
             {
-                TryCleanupReports(directory, reportPath);
+                TryCleanupReports(directory, outputDir, reportPath);
+                if (Directory.Exists(outputDir) && !Directory.EnumerateFileSystemEntries(outputDir).Any())
+                {
+                    try { Directory.Delete(outputDir); } catch { /* Ignore */ }
+                }
             }
         }
-
-        return Task.FromResult(new McpCallToolResponse([new McpContent("text", outputBuilder.ToString())], exitCode != 0));
     }
 
     private McpCallToolResponse ExecuteAnalyzeDelta(IDictionary<string, object>? args)
     {
-        var (format, directory, globPatterns) = ParseArgs(args);
-        var baseBranch = args?.TryGetValue("baseBranch", out var bb) == true ? bb.ToString()! : "main";
+        (CoverageFormat format, string directory, string[] globPatterns) = ParseArgs(args);
+        string baseBranch = args?.TryGetValue("baseBranch", out object? bb) == true ? bb.ToString()! : "main";
 
-        var options = new CoverageAnalyserOptions
+        CoverageAnalyserOptions options = new()
         {
             CoverageFormat = format,
             Directory = directory,
             GlobPatterns = globPatterns
         };
-        var analyser = new CoverageAnalyser(options, _fileFinderFactory(options.GlobPatterns), loggerFactory);
-        var delta = analyser.AnalyseDeltaCoverage(baseBranch);
+        CoverageAnalyser analyser = new(options, _fileFinderFactory(options.GlobPatterns), loggerFactory);
+        DeltaResult delta = analyser.AnalyseDeltaCoverage(baseBranch);
 
         if (!delta.HasChangedLines)
         {
             return new McpCallToolResponse([new McpContent("text", "No changed lines found in the current delta.")]);
         }
 
-        var line = delta.Coverage.CalculateOverallCoverage();
-        var branch = delta.Coverage.CalculateOverallCoverage(CoverageType.Branch);
+        double line = delta.Coverage.CalculateOverallCoverage();
+        double branch = delta.Coverage.CalculateOverallCoverage(CoverageType.Branch);
 
-        var report = $"Delta Coverage Results (Target: {baseBranch}):\n" +
-                     $"- Line Coverage: {line:P2}\n" +
-                     $"- Branch Coverage: {branch:P2}\n\n" +
-                     "Missing Lines in Delta:\n" + GetGaps(delta.Coverage);
+        string report = $"Delta Coverage Results (Target: {baseBranch}):\n" +
+                        $"- Line Coverage: {line:P2}\n" +
+                        $"- Branch Coverage: {branch:P2}\n\n" +
+                        "Missing Lines in Delta:\n" + GetGaps(delta.Coverage);
 
         return new McpCallToolResponse([new McpContent("text", report)]);
     }
 
     private McpCallToolResponse ExecuteGetSummary(IDictionary<string, object>? args)
     {
-        var (format, directory, globPatterns) = ParseArgs(args);
-        var options = new CoverageAnalyserOptions
+        (CoverageFormat format, string directory, string[] globPatterns) = ParseArgs(args);
+        CoverageAnalyserOptions options = new()
         {
             CoverageFormat = format,
             Directory = directory,
             GlobPatterns = globPatterns
         };
-        var analyser = new CoverageAnalyser(options, _fileFinderFactory(options.GlobPatterns), loggerFactory);
-        var coverage = analyser.AnalyseCoverage();
+        CoverageAnalyser analyser = new(options, _fileFinderFactory(options.GlobPatterns), loggerFactory);
+        Coverage coverage = analyser.AnalyseCoverage();
 
-        var line = coverage.CalculateOverallCoverage();
-        var branch = coverage.CalculateOverallCoverage(CoverageType.Branch);
+        double line = coverage.CalculateOverallCoverage();
+        double branch = coverage.CalculateOverallCoverage(CoverageType.Branch);
 
-        var report = $"Overall Coverage Summary:\n" +
-                     $"- Line Coverage: {line:P2}\n" +
-                     $"- Branch Coverage: {branch:P2}\n" +
-                     $"- Total Files: {coverage.Files.Count}";
+        string report = $"Overall Coverage Summary:\n" +
+                        $"- Line Coverage: {line:P2}\n" +
+                        $"- Branch Coverage: {branch:P2}\n" +
+                        $"- Total Files: {coverage.Files.Count}";
 
         return new McpCallToolResponse([new McpContent("text", report)]);
     }
@@ -291,23 +348,41 @@ internal partial class McpServer(
     private static (CoverageFormat Format, string Directory, string[] GlobPatterns) ParseArgs(IDictionary<string, object>? args)
     {
         if (args == null) throw new ArgumentException("Arguments are required");
-        if (!args.TryGetValue("format", out var f)) throw new ArgumentException("Missing required argument: format");
+        if (!args.TryGetValue("format", out object? f)) throw new ArgumentException("Missing required argument: format");
 
-        string? formatStr = f.ToString();
-        var format = Enum.Parse<CoverageFormat>(formatStr!, true);
-        string directory = args.TryGetValue("directory", out var dirObj) && dirObj?.ToString() is { Length: > 0 } dirStr 
+        string? formatStr = f is JsonElement ef ? ef.GetString() : f.ToString();
+        CoverageFormat format = Enum.Parse<CoverageFormat>(formatStr!, true);
+        string directory = args.TryGetValue("directory", out object? dirObj) && (dirObj is JsonElement edir ? edir.GetString() : dirObj?.ToString()) is { Length: > 0 } dirStr
             ? dirStr 
             : Environment.CurrentDirectory;
         
         List<string> globPatterns = [];
-        if (args.TryGetValue("globPatterns", out var gp) && gp is JsonElement element && element.ValueKind == JsonValueKind.Array)
+        if (args.TryGetValue("globPatterns", out object? gp))
         {
-            foreach (var item in element.EnumerateArray())
+            if (gp is JsonElement { ValueKind: JsonValueKind.Array } element)
             {
-                globPatterns.Add(item.GetString()!);
+                foreach (JsonElement item in element.EnumerateArray())
+                {
+                    string pattern = item.GetString()!;
+                    if (Path.IsPathRooted(pattern) && pattern.StartsWith(directory, StringComparison.OrdinalIgnoreCase))
+                    {
+                        pattern = Path.GetRelativePath(directory, pattern);
+                    }
+                    globPatterns.Add(pattern);
+                }
+            }
+            else if (gp is JsonElement { ValueKind: JsonValueKind.String } s)
+            {
+                string pattern = s.GetString()!;
+                if (Path.IsPathRooted(pattern) && pattern.StartsWith(directory, StringComparison.OrdinalIgnoreCase))
+                {
+                    pattern = Path.GetRelativePath(directory, pattern);
+                }
+                globPatterns.Add(pattern);
             }
         }
-        else
+
+        if (globPatterns.Count == 0)
         {
             globPatterns.Add("*.xml");
         }
@@ -315,13 +390,14 @@ internal partial class McpServer(
         return (format, directory, globPatterns.ToArray());
     }
 
-    private void TryCleanupReports(string directory, string reportPath)
+    private void TryCleanupReports(string directory, string outputDir, string reportPath)
     {
         try
         {
-            var finder = _fileFinderFactory([reportPath]);
-            var filesToDelete = finder.FindFiles(directory).Where(File.Exists);
-            foreach (var file in filesToDelete)
+            string searchDir = Directory.Exists(outputDir) ? outputDir : directory;
+            IFileFinder finder = _fileFinderFactory([reportPath]);
+            IEnumerable<string> filesToDelete = finder.FindFiles(searchDir).Where(File.Exists);
+            foreach (string file in filesToDelete)
             {
                 File.Delete(file);
             }
@@ -332,36 +408,24 @@ internal partial class McpServer(
         }
     }
 
-    private static (string FileName, string[] Arguments) ParseCommand(string command)
-    {
-        MatchCollection matches = Regex.Matches(command, """[^\s"']+|"([^"]*)"|'([^']*)'""");
-        string[] parts = matches.Select(m => {
-            if (m.Groups[1].Success) return m.Groups[1].Value;
-            if (m.Groups[2].Success) return m.Groups[2].Value;
-            return m.Value;
-        }).ToArray();
-
-        if (parts.Length == 0) throw new ArgumentException("Command cannot be empty", nameof(command));
-
-        return (parts[0], parts.Skip(1).ToArray());
-    }
-
     private static string GetGaps(Coverage coverage)
     {
-        var sb = new StringBuilder();
-        foreach (var file in coverage.Files)
+        StringBuilder sb = new();
+        foreach (FileCoverage file in coverage.Files)
         {
-            var uncoveredLines = file.Lines.Where(l => !l.IsCovered).Select(l => l.LineNumber.ToString(CultureInfo.CurrentCulture)).ToList();
-            var uncoveredBranches = file.Lines.Where(l => l.IsCovered && l.Branches > 0 && l.CoveredBranches < l.Branches)
-                                              .Select(l => $"{l.LineNumber.ToString(CultureInfo.CurrentCulture)} ({l.CoveredBranches.ToString(CultureInfo.CurrentCulture)}/{l.Branches.ToString(CultureInfo.CurrentCulture)} branches)")
-                                              .ToList();
+            List<string> uncoveredLines = file.Lines.Where(l => !l.IsCovered).Select(l => l.LineNumber.ToString(CultureInfo.InvariantCulture)).ToList();
+            List<string> uncoveredBranches = file.Lines.Where(l => l is { IsCovered: true, Branches: > 0 } && l.CoveredBranches < l.Branches)
+                                                 .Select(l => $"{l.LineNumber.ToString(CultureInfo.InvariantCulture)} ({l.CoveredBranches!.Value.ToString(CultureInfo.InvariantCulture)}/{l.Branches!.Value.ToString(CultureInfo.InvariantCulture)} branches)")
+                                                 .ToList();
 
             if (uncoveredLines.Count <= 0 && uncoveredBranches.Count <= 0)
                 continue;
-            sb.Append(CultureInfo.CurrentCulture, $"- {file.Path}:\n");
+
+            string displayPath = Path.IsPathRooted(file.Path) ? Path.GetRelativePath(Environment.CurrentDirectory, file.Path) : file.Path;
+            sb.Append(CultureInfo.InvariantCulture, $"- {displayPath}:\n");
             if (uncoveredLines.Count > 0)
             {
-                sb.AppendLine(CultureInfo.CurrentCulture, "  - Uncovered Lines:");
+                sb.AppendLine("  - Uncovered Lines:");
                 foreach (string[] chunk in uncoveredLines.Chunk(10))
                 {
                     sb.Append("    ").AppendLine(string.Join(", ", chunk));
@@ -370,7 +434,7 @@ internal partial class McpServer(
 
             if (uncoveredBranches.Count > 0)
             {
-                sb.AppendLine(CultureInfo.CurrentCulture, "  - Partial Branches:");
+                sb.AppendLine("  - Partial Branches:");
                 foreach (string[] chunk in uncoveredBranches.Chunk(5))
                 {
                     sb.Append("    ").AppendLine(string.Join(", ", chunk));
