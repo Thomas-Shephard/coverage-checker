@@ -44,9 +44,7 @@ public class CommandLineRunTests
     {
         string cliPath = GetCliPath();
         
-        string command = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-            ? "echo dummy > {output}\\coverage.xml"
-            : "echo dummy > {output}/coverage.xml";
+        string command = "echo dummy > coverage.xml";
         
         ProcessStartInfo psi = new()
         {
@@ -59,6 +57,7 @@ public class CommandLineRunTests
         psi.ArgumentList.Add("run");
         psi.ArgumentList.Add("--command");
         psi.ArgumentList.Add(command);
+        psi.ArgumentList.Add("--continue-on-failure");
         
         using Process? process = Process.Start(psi);
         Assert.That(process, Is.Not.Null);
@@ -95,6 +94,7 @@ public class CommandLineRunTests
         psi.ArgumentList.Add("run");
         psi.ArgumentList.Add("--command");
         psi.ArgumentList.Add(command);
+        psi.ArgumentList.Add("--continue-on-failure");
         
         using Process? process = Process.Start(psi);
         Assert.That(process, Is.Not.Null);

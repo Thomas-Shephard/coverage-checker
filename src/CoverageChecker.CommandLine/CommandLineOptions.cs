@@ -131,4 +131,10 @@ public record RunOptions : CommandLineOptions
     /// </summary>
     [Option('t', "timeout", Required = false, HelpText = "The timeout for the command in minutes. Default: 30", Default = 30)]
     public int Timeout { get; init; } = 30;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to continue with coverage analysis even if the command fails.
+    /// </summary>
+    [Option("continue-on-failure", Required = false, HelpText = "Continue with coverage analysis even if the command fails.")]
+    public bool ContinueOnFailure { get; init; }
 }

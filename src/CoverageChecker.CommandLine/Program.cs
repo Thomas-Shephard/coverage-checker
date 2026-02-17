@@ -19,75 +19,87 @@ return await parserResult.MapResult(
     (RunOptions options) => RunCommandAndCheck(options),
     _ => Task.FromResult(DisplayHelp(parserResult)));
 
-static async Task<int> Run(CommandLineOptions options)
+static async Task<int> Run(CommandLineOptions options, ILoggerFactory? loggerFactory = null)
 {
     bool isGitHubActions = Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true";
 
-    using ILoggerFactory loggerFactory = CreateLoggerFactory(isGitHubActions);
-    ILogger logger = loggerFactory.CreateLogger("CoverageChecker.CommandLine");
+    bool shouldDispose = loggerFactory == null;
+    loggerFactory ??= CreateLoggerFactory(isGitHubActions);
 
-    CoverageAnalyserOptions analyserOptions = new()
+    try
     {
-        CoverageFormat = options.CoverageFormat,
-        Directory = options.Directory,
-        GlobPatterns = options.GlobPatterns,
-        Include = options.Include,
-        Exclude = options.Exclude,
-        RenameThreshold = options.RenameThreshold
-    };
+        ILogger logger = loggerFactory.CreateLogger("CoverageChecker.CommandLine");
 
-    CoverageAnalyser coverageAnalyser = new(analyserOptions, loggerFactory);
+        CoverageAnalyserOptions analyserOptions = new()
+        {
+            CoverageFormat = options.CoverageFormat,
+            Directory = options.Directory,
+            GlobPatterns = options.GlobPatterns,
+            Include = options.Include,
+            Exclude = options.Exclude,
+            RenameThreshold = options.RenameThreshold
+        };
 
-    if (!TryAnalyseCoverage(coverageAnalyser, logger, out Coverage? coverage))
-    {
-        return 1;
-    }
+        CoverageAnalyser coverageAnalyser = new(analyserOptions, loggerFactory);
 
-    CoverageResult result = new(
-        coverage,
-        coverage.CalculateOverallCoverage(),
-        coverage.CalculateOverallCoverage(CoverageType.Branch),
-        null,
-        double.NaN,
-        double.NaN,
-        false
-    );
-
-    logger.LogLineCoverage(result.LineCoverage);
-    logger.LogBranchCoverage(result.BranchCoverage);
-
-    if (options.Delta)
-    {
-        if (!TryAnalyseDeltaCoverage(coverageAnalyser, coverage, options, logger, out Coverage? deltaCoverage, out bool hasDeltaChangedLines))
+        if (!TryAnalyseCoverage(coverageAnalyser, logger, out Coverage? coverage))
         {
             return 1;
         }
 
-        if (hasDeltaChangedLines && deltaCoverage != null)
+        CoverageResult result = new(
+            coverage,
+            coverage.CalculateOverallCoverage(),
+            coverage.CalculateOverallCoverage(CoverageType.Branch),
+            null,
+            double.NaN,
+            double.NaN,
+            false
+        );
+
+        logger.LogLineCoverage(result.LineCoverage);
+        logger.LogBranchCoverage(result.BranchCoverage);
+
+        if (options.Delta)
         {
-            result = result with
+            if (!TryAnalyseDeltaCoverage(coverageAnalyser, coverage, options, logger, out Coverage? deltaCoverage, out bool hasDeltaChangedLines))
             {
-                DeltaCoverage = deltaCoverage,
-                HasDeltaChangedLines = true,
-                DeltaLineCoverage = deltaCoverage.CalculateOverallCoverage(),
-                DeltaBranchCoverage = deltaCoverage.CalculateOverallCoverage(CoverageType.Branch)
-            };
+                return 1;
+            }
 
-            logger.LogDeltaLineCoverage(result.DeltaLineCoverage);
-            logger.LogDeltaBranchCoverage(result.DeltaBranchCoverage);
+            if (hasDeltaChangedLines && deltaCoverage != null)
+            {
+                result = result with
+                {
+                    DeltaCoverage = deltaCoverage,
+                    HasDeltaChangedLines = true,
+                    DeltaLineCoverage = deltaCoverage.CalculateOverallCoverage(),
+                    DeltaBranchCoverage = deltaCoverage.CalculateOverallCoverage(CoverageType.Branch)
+                };
+
+                logger.LogDeltaLineCoverage(result.DeltaLineCoverage);
+                logger.LogDeltaBranchCoverage(result.DeltaBranchCoverage);
+            }
+            else
+            {
+                logger.LogNoDeltaLinesFound();
+            }
         }
-        else
+
+        if (isGitHubActions)
         {
-            logger.LogNoDeltaLinesFound();
+            await WriteGitHubSummary(result, options, logger);
+        }
+
+        return CheckThresholds(result, options, logger, isGitHubActions);
+    }
+    finally
+    {
+        if (shouldDispose)
+        {
+            loggerFactory.Dispose();
         }
     }
-
-    if (isGitHubActions)
-    {
-        await WriteGitHubSummary(result, options, logger);
-    }
-
-    return CheckThresholds(result, options, logger, isGitHubActions);
 }
 
 static async Task<int> RunCommandAndCheck(RunOptions options)
@@ -133,6 +145,7 @@ static async Task<int> RunCommandAndCheck(RunOptions options)
         
         process.StartInfo.UseShellExecute = false;
         process.StartInfo.CreateNoWindow = true;
+        process.StartInfo.WorkingDirectory = outputDir;
         // Do not redirect to allow inheriting the parent console's stdout/stderr (real-time output)
         process.StartInfo.RedirectStandardOutput = false;
         process.StartInfo.RedirectStandardError = false;
@@ -155,12 +168,19 @@ static async Task<int> RunCommandAndCheck(RunOptions options)
 
         if (exitCode != 0)
         {
-            logger.LogCommandFailed(exitCode);
-            return exitCode;
+            if (options.ContinueOnFailure)
+            {
+                logger.LogCommandFailedWarning(exitCode);
+            }
+            else
+            {
+                logger.LogCommandFailed(exitCode);
+                return exitCode;
+            }
         }
 
         CommandLineOptions effectiveOptions = options with { Directory = outputDir };
-        return await Run(effectiveOptions);
+        return await Run(effectiveOptions, loggerFactory);
     }
     catch (Exception ex)
     {
@@ -175,9 +195,9 @@ static async Task<int> RunCommandAndCheck(RunOptions options)
             {
                 Directory.Delete(tempDir, true);
             }
-            catch
+            catch (Exception ex)
             {
-                // Ignore cleanup errors
+                logger.LogCleanupFailed(ex, tempDir);
             }
         }
     }
