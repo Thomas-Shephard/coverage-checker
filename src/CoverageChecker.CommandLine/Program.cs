@@ -19,9 +19,9 @@ return await parserResult.MapResult(
     (RunOptions options) => RunCommandAndCheck(options),
     _ => Task.FromResult(DisplayHelp(parserResult)));
 
-static async Task<int> Run(CommandLineOptions options, ILoggerFactory? loggerFactory = null)
+static async Task<int> Run(CommandLineOptions options, bool? isGitHubActionsParam = null, ILoggerFactory? loggerFactory = null)
 {
-    bool isGitHubActions = Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true";
+    bool isGitHubActions = isGitHubActionsParam ?? Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true";
 
     bool shouldDispose = loggerFactory == null;
     loggerFactory ??= CreateLoggerFactory(isGitHubActions);
@@ -52,7 +52,7 @@ static async Task<int> Run(CommandLineOptions options, ILoggerFactory? loggerFac
             await WriteGitHubSummary(result, options, logger);
         }
 
-        return CheckThresholds(result, options, logger, isGitHubActions);
+        return CheckThresholds(result, options, isGitHubActions, logger);
     }
     finally
     {
@@ -153,7 +153,7 @@ static async Task<int> RunCommandAndCheck(RunOptions options)
         }
 
         CommandLineOptions effectiveOptions = options with { Directory = outputDir };
-        return await Run(effectiveOptions, loggerFactory);
+        return await Run(effectiveOptions, isGitHubActions, loggerFactory);
     }
     catch (Exception ex)
     {
@@ -168,8 +168,6 @@ static async Task<int> RunCommandAndCheck(RunOptions options)
 
 static string PrepareCommand(string commandTemplate, string outputDir, ILogger logger)
 {
-    // Wrap the output directory in quotes and escape any internal quotes to ensure
-    // it is handled correctly by the shell, even if it contains spaces.
     string escapedPath = $"\"{outputDir.Replace("\"", "\\\"")}\"";
     string command = commandTemplate.Replace("{output}", escapedPath);
     logger.LogRunningCommand(command);
@@ -201,7 +199,10 @@ static async Task<int> ExecuteCommand(string command, string workingDirectory, i
 
     process.Start();
 
-    using CancellationTokenSource cts = new(TimeSpan.FromMinutes(timeoutMinutes));
+    TimeSpan timeout = timeoutMinutes == -1
+        ? Timeout.InfiniteTimeSpan
+        : TimeSpan.FromMinutes(timeoutMinutes);
+    using CancellationTokenSource cts = new(timeout);
     try
     {
         await process.WaitForExitAsync(cts.Token);
@@ -249,7 +250,7 @@ static bool TryAnalyseDeltaCoverage(CoverageAnalyser analyser, Coverage coverage
     }
 }
 
-static int CheckThresholds(CoverageResult result, CommandLineOptions options, ILogger logger, bool isGitHubActions)
+static int CheckThresholds(CoverageResult result, CommandLineOptions options, bool isGitHubActions, ILogger logger)
 {
     bool failed = EvaluateOverallThresholds(result, options, logger);
 
