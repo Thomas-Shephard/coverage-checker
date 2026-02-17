@@ -44,7 +44,7 @@ public class CommandLineRunTests
     {
         string cliPath = GetCliPath();
         
-        string command = "echo dummy > coverage.xml";
+        string command = "echo dummy > \"{output}/coverage.xml\"";
         
         ProcessStartInfo psi = new()
         {

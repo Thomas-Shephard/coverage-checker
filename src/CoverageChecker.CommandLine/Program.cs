@@ -137,7 +137,7 @@ static async Task<int> RunCommandAndCheck(RunOptions options)
     {
         string command = PrepareCommand(options.Command, outputDir, logger);
 
-        int exitCode = await ExecuteCommand(command, outputDir, options.Timeout, logger);
+        int exitCode = await ExecuteCommand(command, Environment.CurrentDirectory, options.Timeout, logger);
 
         if (exitCode != 0)
         {

@@ -34,7 +34,7 @@ coveragechecker [options]
 Runs a specified command (e.g., your test runner), captures the coverage results, and then performs the analysis. It automatically handles temporary directory creation and cleanup.
 
 ```bash
-coveragechecker run --command "dotnet test --collect 'XPlat Code Coverage' --results-directory {output}" [options]
+coveragechecker run --command "dotnet test --collect 'XPlat Code Coverage' --results-directory \"{output}\"" [options]
 ```
 
 ### Common Options (Base)
@@ -44,7 +44,6 @@ These options apply to both `check` and `run` commands.
 | Option                     | Description                                                                   | Required | Default               |
 |----------------------------|-------------------------------------------------------------------------------|----------|-----------------------|
 | `-f`, `--format`           | The format of the coverage file(s). Options: `Auto`, `SonarQube`, `Cobertura` | No       | `Auto`                |
-| `-d`, `--directory`        | The directory to search for the coverage file(s) within.                      | No       | The current directory |
 | `-g`, `--glob-patterns`    | The glob pattern(s) to use to search for the coverage file(s).                | No       | `**/*.xml`            |
 | `-i`, `--include`          | Glob patterns of files to include in the coverage analysis.                   | No       |                       |
 | `-e`, `--exclude`          | Glob patterns of files to exclude from the coverage analysis.                 | No       |                       |
@@ -53,6 +52,12 @@ These options apply to both `check` and `run` commands.
 | `--rename-threshold`       | The similarity threshold for rename detection (percentage). Default: 50       | No       | 50                    |
 | `--delta`                  | Calculate coverage for changed lines only.                                    | No       | `false`               |
 | `--delta-base`             | Base branch or commit to compare against for delta coverage.                  | No       | `origin/main`         |
+
+### `check` Specific Options
+
+| Option              | Description                                               | Required | Default               |
+|---------------------|-----------------------------------------------------------|----------|-----------------------|
+| `-d`, `--directory` | The directory to search for the coverage file(s) within.  | No       | The current directory |
 
 ### `run` Specific Options
 
@@ -72,7 +77,7 @@ The `--delta` and `--delta-base` options require Git to be installed and availab
 Run tests and check coverage in a single command. The `{output}` placeholder will be replaced with a managed temporary directory that is automatically cleaned up after analysis.
 
 ```bash
-coveragechecker run --command "dotnet test --collect 'XPlat Code Coverage' --results-directory {output}" --line-threshold 90
+coveragechecker run --command "dotnet test --collect 'XPlat Code Coverage' --results-directory \"{output}\"" --line-threshold 90
 ```
 
 ### Filtering Source Files
