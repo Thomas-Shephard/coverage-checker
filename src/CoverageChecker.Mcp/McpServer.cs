@@ -178,7 +178,7 @@ internal class McpServer(
         }
     }
 
-    private Task<McpCallToolResponse> ExecuteRunTestsAndAnalyze(IDictionary<string, object>? args)
+    private Task<McpCallToolResponse> ExecuteRunTestsAndAnalyze(IDictionary<string, object?>? args)
     {
         if (args == null || 
             !args.TryGetValue("testCommand", out object? tc) ||
@@ -189,11 +189,11 @@ internal class McpServer(
             throw new ArgumentException("Missing required arguments: testCommand, format, directory, reportPath");
         }
 
-        string testCommandTemplate = tc is JsonElement etc ? etc.GetString() ?? string.Empty : tc.ToString() ?? string.Empty;
-        string formatStr = f is JsonElement ef ? ef.GetString() ?? string.Empty : f.ToString() ?? string.Empty;
-        string directory = d is JsonElement ed ? ed.GetString() ?? string.Empty : d.ToString() ?? string.Empty;
-        string reportPathTemplate = rp is JsonElement erp ? erp.GetString() ?? string.Empty : rp.ToString() ?? string.Empty;
-        string baseBranch = args.TryGetValue("baseBranch", out object? bb) ? (bb is JsonElement ebb ? ebb.GetString() ?? "main" : bb.ToString() ?? "main") : "main";
+        string testCommandTemplate = tc is JsonElement etc ? etc.GetString() ?? string.Empty : tc?.ToString() ?? string.Empty;
+        string formatStr = f is JsonElement ef ? ef.GetString() ?? string.Empty : f?.ToString() ?? string.Empty;
+        string directory = d is JsonElement ed ? ed.GetString() ?? string.Empty : d?.ToString() ?? string.Empty;
+        string reportPathTemplate = rp is JsonElement erp ? erp.GetString() ?? string.Empty : rp?.ToString() ?? string.Empty;
+        string baseBranch = args.TryGetValue("baseBranch", out object? bb) ? (bb is JsonElement ebb ? ebb.GetString() ?? "main" : bb?.ToString() ?? "main") : "main";
         
         bool cleanup = true;
         if (args.TryGetValue("cleanup", out object? c))
@@ -285,18 +285,18 @@ internal class McpServer(
             if (cleanup)
             {
                 TryCleanupReports(directory, reportPath);
-                if (Directory.Exists(outputDir) && !Directory.EnumerateFileSystemEntries(outputDir).Any())
+                if (Directory.Exists(outputDir))
                 {
-                    try { Directory.Delete(outputDir); } catch { /* Ignore */ }
+                    try { Directory.Delete(outputDir, recursive: true); } catch { /* Ignore */ }
                 }
             }
         }
     }
 
-    private McpCallToolResponse ExecuteAnalyzeDelta(IDictionary<string, object>? args)
+    private McpCallToolResponse ExecuteAnalyzeDelta(IDictionary<string, object?>? args)
     {
         (CoverageFormat format, string directory, string[] globPatterns) = ParseArgs(args);
-        string baseBranch = args?.TryGetValue("baseBranch", out object? bb) == true ? bb.ToString() ?? "main" : "main";
+        string baseBranch = args?.TryGetValue("baseBranch", out object? bb) == true ? bb?.ToString() ?? "main" : "main";
 
         CoverageAnalyserOptions options = new()
         {
@@ -323,7 +323,7 @@ internal class McpServer(
         return new McpCallToolResponse([new McpContent("text", report)]);
     }
 
-    private McpCallToolResponse ExecuteGetSummary(IDictionary<string, object>? args)
+    private McpCallToolResponse ExecuteGetSummary(IDictionary<string, object?>? args)
     {
         (CoverageFormat format, string directory, string[] globPatterns) = ParseArgs(args);
         CoverageAnalyserOptions options = new()
@@ -346,14 +346,14 @@ internal class McpServer(
         return new McpCallToolResponse([new McpContent("text", report)]);
     }
 
-    private static (CoverageFormat Format, string Directory, string[] GlobPatterns) ParseArgs(IDictionary<string, object>? args)
+    private static (CoverageFormat Format, string Directory, string[] GlobPatterns) ParseArgs(IDictionary<string, object?>? args)
     {
         if (args == null) throw new ArgumentException("Arguments are required");
         if (!args.TryGetValue("format", out object? f)) throw new ArgumentException("Missing required argument: format");
 
-        string? formatStr = f is JsonElement ef ? ef.GetString() : f.ToString();
+        string? formatStr = f is JsonElement ef ? ef.GetString() : f?.ToString();
         CoverageFormat format = Enum.Parse<CoverageFormat>(formatStr ?? "Auto", true);
-        string directory = args.TryGetValue("directory", out object? dirObj) && (dirObj is JsonElement edir ? edir.GetString() : dirObj.ToString()) is { Length: > 0 } dirStr
+        string directory = args.TryGetValue("directory", out object? dirObj) && (dirObj is JsonElement edir ? edir.GetString() : dirObj?.ToString()) is { Length: > 0 } dirStr
             ? dirStr 
             : Environment.CurrentDirectory;
         

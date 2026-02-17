@@ -45,7 +45,7 @@ public record McpToolListResponse(IEnumerable<McpTool> Tools);
 /// </summary>
 /// <param name="Name">The tool name.</param>
 /// <param name="Arguments">The tool arguments.</param>
-public record McpCallToolRequest(string Name, IDictionary<string, object>? Arguments);
+public record McpCallToolRequest(string Name, IDictionary<string, object?>? Arguments);
 
 /// <summary>
 /// Represents an MCP call tool response.
