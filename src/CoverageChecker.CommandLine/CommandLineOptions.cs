@@ -5,7 +5,7 @@ namespace CoverageChecker.CommandLine;
 /// <summary>
 /// Base class for command line options.
 /// </summary>
-public abstract record BaseOptions
+public abstract record CommandLineOptions
 {
     /// <summary>
     /// Gets or sets the format of coverage files.
@@ -100,7 +100,7 @@ public abstract record BaseOptions
 /// Represents the command line options for the check command.
 /// </summary>
 [Verb("check", isDefault: true, HelpText = "Check coverage of existing files.")]
-public record CheckOptions : BaseOptions
+public record CheckOptions : CommandLineOptions
 {
 }
 
@@ -108,7 +108,7 @@ public record CheckOptions : BaseOptions
 /// Represents the command line options for the run command.
 /// </summary>
 [Verb("run", HelpText = "Run a command and check the resulting coverage.")]
-public record RunOptions : BaseOptions
+public record RunOptions : CommandLineOptions
 {
     /// <summary>
     /// Gets or sets the command to run.
@@ -121,4 +121,10 @@ public record RunOptions : BaseOptions
     /// </summary>
     [Option('o', "output", Required = false, HelpText = "The directory where coverage results will be stored. If not specified, a temporary directory will be used.")]
     public string? Output { get; init; }
+
+    /// <summary>
+    /// Gets or sets the maximum amount of time, in minutes, that the specified command is allowed to run before being automatically terminated.
+    /// </summary>
+    [Option('t', "timeout", Required = false, HelpText = "The timeout for the command in minutes. Default: 30", Default = 30)]
+    public int Timeout { get; init; } = 30;
 }

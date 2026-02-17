@@ -56,10 +56,11 @@ These options apply to both `check` and `run` commands.
 
 ### `run` Specific Options
 
-| Option            | Description                                                                                              | Required | Default |
-|-------------------|----------------------------------------------------------------------------------------------------------|----------|---------|
-| `-c`, `--command` | The command to execute. Use `{output}` as a placeholder for the results directory.                       | Yes      |         |
+| Option            | Description                                                                                           | Required | Default |
+|-------------------|-------------------------------------------------------------------------------------------------------|----------|---------|
+| `-c`, `--command` | The command to execute. Use `{output}` as a placeholder for the results directory.                    | Yes      |         |
 | `-o`, `--output`  | The directory where coverage results will be stored. If not specified, a temporary directory is used. | No       |         |
+| `-t`, `--timeout` | The maximum amount of time, in minutes, that the specified command is allowed to run.                 | No       | 30      |
 
 The `--delta` and `--delta-base` options require Git to be installed and available on the system `PATH`.
 

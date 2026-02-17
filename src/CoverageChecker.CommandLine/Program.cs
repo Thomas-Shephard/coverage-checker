@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -6,7 +7,6 @@ using CommandLine.Text;
 using CoverageChecker;
 using CoverageChecker.CommandLine;
 using CoverageChecker.Results;
-using CoverageChecker.Services;
 using CoverageChecker.Utils;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
@@ -19,7 +19,7 @@ return await parserResult.MapResult(
     (RunOptions options) => RunCommandAndCheck(options),
     _ => Task.FromResult(DisplayHelp(parserResult)));
 
-static async Task<int> Run(BaseOptions options)
+static async Task<int> Run(CommandLineOptions options)
 {
     bool isGitHubActions = Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true";
 
@@ -95,9 +95,9 @@ static async Task<int> RunCommandAndCheck(RunOptions options)
     string? tempDir = null;
     string outputDir = options.Output ?? (tempDir = Path.Combine(Path.GetTempPath(), "coverage-checker", Guid.NewGuid().ToString()));
 
-    if (!string.IsNullOrEmpty(tempDir))
+    if (!Directory.Exists(outputDir))
     {
-        Directory.CreateDirectory(tempDir);
+        Directory.CreateDirectory(outputDir);
     }
 
     try
@@ -106,18 +106,49 @@ static async Task<int> RunCommandAndCheck(RunOptions options)
         using ILoggerFactory loggerFactory = CreateLoggerFactory(isGitHubActions);
         ILogger logger = loggerFactory.CreateLogger("CoverageChecker.CommandLine");
 
-        string command = options.Command.Replace("{output}", outputDir);
+        // Safely replace {output} placeholder. Check if the PLACEHOLDER is already quoted in the command string.
+        string escapedOutputDir = outputDir.Contains(' ') && !options.Command.Contains("\"{output}\"") && !options.Command.Contains("'{output}'")
+            ? $"\"{outputDir}\""
+            : outputDir;
+            
+        string command = options.Command.Replace("{output}", escapedOutputDir);
         logger.LogRunningCommand(command);
 
-        ProcessExecutor executor = new();
-        (string fileName, IEnumerable<string> arguments) = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-            ? ("cmd.exe", new[] { "/c", command })
-            : ("sh", new[] { "-c", command });
+        using Process process = new();
+        process.StartInfo.FileName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "cmd.exe" : "sh";
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            process.StartInfo.ArgumentList.Add("/c");
+            process.StartInfo.ArgumentList.Add(command);
+        }
+        else
+        {
+            process.StartInfo.ArgumentList.Add("-c");
+            process.StartInfo.ArgumentList.Add(command);
+        }
+        
+        process.StartInfo.UseShellExecute = false;
+        process.StartInfo.CreateNoWindow = true;
+        // Do not redirect to allow inheriting the parent console's stdout/stderr (real-time output)
+        process.StartInfo.RedirectStandardOutput = false;
+        process.StartInfo.RedirectStandardError = false;
 
-        (int exitCode, string stdout, string stderr) = executor.Execute(fileName, arguments, TimeSpan.FromMinutes(30));
+        process.Start();
+        
+        using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(options.Timeout));
+        try
+        {
+            await process.WaitForExitAsync(cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            process.Kill(true);
+            logger.LogCommandFailed(-1);
+            Console.Error.WriteLine($"Error: Command timed out after {options.Timeout} minutes.");
+            return -1;
+        }
 
-        if (!string.IsNullOrWhiteSpace(stdout)) logger.LogCommandStdout(stdout);
-        if (!string.IsNullOrWhiteSpace(stderr)) logger.LogCommandStderr(stderr);
+        int exitCode = process.ExitCode;
 
         if (exitCode != 0)
         {
@@ -125,7 +156,7 @@ static async Task<int> RunCommandAndCheck(RunOptions options)
             return exitCode;
         }
 
-        BaseOptions effectiveOptions = options with { Directory = outputDir };
+        CommandLineOptions effectiveOptions = options with { Directory = outputDir };
         return await Run(effectiveOptions);
     }
     catch (Exception ex)
@@ -149,7 +180,7 @@ static async Task<int> RunCommandAndCheck(RunOptions options)
     }
 }
 
-static bool TryAnalyseDeltaCoverage(CoverageAnalyser analyser, Coverage coverage, BaseOptions options, ILogger logger, out Coverage? deltaCoverage, out bool hasChangedLines)
+static bool TryAnalyseDeltaCoverage(CoverageAnalyser analyser, Coverage coverage, CommandLineOptions options, ILogger logger, out Coverage? deltaCoverage, out bool hasChangedLines)
 {
     deltaCoverage = null;
     hasChangedLines = false;
@@ -167,7 +198,7 @@ static bool TryAnalyseDeltaCoverage(CoverageAnalyser analyser, Coverage coverage
     }
 }
 
-static int CheckThresholds(CoverageResult result, BaseOptions options, ILogger logger, bool isGitHubActions)
+static int CheckThresholds(CoverageResult result, CommandLineOptions options, ILogger logger, bool isGitHubActions)
 {
     bool failed = EvaluateOverallThresholds(result, options, logger);
 
@@ -193,7 +224,7 @@ static int CheckThresholds(CoverageResult result, BaseOptions options, ILogger l
     return 1;
 }
 
-static bool EvaluateOverallThresholds(CoverageResult result, BaseOptions options, ILogger logger)
+static bool EvaluateOverallThresholds(CoverageResult result, CommandLineOptions options, ILogger logger)
 {
     bool failed = false;
     if (options.LineThreshold > result.LineCoverage)
@@ -211,7 +242,7 @@ static bool EvaluateOverallThresholds(CoverageResult result, BaseOptions options
     return failed;
 }
 
-static bool EvaluateDeltaThresholds(CoverageResult result, BaseOptions options, ILogger logger)
+static bool EvaluateDeltaThresholds(CoverageResult result, CommandLineOptions options, ILogger logger)
 {
     bool failed = false;
 
@@ -305,7 +336,7 @@ static bool TryAnalyseCoverage(CoverageAnalyser coverageAnalyser, ILogger logger
     return false;
 }
 
-static async Task WriteGitHubSummary(CoverageResult result, BaseOptions options, ILogger logger)
+static async Task WriteGitHubSummary(CoverageResult result, CommandLineOptions options, ILogger logger)
 {
     string? summaryPath = Environment.GetEnvironmentVariable("GITHUB_STEP_SUMMARY");
     if (string.IsNullOrEmpty(summaryPath)) return;
@@ -333,7 +364,7 @@ static async Task WriteGitHubSummary(CoverageResult result, BaseOptions options,
     }
 }
 
-static string BuildGitHubSummary(CoverageResult result, BaseOptions options)
+static string BuildGitHubSummary(CoverageResult result, CommandLineOptions options)
 {
     StringBuilder summary = new();
     summary.AppendLine("### Coverage Report Summary");
@@ -363,7 +394,7 @@ static string BuildGitHubSummary(CoverageResult result, BaseOptions options)
     return summary.ToString();
 }
 
-static void AppendDeltaSummary(StringBuilder summary, CoverageResult result, BaseOptions options)
+static void AppendDeltaSummary(StringBuilder summary, CoverageResult result, CommandLineOptions options)
 {
     if (result.HasDeltaChangedLines)
     {
@@ -376,7 +407,7 @@ static void AppendDeltaSummary(StringBuilder summary, CoverageResult result, Bas
     }
 }
 
-static bool IsAnyThresholdViolated(CoverageResult result, BaseOptions options)
+static bool IsAnyThresholdViolated(CoverageResult result, CommandLineOptions options)
 {
     if (options.LineThreshold > result.LineCoverage || options.BranchThreshold > result.BranchCoverage)
     {

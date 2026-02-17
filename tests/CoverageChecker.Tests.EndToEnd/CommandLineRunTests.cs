@@ -7,22 +7,35 @@ public class CommandLineRunTests
 {
     private static string GetCliPath()
     {
+        string? envPath = Environment.GetEnvironmentVariable("COVERAGE_CHECKER_CLI_PATH");
+        if (!string.IsNullOrEmpty(envPath) && File.Exists(envPath))
+            return envPath;
+
         string baseDir = AppContext.BaseDirectory;
-        DirectoryInfo? dir = new DirectoryInfo(baseDir);
+        DirectoryInfo? dir = new(baseDir);
+
+        // Find the project root by looking for the solution or artifacts folder
         while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, "artifacts")))
         {
             dir = dir.Parent;
         }
-        
-        if (dir == null) throw new InvalidOperationException("Could not find artifacts folder");
-        
+
+        if (dir == null)
+            throw new InvalidOperationException("Could not find artifacts folder");
+
         string artifactsDir = Path.Combine(dir.FullName, "artifacts", "bin", "CoverageChecker.CommandLine");
         string exeName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "CoverageChecker.CommandLine.exe" : "CoverageChecker.CommandLine";
-        
+
+        // Try to find the executable in a directory that matches the current configuration (Debug/Release)
+        string configuration = new DirectoryInfo(baseDir).Name;
         string? exePath = Directory.GetFiles(artifactsDir, exeName, SearchOption.AllDirectories)
-                                   .FirstOrDefault(f => !f.Contains("publish")); // Avoid publish folders if they exist
-        
-        return exePath ?? throw new InvalidOperationException($"Could not find {exeName} executable in {artifactsDir}");
+                                   .FirstOrDefault(f => f.Contains(configuration) && !f.Contains("publish"));
+
+        // Fallback to any match if configuration-specific one isn't found
+        exePath ??= Directory.GetFiles(artifactsDir, exeName, SearchOption.AllDirectories)
+                                .FirstOrDefault(f => !f.Contains("publish"));
+
+        return exePath ?? throw new InvalidOperationException($"Could not find {exeName} executable in {artifactsDir}. Set COVERAGE_CHECKER_CLI_PATH to override.");
     }
 
     [Test]
