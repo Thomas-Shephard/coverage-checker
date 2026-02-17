@@ -24,7 +24,7 @@ internal class McpServer(
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
-    private static readonly string[] CoverageFormats = ["SonarQube", "Cobertura"];
+    private static readonly string[] CoverageFormats = ["Auto", "SonarQube", "Cobertura"];
     private static readonly string[] FormatRequiredArgs = ["format"];
     private static readonly string[] RunTestsRequiredArgs = ["testCommand", "format", "directory", "reportPath"];
 
@@ -37,11 +37,14 @@ internal class McpServer(
 
     public async Task RunAsync(TextReader reader, TextWriter writer)
     {
+        List<Task> tasks = [];
         while (await reader.ReadLineAsync() is { } line)
         {
             _logger.LogReceivedLine(line);
-            await HandleRequestAsync(line, writer);
+            tasks.Add(HandleRequestAsync(line, writer));
+            tasks.RemoveAll(t => t.IsCompleted);
         }
+        await Task.WhenAll(tasks);
     }
 
     private async Task HandleRequestAsync(string line, TextWriter writer)
@@ -166,7 +169,7 @@ internal class McpServer(
         {
             return callRequest.Name switch
             {
-                "analyze_delta" => ExecuteAnalyzeDelta(callRequest.Arguments),
+                "analyze_delta" => await ExecuteAnalyzeDelta(callRequest.Arguments),
                 "get_coverage_summary" => ExecuteGetSummary(callRequest.Arguments),
                 "run_tests_and_analyze" => await ExecuteRunTestsAndAnalyze(callRequest.Arguments),
                 _ => new McpCallToolResponse([new McpContent("text", $"Unknown tool: {callRequest.Name}")], true)
@@ -178,7 +181,7 @@ internal class McpServer(
         }
     }
 
-    private Task<McpCallToolResponse> ExecuteRunTestsAndAnalyze(IDictionary<string, object?>? args)
+    private async Task<McpCallToolResponse> ExecuteRunTestsAndAnalyze(IDictionary<string, object?>? args)
     {
         if (args == null || 
             !args.TryGetValue("testCommand", out object? tc) ||
@@ -215,11 +218,7 @@ internal class McpServer(
         // 1. Prepare Paths and Command
         string outputDir = Path.Combine(directory, ".coverage-checker-mcp", Guid.NewGuid().ToString());
         string testCommand = CommandUtils.PrepareCommand(testCommandTemplate, outputDir, _logger);
-        string reportPath = reportPathTemplate.Replace("{output}", outputDir);
-        if (Path.IsPathRooted(reportPath) && reportPath.StartsWith(directory, StringComparison.OrdinalIgnoreCase))
-        {
-            reportPath = Path.GetRelativePath(directory, reportPath);
-        }
+        string reportPath = PathUtils.MakeRelativeIfInside(directory, reportPathTemplate.Replace("{output}", outputDir));
 
         if (!Directory.Exists(outputDir))
         {
@@ -229,7 +228,7 @@ internal class McpServer(
         try
         {
             // 2. Run Tests
-            (int exitCode, string stdout, string stderr) = _processExecutor.ExecuteShell(testCommand, directory, timeout);
+            (int exitCode, string stdout, string stderr) = await _processExecutor.ExecuteShellAsync(testCommand, directory, timeout);
 
             StringBuilder outputBuilder = new();
             outputBuilder.AppendLine(CultureInfo.InvariantCulture, $"Test Command Exited with code {exitCode}");
@@ -277,7 +276,7 @@ internal class McpServer(
                 outputBuilder.AppendLine(CultureInfo.InvariantCulture, $"\n--- Delta Coverage Analysis Failed ---\n{ex.Message}");
             }
 
-            return Task.FromResult(new McpCallToolResponse([new McpContent("text", outputBuilder.ToString())], exitCode != 0));
+            return new McpCallToolResponse([new McpContent("text", outputBuilder.ToString())], exitCode != 0);
         }
         finally
         {
@@ -293,7 +292,7 @@ internal class McpServer(
         }
     }
 
-    private McpCallToolResponse ExecuteAnalyzeDelta(IDictionary<string, object?>? args)
+    private Task<McpCallToolResponse> ExecuteAnalyzeDelta(IDictionary<string, object?>? args)
     {
         (CoverageFormat format, string directory, string[] globPatterns) = ParseArgs(args);
         string baseBranch = args?.TryGetValue("baseBranch", out object? bb) == true ? bb?.ToString() ?? "main" : "main";
@@ -309,7 +308,7 @@ internal class McpServer(
 
         if (!delta.HasChangedLines)
         {
-            return new McpCallToolResponse([new McpContent("text", "No changed lines found in the current delta.")]);
+            return Task.FromResult(new McpCallToolResponse([new McpContent("text", "No changed lines found in the current delta.")]));
         }
 
         double line = delta.Coverage.CalculateOverallCoverage();
@@ -320,7 +319,7 @@ internal class McpServer(
                         $"- Branch Coverage: {branch:P2}\n\n" +
                         "Missing Lines in Delta:\n" + GetGaps(delta.Coverage, directory);
 
-        return new McpCallToolResponse([new McpContent("text", report)]);
+        return Task.FromResult(new McpCallToolResponse([new McpContent("text", report)]));
     }
 
     private McpCallToolResponse ExecuteGetSummary(IDictionary<string, object?>? args)
@@ -365,21 +364,13 @@ internal class McpServer(
                 foreach (JsonElement item in element.EnumerateArray())
                 {
                     string pattern = item.GetString() ?? string.Empty;
-                    if (Path.IsPathRooted(pattern) && pattern.StartsWith(directory, StringComparison.OrdinalIgnoreCase))
-                    {
-                        pattern = Path.GetRelativePath(directory, pattern);
-                    }
-                    globPatterns.Add(pattern);
+                    globPatterns.Add(PathUtils.MakeRelativeIfInside(directory, pattern));
                 }
             }
             else if (gp is JsonElement { ValueKind: JsonValueKind.String } s)
             {
                 string pattern = s.GetString() ?? string.Empty;
-                if (Path.IsPathRooted(pattern) && pattern.StartsWith(directory, StringComparison.OrdinalIgnoreCase))
-                {
-                    pattern = Path.GetRelativePath(directory, pattern);
-                }
-                globPatterns.Add(pattern);
+                globPatterns.Add(PathUtils.MakeRelativeIfInside(directory, pattern));
             }
         }
 

@@ -10,5 +10,6 @@ internal interface ISystemProcess : IDisposable
     int ExitCode { get; }
     bool Start();
     bool WaitForExit(int milliseconds);
+    Task WaitForExitAsync(CancellationToken cancellationToken = default);
     void Kill();
 }

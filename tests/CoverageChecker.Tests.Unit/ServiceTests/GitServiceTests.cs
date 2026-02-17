@@ -85,6 +85,16 @@ public class GitServiceTests
         {
             return (0, "", "");
         }
+
+        public Task<(int ExitCode, string StandardOutput, string StandardError)> ExecuteAsync(string fileName, IEnumerable<string> arguments, string? workingDirectory = null, TimeSpan? timeout = null)
+        {
+            return Task.FromResult(Execute(fileName, arguments, workingDirectory, timeout));
+        }
+
+        public Task<(int ExitCode, string StandardOutput, string StandardError)> ExecuteShellAsync(string command, string? workingDirectory = null, TimeSpan? timeout = null)
+        {
+            return Task.FromResult(ExecuteShell(command, workingDirectory, timeout));
+        }
     }
 
     private MockProcessExecutor _mockExecutor;

@@ -182,14 +182,14 @@ public class McpServerTests
         };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        _mockExecutor.Setup(e => e.ExecuteShell(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan?>()))
-                     .Returns((0, "Test Output", ""));
+        _mockExecutor.Setup(e => e.ExecuteShellAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan?>()))
+                     .ReturnsAsync((0, "Test Output", ""));
         
         _mockFinder.Setup(f => f.FindFiles(It.IsAny<string>())).Returns(["/repo/coverage.xml"]);
 
         await RunSutAsync(sut);
 
-        _mockExecutor.Verify(e => e.ExecuteShell(It.Is<string>(c => c.Contains("dotnet test")), "/repo", It.IsAny<TimeSpan?>()), Times.Once);
+        _mockExecutor.Verify(e => e.ExecuteShellAsync(It.Is<string>(c => c.Contains("dotnet test")), "/repo", It.IsAny<TimeSpan?>()), Times.Once);
         _mockFinder.Verify(f => f.FindFiles("/repo"), Times.AtLeastOnce);
     }
 
@@ -215,12 +215,12 @@ public class McpServerTests
         };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        _mockExecutor.Setup(e => e.ExecuteShell(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan?>()))
-                     .Returns((0, "Test Output", ""));
+        _mockExecutor.Setup(e => e.ExecuteShellAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan?>()))
+                     .ReturnsAsync((0, "Test Output", ""));
 
         await RunSutAsync();
 
-        _mockExecutor.Verify(e => e.ExecuteShell(It.Is<string>(c => c.Contains("run --out") && c.Contains(".coverage-checker-mcp")), "/repo", It.IsAny<TimeSpan?>()), Times.Once);
+        _mockExecutor.Verify(e => e.ExecuteShellAsync(It.Is<string>(c => c.Contains("run --out") && c.Contains(".coverage-checker-mcp")), "/repo", It.IsAny<TimeSpan?>()), Times.Once);
     }
 
     [Test]

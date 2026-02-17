@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Runtime.InteropServices;
+using System.Diagnostics;
 
 namespace CoverageChecker.Services;
 
@@ -9,6 +10,8 @@ internal interface IProcessExecutor
     (int ExitCode, string StandardOutput, string StandardError) Execute(string fileName, IEnumerable<string> arguments, TimeSpan? timeout = null);
     (int ExitCode, string StandardOutput, string StandardError) Execute(string fileName, IEnumerable<string> arguments, string? workingDirectory, TimeSpan? timeout = null);
     (int ExitCode, string StandardOutput, string StandardError) ExecuteShell(string command, string? workingDirectory = null, TimeSpan? timeout = null);
+    Task<(int ExitCode, string StandardOutput, string StandardError)> ExecuteAsync(string fileName, IEnumerable<string> arguments, string? workingDirectory = null, TimeSpan? timeout = null);
+    Task<(int ExitCode, string StandardOutput, string StandardError)> ExecuteShellAsync(string command, string? workingDirectory = null, TimeSpan? timeout = null);
 }
 
 internal partial class ProcessExecutor : IProcessExecutor
@@ -34,20 +37,7 @@ internal partial class ProcessExecutor : IProcessExecutor
     {
         using ISystemProcess process = _processFactory();
         
-        string? effectiveWorkingDirectory = workingDirectory ?? _workingDirectory;
-        if (!string.IsNullOrEmpty(effectiveWorkingDirectory))
-        {
-            process.StartInfo.WorkingDirectory = effectiveWorkingDirectory;
-        }
-        process.StartInfo.FileName = fileName;
-        foreach (string argument in arguments)
-        {
-            process.StartInfo.ArgumentList.Add(argument);
-        }
-        process.StartInfo.RedirectStandardOutput = true;
-        process.StartInfo.RedirectStandardError = true;
-        process.StartInfo.UseShellExecute = false;
-        process.StartInfo.CreateNoWindow = true;
+        ConfigureStartInfo(process.StartInfo, fileName, arguments, workingDirectory);
 
         return InternalExecute(process, fileName, timeout);
     }
@@ -56,33 +46,74 @@ internal partial class ProcessExecutor : IProcessExecutor
     {
         using ISystemProcess process = _processFactory();
 
+        ConfigureShellStartInfo(process.StartInfo, command, workingDirectory);
+
+        return InternalExecute(process, command, timeout);
+    }
+
+    public async Task<(int ExitCode, string StandardOutput, string StandardError)> ExecuteAsync(string fileName, IEnumerable<string> arguments, string? workingDirectory = null, TimeSpan? timeout = null)
+    {
+        using ISystemProcess process = _processFactory();
+        
+        ConfigureStartInfo(process.StartInfo, fileName, arguments, workingDirectory);
+
+        return await InternalExecuteAsync(process, fileName, timeout);
+    }
+
+    public async Task<(int ExitCode, string StandardOutput, string StandardError)> ExecuteShellAsync(string command, string? workingDirectory = null, TimeSpan? timeout = null)
+    {
+        using ISystemProcess process = _processFactory();
+
+        ConfigureShellStartInfo(process.StartInfo, command, workingDirectory);
+
+        return await InternalExecuteAsync(process, command, timeout);
+    }
+
+    private void ConfigureStartInfo(ProcessStartInfo startInfo, string fileName, IEnumerable<string> arguments, string? workingDirectory)
+    {
         string? effectiveWorkingDirectory = workingDirectory ?? _workingDirectory;
         if (!string.IsNullOrEmpty(effectiveWorkingDirectory))
         {
-            process.StartInfo.WorkingDirectory = effectiveWorkingDirectory;
+            startInfo.WorkingDirectory = effectiveWorkingDirectory;
+        }
+        startInfo.FileName = fileName;
+        foreach (string argument in arguments)
+        {
+            startInfo.ArgumentList.Add(argument);
+        }
+        startInfo.RedirectStandardOutput = true;
+        startInfo.RedirectStandardError = true;
+        startInfo.UseShellExecute = false;
+        startInfo.CreateNoWindow = true;
+    }
+
+    private void ConfigureShellStartInfo(ProcessStartInfo startInfo, string command, string? workingDirectory)
+    {
+        string? effectiveWorkingDirectory = workingDirectory ?? _workingDirectory;
+        if (!string.IsNullOrEmpty(effectiveWorkingDirectory))
+        {
+            startInfo.WorkingDirectory = effectiveWorkingDirectory;
         }
 
         bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-        process.StartInfo.FileName = isWindows ? "cmd.exe" : "sh";
+        startInfo.FileName = isWindows ? "cmd.exe" : "sh";
 
         if (isWindows)
         {
             // Use /s and wrap the command in quotes to ensure cmd.exe 
             // preserves the internal quoting of the command string.
-            process.StartInfo.Arguments = $"/s /c \"{command}\"";
+            startInfo.Arguments = $"/s /c \"{command}\"";
         }
         else
         {
-            process.StartInfo.ArgumentList.Add("-c");
-            process.StartInfo.ArgumentList.Add(command);
+            startInfo.ArgumentList.Add("-c");
+            startInfo.ArgumentList.Add(command);
         }
 
-        process.StartInfo.RedirectStandardOutput = true;
-        process.StartInfo.RedirectStandardError = true;
-        process.StartInfo.UseShellExecute = false;
-        process.StartInfo.CreateNoWindow = true;
-
-        return InternalExecute(process, command, timeout);
+        startInfo.RedirectStandardOutput = true;
+        startInfo.RedirectStandardError = true;
+        startInfo.UseShellExecute = false;
+        startInfo.CreateNoWindow = true;
     }
 
     private (int ExitCode, string StandardOutput, string StandardError) InternalExecute(ISystemProcess process, string name, TimeSpan? timeout)
@@ -117,6 +148,42 @@ internal partial class ProcessExecutor : IProcessExecutor
         }
 
         Task.WaitAll(stdoutTask, stderrTask);
+        return (process.ExitCode, stdoutTask.Result, stderrTask.Result);
+    }
+
+    private async Task<(int ExitCode, string StandardOutput, string StandardError)> InternalExecuteAsync(ISystemProcess process, string name, TimeSpan? timeout)
+    {
+        process.Start();
+
+        Task<string> stdoutTask = process.StandardOutput.ReadToEndAsync();
+        Task<string> stderrTask = process.StandardError.ReadToEndAsync();
+
+        TimeSpan effectiveTimeout = timeout ?? DefaultTimeout;
+        using CancellationTokenSource cts = new(effectiveTimeout);
+
+        try
+        {
+            await process.WaitForExitAsync(cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            try
+            {
+                process.Kill();
+            }
+            catch (Exception ex)
+            {
+                LogProcessKillFailed(ex, name);
+            }
+
+            // Wait a short time for tasks to complete to avoid unobserved task exceptions
+            await Task.WhenAny(Task.WhenAll(stdoutTask, stderrTask), Task.Delay(TimeSpan.FromSeconds(1)));
+
+            int timeoutSeconds = (int)effectiveTimeout.TotalSeconds;
+            throw new ProcessExecutionException($"Process '{name}' timed out after {timeoutSeconds} second{(timeoutSeconds == 1 ? string.Empty : "s")}.");
+        }
+
+        await Task.WhenAll(stdoutTask, stderrTask);
         return (process.ExitCode, stdoutTask.Result, stderrTask.Result);
     }
 

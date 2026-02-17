@@ -59,7 +59,7 @@ public class GitException : CoverageException
 }
 
 /// <summary>
-/// Thrown when a process fails to execute.
+/// Thrown when an error occurs while executing or waiting for a system process.
 /// </summary>
 public class ProcessExecutionException : CoverageException
 {

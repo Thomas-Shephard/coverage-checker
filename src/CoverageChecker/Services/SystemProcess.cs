@@ -15,6 +15,7 @@ internal class SystemProcess : ISystemProcess
 
     public bool Start() => _process.Start();
     public bool WaitForExit(int milliseconds) => _process.WaitForExit(milliseconds);
+    public Task WaitForExitAsync(CancellationToken cancellationToken = default) => _process.WaitForExitAsync(cancellationToken);
     public void Kill() => _process.Kill();
 
     private bool _disposed;

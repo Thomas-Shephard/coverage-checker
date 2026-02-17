@@ -53,4 +53,32 @@ internal static class PathUtils
             throw new ArgumentException($"Invalid path: {path}", nameof(path), ex);
         }
     }
+
+    /// <summary>
+    /// Makes a path relative to a directory if it is rooted and inside that directory.
+    /// </summary>
+    /// <param name="directory">The directory to make the path relative to.</param>
+    /// <param name="path">The path to process.</param>
+    /// <returns>The relative path if it was inside the directory, otherwise the original path.</returns>
+    public static string MakeRelativeIfInside(string directory, string path)
+    {
+        if (string.IsNullOrEmpty(path) || !Path.IsPathRooted(path))
+        {
+            return path;
+        }
+
+        string fullPath = GetNormalizedFullPath(path);
+        string fullDirectory = GetNormalizedFullPath(directory);
+
+        if (fullPath.StartsWith(fullDirectory, PathComparer == StringComparer.OrdinalIgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
+        {
+            // Ensure we don't match "C:/repo_suffix" when directory is "C:/repo"
+            if (fullPath.Length == fullDirectory.Length || fullPath[fullDirectory.Length] == '/')
+            {
+                return Path.GetRelativePath(fullDirectory, fullPath).Replace('\\', '/');
+            }
+        }
+
+        return path;
+    }
 }
