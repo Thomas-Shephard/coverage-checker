@@ -126,11 +126,17 @@ public record RunOptions : CommandLineOptions
     [Option('o', "output", Required = false, HelpText = "The directory where coverage results will be stored. If not specified, a temporary directory will be used.")]
     public string? Output { get; init; }
 
+    private readonly int _timeout = 30;
+
     /// <summary>
     /// Gets or sets the maximum amount of time, in minutes, that the specified command is allowed to run before being automatically terminated.
     /// </summary>
     [Option('t', "timeout", Required = false, HelpText = "The timeout for the command in minutes. Default: 30", Default = 30)]
-    public int Timeout { get; init; } = 30;
+    public int Timeout
+    {
+        get => _timeout;
+        init => _timeout = value is < 1 and not -1 ? throw new ArgumentOutOfRangeException(nameof(Timeout), "Timeout must be at least 1 minute, or -1 for infinite.") : value;
+    }
 
     /// <summary>
     /// Gets or sets a value indicating whether to continue with coverage analysis even if the command fails.

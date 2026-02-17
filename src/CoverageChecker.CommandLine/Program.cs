@@ -181,9 +181,9 @@ static async Task<int> ExecuteCommand(string command, string workingDirectory, i
     process.StartInfo.FileName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "cmd.exe" : "sh";
     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
     {
-        // Use Arguments property for cmd.exe to ensure exact pass-through of the command string
-        // without .NET's automatic argument escaping interfering with the user's shell syntax.
-        process.StartInfo.Arguments = $"/c {command}";
+        // Use /s and wrap the command in quotes to ensure cmd.exe 
+        // preserves the internal quoting of the command string.
+        process.StartInfo.Arguments = $"/s /c \"{command}\"";
     }
     else
     {
