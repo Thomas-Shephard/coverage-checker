@@ -55,9 +55,6 @@ internal static partial class ProgramLogs
     [LoggerMessage(Level = LogLevel.Error, Message = "Failed to perform delta coverage analysis.")]
     public static partial void LogDeltaAnalysisFailed(this ILogger logger, Exception exception);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Running command: {Command}")]
-    public static partial void LogRunningCommand(this ILogger logger, string command);
-
     [LoggerMessage(Level = LogLevel.Error, Message = "Command failed with exit code {ExitCode}.")]
     public static partial void LogCommandFailed(this ILogger logger, int exitCode);
 

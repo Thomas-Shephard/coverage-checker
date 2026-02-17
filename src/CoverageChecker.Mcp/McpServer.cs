@@ -36,45 +36,46 @@ internal partial class McpServer(
     }
 
     public async Task RunAsync(TextReader reader, TextWriter writer)
+    {
+        while (await reader.ReadLineAsync() is { } line)
         {
-            while (await reader.ReadLineAsync() is { } line)
-            {
-                LogReceivedLine(line);
-                _ = HandleRequestAsync(line, writer);
-            }
+            LogReceivedLine(line);
+            await HandleRequestAsync(line, writer);
         }
-    
-        private async Task HandleRequestAsync(string line, TextWriter writer)
+    }
+
+    private async Task HandleRequestAsync(string line, TextWriter writer)
+    {
+        try
         {
-            try
+            McpRequest? request = JsonSerializer.Deserialize<McpRequest>(line, _jsonOptions);
+            if (request == null) return;
+
+            McpResponse? response = await HandleRequest(request);
+
+            // Only respond to requests with an ID (notifications have null ID and don't get a response)
+            if (response != null && request.Id != null)
             {
-                McpRequest? request = JsonSerializer.Deserialize<McpRequest>(line, _jsonOptions);
-                if (request == null) return;
-    
-                McpResponse? response = await HandleRequest(request);
-    
-                // Only respond to requests with an ID (notifications have null ID and don't get a response)
-                if (response != null && request.Id != null)
+                string responseJson = JsonSerializer.Serialize(response, _jsonOptions);
+                await _writeLock.WaitAsync();
+                try
                 {
-                    string responseJson = JsonSerializer.Serialize(response, _jsonOptions);
-                    await _writeLock.WaitAsync();
-                    try
-                    {
-                        await writer.WriteLineAsync(responseJson);
-                        await writer.FlushAsync();
-                    }
-                    finally
-                    {
-                        _writeLock.Release();
-                    }
+                    await writer.WriteLineAsync(responseJson);
+                    await writer.FlushAsync();
+                }
+                finally
+                {
+                    _writeLock.Release();
                 }
             }
-            catch (Exception ex)
-            {
-                LogMcpRequestProcessingError(ex);
-            }
         }
-        private async Task<McpResponse?> HandleRequest(McpRequest request)
+        catch (Exception ex)
+        {
+            LogMcpRequestProcessingError(ex);
+        }
+    }
+
+    private async Task<McpResponse?> HandleRequest(McpRequest request)
     {
         switch (request.Method)
         {
@@ -188,11 +189,11 @@ internal partial class McpServer(
             throw new ArgumentException("Missing required arguments: testCommand, format, directory, reportPath");
         }
 
-        string testCommandTemplate = tc is JsonElement etc ? etc.GetString()! : tc.ToString()!;
-        string formatStr = f is JsonElement ef ? ef.GetString()! : f.ToString()!;
-        string directory = d is JsonElement ed ? ed.GetString()! : d.ToString()!;
-        string reportPathTemplate = rp is JsonElement erp ? erp.GetString()! : rp.ToString()!;
-        string baseBranch = args.TryGetValue("baseBranch", out object? bb) ? (bb is JsonElement ebb ? ebb.GetString()! : bb.ToString()!) : "main";
+        string testCommandTemplate = tc is JsonElement etc ? etc.GetString() ?? string.Empty : tc.ToString() ?? string.Empty;
+        string formatStr = f is JsonElement ef ? ef.GetString() ?? string.Empty : f.ToString() ?? string.Empty;
+        string directory = d is JsonElement ed ? ed.GetString() ?? string.Empty : d.ToString() ?? string.Empty;
+        string reportPathTemplate = rp is JsonElement erp ? erp.GetString() ?? string.Empty : rp.ToString() ?? string.Empty;
+        string baseBranch = args.TryGetValue("baseBranch", out object? bb) ? (bb is JsonElement ebb ? ebb.GetString() ?? "main" : bb.ToString() ?? "main") : "main";
         
         bool cleanup = true;
         if (args.TryGetValue("cleanup", out object? c))
@@ -267,7 +268,7 @@ internal partial class McpServer(
                     outputBuilder.AppendLine(CultureInfo.InvariantCulture, $"- Line Coverage: {line:P2}");
                     outputBuilder.AppendLine(CultureInfo.InvariantCulture, $"- Branch Coverage: {branch:P2}");
                     outputBuilder.AppendLine("\nMissing Lines in Delta:");
-                    outputBuilder.Append(GetGaps(delta.Coverage));
+                    outputBuilder.Append(GetGaps(delta.Coverage, directory));
                     outputBuilder.AppendLine();
                 }
             }
@@ -283,7 +284,7 @@ internal partial class McpServer(
             // 4. Cleanup
             if (cleanup)
             {
-                TryCleanupReports(directory, outputDir, reportPath);
+                TryCleanupReports(directory, reportPath);
                 if (Directory.Exists(outputDir) && !Directory.EnumerateFileSystemEntries(outputDir).Any())
                 {
                     try { Directory.Delete(outputDir); } catch { /* Ignore */ }
@@ -295,7 +296,7 @@ internal partial class McpServer(
     private McpCallToolResponse ExecuteAnalyzeDelta(IDictionary<string, object>? args)
     {
         (CoverageFormat format, string directory, string[] globPatterns) = ParseArgs(args);
-        string baseBranch = args?.TryGetValue("baseBranch", out object? bb) == true ? bb.ToString()! : "main";
+        string baseBranch = args?.TryGetValue("baseBranch", out object? bb) == true ? bb.ToString() ?? "main" : "main";
 
         CoverageAnalyserOptions options = new()
         {
@@ -317,7 +318,7 @@ internal partial class McpServer(
         string report = $"Delta Coverage Results (Target: {baseBranch}):\n" +
                         $"- Line Coverage: {line:P2}\n" +
                         $"- Branch Coverage: {branch:P2}\n\n" +
-                        "Missing Lines in Delta:\n" + GetGaps(delta.Coverage);
+                        "Missing Lines in Delta:\n" + GetGaps(delta.Coverage, directory);
 
         return new McpCallToolResponse([new McpContent("text", report)]);
     }
@@ -351,8 +352,8 @@ internal partial class McpServer(
         if (!args.TryGetValue("format", out object? f)) throw new ArgumentException("Missing required argument: format");
 
         string? formatStr = f is JsonElement ef ? ef.GetString() : f.ToString();
-        CoverageFormat format = Enum.Parse<CoverageFormat>(formatStr!, true);
-        string directory = args.TryGetValue("directory", out object? dirObj) && (dirObj is JsonElement edir ? edir.GetString() : dirObj?.ToString()) is { Length: > 0 } dirStr
+        CoverageFormat format = Enum.Parse<CoverageFormat>(formatStr ?? "Auto", true);
+        string directory = args.TryGetValue("directory", out object? dirObj) && (dirObj is JsonElement edir ? edir.GetString() : dirObj.ToString()) is { Length: > 0 } dirStr
             ? dirStr 
             : Environment.CurrentDirectory;
         
@@ -363,7 +364,7 @@ internal partial class McpServer(
             {
                 foreach (JsonElement item in element.EnumerateArray())
                 {
-                    string pattern = item.GetString()!;
+                    string pattern = item.GetString() ?? string.Empty;
                     if (Path.IsPathRooted(pattern) && pattern.StartsWith(directory, StringComparison.OrdinalIgnoreCase))
                     {
                         pattern = Path.GetRelativePath(directory, pattern);
@@ -373,7 +374,7 @@ internal partial class McpServer(
             }
             else if (gp is JsonElement { ValueKind: JsonValueKind.String } s)
             {
-                string pattern = s.GetString()!;
+                string pattern = s.GetString() ?? string.Empty;
                 if (Path.IsPathRooted(pattern) && pattern.StartsWith(directory, StringComparison.OrdinalIgnoreCase))
                 {
                     pattern = Path.GetRelativePath(directory, pattern);
@@ -390,13 +391,13 @@ internal partial class McpServer(
         return (format, directory, globPatterns.ToArray());
     }
 
-    private void TryCleanupReports(string directory, string outputDir, string reportPath)
+    private void TryCleanupReports(string directory, string reportPath)
     {
         try
         {
-            string searchDir = Directory.Exists(outputDir) ? outputDir : directory;
+            // Always search from the root directory as reportPath is made relative to it
             IFileFinder finder = _fileFinderFactory([reportPath]);
-            IEnumerable<string> filesToDelete = finder.FindFiles(searchDir).Where(File.Exists);
+            IEnumerable<string> filesToDelete = finder.FindFiles(directory).Where(File.Exists);
             foreach (string file in filesToDelete)
             {
                 File.Delete(file);
@@ -408,20 +409,20 @@ internal partial class McpServer(
         }
     }
 
-    private static string GetGaps(Coverage coverage)
+    private static string GetGaps(Coverage coverage, string rootDirectory)
     {
         StringBuilder sb = new();
         foreach (FileCoverage file in coverage.Files)
         {
             List<string> uncoveredLines = file.Lines.Where(l => !l.IsCovered).Select(l => l.LineNumber.ToString(CultureInfo.InvariantCulture)).ToList();
             List<string> uncoveredBranches = file.Lines.Where(l => l is { IsCovered: true, Branches: > 0 } && l.CoveredBranches < l.Branches)
-                                                 .Select(l => $"{l.LineNumber.ToString(CultureInfo.InvariantCulture)} ({l.CoveredBranches!.Value.ToString(CultureInfo.InvariantCulture)}/{l.Branches!.Value.ToString(CultureInfo.InvariantCulture)} branches)")
+                                                 .Select(l => $"{l.LineNumber.ToString(CultureInfo.InvariantCulture)} ({l.CoveredBranches?.ToString(CultureInfo.InvariantCulture) ?? "0"}/{l.Branches?.ToString(CultureInfo.InvariantCulture) ?? "0"} branches)")
                                                  .ToList();
 
             if (uncoveredLines.Count <= 0 && uncoveredBranches.Count <= 0)
                 continue;
 
-            string displayPath = Path.IsPathRooted(file.Path) ? Path.GetRelativePath(Environment.CurrentDirectory, file.Path) : file.Path;
+            string displayPath = Path.IsPathRooted(file.Path) ? Path.GetRelativePath(rootDirectory, file.Path) : file.Path;
             sb.Append(CultureInfo.InvariantCulture, $"- {displayPath}:\n");
             if (uncoveredLines.Count > 0)
             {

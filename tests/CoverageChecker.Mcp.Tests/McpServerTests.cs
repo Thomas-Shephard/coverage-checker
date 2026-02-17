@@ -38,6 +38,13 @@ public class McpServerTests
         _writer = new StringWriter();
     }
 
+    private async Task RunSutAsync(McpServer? sut = null)
+    {
+        McpServer target = sut ?? _sut;
+        if (_reader == null || _writer == null) throw new InvalidOperationException("Communication not setup");
+        await target.RunAsync(_reader, _writer);
+    }
+
     private static string GetRepoRoot()
     {
         string? current = AppContext.BaseDirectory;
@@ -59,9 +66,9 @@ public class McpServerTests
         var request = new { jsonrpc = "2.0", method = "initialize", id = 1 };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        await _sut.RunAsync(_reader!, _writer!);
+        await RunSutAsync();
 
-        string responseJson = _writer!.ToString();
+        string responseJson = _writer?.ToString() ?? string.Empty;
         Assert.That(responseJson, Is.Not.Empty);
         JsonElement response = JsonSerializer.Deserialize<JsonElement>(responseJson);
         Assert.Multiple(() =>
@@ -77,9 +84,9 @@ public class McpServerTests
         var request = new { jsonrpc = "2.0", method = "tools/list", id = 2 };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        await _sut.RunAsync(_reader!, _writer!);
+        await RunSutAsync();
 
-        string responseJson = _writer!.ToString();
+        string responseJson = _writer?.ToString() ?? string.Empty;
         JsonElement response = JsonSerializer.Deserialize<JsonElement>(responseJson);
         Assert.That(response.GetProperty("id").GetInt32(), Is.EqualTo(2));
         JsonElement tools = response.GetProperty("result").GetProperty("tools");
@@ -92,9 +99,9 @@ public class McpServerTests
         var request = new { jsonrpc = "2.0", method = "unknown", id = 3 };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        await _sut.RunAsync(_reader!, _writer!);
+        await RunSutAsync();
 
-        string responseJson = _writer!.ToString();
+        string responseJson = _writer?.ToString() ?? string.Empty;
         JsonElement response = JsonSerializer.Deserialize<JsonElement>(responseJson);
         Assert.Multiple(() =>
         {
@@ -115,9 +122,9 @@ public class McpServerTests
         };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        await _sut.RunAsync(_reader!, _writer!);
+        await RunSutAsync();
 
-        string responseJson = _writer!.ToString();
+        string responseJson = _writer?.ToString() ?? string.Empty;
         JsonElement response = JsonSerializer.Deserialize<JsonElement>(responseJson);
         JsonElement result = response.GetProperty("result");
         Assert.Multiple(() =>
@@ -139,9 +146,9 @@ public class McpServerTests
         };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        await _sut.RunAsync(_reader!, _writer!);
+        await RunSutAsync();
 
-        string responseJson = _writer!.ToString();
+        string responseJson = _writer?.ToString() ?? string.Empty;
         JsonElement response = JsonSerializer.Deserialize<JsonElement>(responseJson);
         JsonElement result = response.GetProperty("result");
         Assert.Multiple(() =>
@@ -180,7 +187,7 @@ public class McpServerTests
         
         _mockFinder.Setup(f => f.FindFiles(It.IsAny<string>())).Returns(["/repo/coverage.xml"]);
 
-        await sut.RunAsync(_reader!, _writer!);
+        await RunSutAsync(sut);
 
         _mockExecutor.Verify(e => e.ExecuteShell(It.Is<string>(c => c.Contains("dotnet test")), "/repo", It.IsAny<TimeSpan?>()), Times.Once);
         _mockFinder.Verify(f => f.FindFiles("/repo"), Times.AtLeastOnce);
@@ -211,7 +218,7 @@ public class McpServerTests
         _mockExecutor.Setup(e => e.ExecuteShell(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan?>()))
                      .Returns((0, "Test Output", ""));
 
-        await _sut.RunAsync(_reader!, _writer!);
+        await RunSutAsync();
 
         _mockExecutor.Verify(e => e.ExecuteShell(It.Is<string>(c => c.Contains("run --out") && c.Contains(".coverage-checker-mcp")), "/repo", It.IsAny<TimeSpan?>()), Times.Once);
     }
@@ -228,9 +235,9 @@ public class McpServerTests
         };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        await _sut.RunAsync(_reader!, _writer!);
+        await RunSutAsync();
 
-        string responseJson = _writer!.ToString();
+        string responseJson = _writer?.ToString() ?? string.Empty;
         JsonElement response = JsonSerializer.Deserialize<JsonElement>(responseJson);
         JsonElement result = response.GetProperty("result");
         Assert.Multiple(() =>
@@ -263,9 +270,9 @@ public class McpServerTests
         };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        await _sut.RunAsync(_reader!, _writer!);
+        await RunSutAsync();
 
-        string responseJson = _writer!.ToString();
+        string responseJson = _writer?.ToString() ?? string.Empty;
         JsonElement response = JsonSerializer.Deserialize<JsonElement>(responseJson);
         JsonElement result = response.GetProperty("result");
         Assert.That(result.TryGetProperty("content", out _), Is.True);
@@ -295,9 +302,9 @@ public class McpServerTests
         };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        await _sut.RunAsync(_reader!, _writer!);
+        await RunSutAsync();
 
-        string responseJson = _writer!.ToString();
+        string responseJson = _writer?.ToString() ?? string.Empty;
         JsonElement response = JsonSerializer.Deserialize<JsonElement>(responseJson);
         JsonElement result = response.GetProperty("result");
         Assert.That(result.TryGetProperty("content", out _), Is.True);
@@ -328,9 +335,9 @@ public class McpServerTests
         };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        await _sut.RunAsync(_reader!, _writer!);
+        await RunSutAsync();
 
-        string responseJson = _writer!.ToString();
+        string responseJson = _writer?.ToString() ?? string.Empty;
         JsonElement response = JsonSerializer.Deserialize<JsonElement>(responseJson);
         JsonElement result = response.GetProperty("result");
         Assert.That(result.TryGetProperty("content", out _), Is.True);
@@ -360,9 +367,9 @@ public class McpServerTests
         };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        await _sut.RunAsync(_reader!, _writer!);
+        await RunSutAsync();
 
-        string responseJson = _writer!.ToString();
+        string responseJson = _writer?.ToString() ?? string.Empty;
         JsonElement response = JsonSerializer.Deserialize<JsonElement>(responseJson);
         JsonElement result = response.GetProperty("result");
         Assert.That(result.TryGetProperty("content", out _), Is.True);
@@ -400,9 +407,9 @@ public class McpServerTests
         };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        await _sut.RunAsync(_reader!, _writer!);
+        await RunSutAsync();
 
-        string responseJson = _writer!.ToString();
+        string responseJson = _writer?.ToString() ?? string.Empty;
         JsonElement response = JsonSerializer.Deserialize<JsonElement>(responseJson);
         JsonElement result = response.GetProperty("result");
         string? text = result.GetProperty("content")[0].GetProperty("text").GetString();
@@ -442,7 +449,7 @@ public class McpServerTests
         string tempFile = Path.GetTempFileName();
         _mockFinder.Setup(f => f.FindFiles(It.IsAny<string>())).Returns([tempFile]);
 
-        await sut.RunAsync(_reader!, _writer!);
+        await RunSutAsync(sut);
 
         Assert.That(File.Exists(tempFile), Is.False);
     }
@@ -471,15 +478,14 @@ public class McpServerTests
             },
             id = 14
         };
-        _reader = new StringReader(JsonSerializer.Serialize(request) + "\n");
-        _writer = new StringWriter();
+        SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
         _mockExecutor.Setup(e => e.ExecuteShell(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan?>()))
                      .Returns((0, "OK", ""));
 
-        await sut.RunAsync(_reader, _writer);
+        await RunSutAsync(sut);
 
-        string responseJson = _writer.ToString();
+        string responseJson = _writer?.ToString() ?? string.Empty;
         Assert.That(responseJson, Is.Not.Empty);
     }
 
@@ -489,9 +495,9 @@ public class McpServerTests
         var request = new { jsonrpc = "2.0", method = "initialized" };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        await _sut.RunAsync(_reader!, _writer!);
+        await RunSutAsync();
 
-        Assert.That(_writer!.ToString(), Is.Empty);
+        Assert.That(_writer?.ToString() ?? string.Empty, Is.Empty);
     }
 
     [Test]
@@ -501,9 +507,9 @@ public class McpServerTests
         var request = new { jsonrpc = "2.0", method = "tools/list", id = 100 };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        await sut.RunAsync(_reader!, _writer!);
+        await RunSutAsync(sut);
 
-        Assert.That(_writer!.ToString(), Is.Not.Empty);
+        Assert.That(_writer?.ToString() ?? string.Empty, Is.Not.Empty);
     }
 
     [Test]
@@ -518,9 +524,9 @@ public class McpServerTests
         };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        await _sut.RunAsync(_reader!, _writer!);
+        await RunSutAsync();
 
-        string responseJson = _writer!.ToString();
+        string responseJson = _writer?.ToString() ?? string.Empty;
         JsonElement response = JsonSerializer.Deserialize<JsonElement>(responseJson);
         JsonElement result = response.GetProperty("result");
         Assert.Multiple(() =>
@@ -552,9 +558,9 @@ public class McpServerTests
         };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        await _sut.RunAsync(_reader!, _writer!);
+        await RunSutAsync();
 
-        string responseJson = _writer!.ToString();
+        string responseJson = _writer?.ToString() ?? string.Empty;
         JsonElement response = JsonSerializer.Deserialize<JsonElement>(responseJson);
         JsonElement result = response.GetProperty("result");
         string? text = result.GetProperty("content")[0].GetProperty("text").GetString();
@@ -583,9 +589,9 @@ public class McpServerTests
         };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        await _sut.RunAsync(_reader!, _writer!);
+        await RunSutAsync();
 
-        string responseJson = _writer!.ToString();
+        string responseJson = _writer?.ToString() ?? string.Empty;
         JsonElement response = JsonSerializer.Deserialize<JsonElement>(responseJson);
         JsonElement result = response.GetProperty("result");
         Assert.That(result.TryGetProperty("content", out _), Is.True);

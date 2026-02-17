@@ -13,10 +13,10 @@ using ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
     builder.AddConsole(c => c.LogToStandardErrorThreshold = LogLevel.Trace);
 });
 
-var logger = loggerFactory.CreateLogger("Program");
+ILogger logger = loggerFactory.CreateLogger("Program");
 Log.ServerStarting(logger);
 
-var server = new McpServer(loggerFactory);
+using McpServer server = new(loggerFactory);
 await server.RunAsync(Console.In, Console.Out);
 return 0;
 
