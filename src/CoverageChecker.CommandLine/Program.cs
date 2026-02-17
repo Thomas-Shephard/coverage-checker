@@ -100,12 +100,12 @@ static async Task<int> RunCommandAndCheck(RunOptions options)
         Directory.CreateDirectory(outputDir);
     }
 
+    bool isGitHubActions = Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true";
+    using ILoggerFactory loggerFactory = CreateLoggerFactory(isGitHubActions);
+    ILogger logger = loggerFactory.CreateLogger("CoverageChecker.CommandLine");
+
     try
     {
-        bool isGitHubActions = Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true";
-        using ILoggerFactory loggerFactory = CreateLoggerFactory(isGitHubActions);
-        ILogger logger = loggerFactory.CreateLogger("CoverageChecker.CommandLine");
-
         // Safely replace {output} placeholder. Check if the PLACEHOLDER is already quoted in the command string.
         string escapedOutputDir = outputDir.Contains(' ') && !options.Command.Contains("\"{output}\"") && !options.Command.Contains("'{output}'")
             ? $"\"{outputDir}\""
@@ -144,7 +144,6 @@ static async Task<int> RunCommandAndCheck(RunOptions options)
         {
             process.Kill(true);
             logger.LogCommandFailed(-1);
-            Console.Error.WriteLine($"Error: Command timed out after {options.Timeout} minutes.");
             return -1;
         }
 
@@ -161,7 +160,7 @@ static async Task<int> RunCommandAndCheck(RunOptions options)
     }
     catch (Exception ex)
     {
-        Console.Error.WriteLine($"Error: {ex.Message}");
+        logger.LogCriticalError(ex);
         return 1;
     }
     finally
