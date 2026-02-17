@@ -13,6 +13,7 @@ as a development dependency if you need to extract code coverage metrics as part
 - **CI/CD Ready**: Automatic integration with GitHub Actions for workflow commands and job summaries.
 - **Threshold enforcement**: Exit with non-zero codes if coverage targets aren't met.
 - **AI-Native (MCP)**: Dedicated server for Model Context Protocol integration with AI coding agents.
+- **Integrated Workflow**: Use the `run` command to execute tests and check coverage in a single step with automatic temporary directory management.
 
 ## Projects
 

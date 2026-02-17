@@ -3,9 +3,9 @@ using CommandLine;
 namespace CoverageChecker.CommandLine;
 
 /// <summary>
-/// Represents the command line options for the coverage checker.
+/// Base record for command line options.
 /// </summary>
-public class CommandLineOptions
+public abstract record CommandLineOptions
 {
     /// <summary>
     /// Gets or sets the format of coverage files.
@@ -16,8 +16,7 @@ public class CommandLineOptions
     /// <summary>
     /// Gets or sets the directory where coverage files are located.
     /// </summary>
-    [Option('d', "directory", Required = false, HelpText = "Directory where coverage files are located. Default: Current directory")]
-    public string Directory { get; init; } = Environment.CurrentDirectory;
+    public virtual string Directory { get; init; } = Environment.CurrentDirectory;
 
     /// <summary>
     /// Gets or sets the glob patterns of coverage file locations.
@@ -78,7 +77,7 @@ public class CommandLineOptions
     /// <summary>
     /// Gets or sets the similarity threshold for rename detection. The setter expects a percentage (0-100), which is stored as a decimal (0.0-1.0).
     /// </summary>
-    [Option('r', "rename-threshold", Required = false, HelpText = "The similarity threshold for rename detection (percentage). Default: 50", Default = 50.0)]
+    [Option("rename-threshold", Required = false, HelpText = "The similarity threshold for rename detection (percentage). Default: 50", Default = 50.0)]
     public double RenameThreshold
     {
         get => _renameThreshold;
@@ -94,4 +93,54 @@ public class CommandLineOptions
 
         return value;
     }
+}
+
+/// <summary>
+/// Represents the command line options for the check command.
+/// </summary>
+[Verb("check", isDefault: true, HelpText = "Check coverage of existing files.")]
+public record CheckOptions : CommandLineOptions
+{
+    /// <summary>
+    /// Gets or sets the directory where coverage files are located.
+    /// </summary>
+    [Option('d', "directory", Required = false, HelpText = "Directory where coverage files are located. Default: Current directory")]
+    public override string Directory { get; init; } = Environment.CurrentDirectory;
+}
+
+/// <summary>
+/// Represents the command line options for the run command.
+/// </summary>
+[Verb("run", HelpText = "Run a command and check the resulting coverage.")]
+public record RunOptions : CommandLineOptions
+{
+    /// <summary>
+    /// Gets or sets the command to run.
+    /// </summary>
+    [Option('c', "command", Required = true, HelpText = "The command to run.")]
+    public string Command { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the directory where coverage results will be stored. If not specified, a temporary directory will be used.
+    /// </summary>
+    [Option('o', "output", Required = false, HelpText = "The directory where coverage results will be stored. If not specified, a temporary directory will be used.")]
+    public string? Output { get; init; }
+
+    private readonly int _timeout = 30;
+
+    /// <summary>
+    /// Gets or sets the maximum amount of time, in minutes, that the specified command is allowed to run before being automatically terminated.
+    /// </summary>
+    [Option('t', "timeout", Required = false, HelpText = "The timeout for the command in minutes. Default: 30", Default = 30)]
+    public int Timeout
+    {
+        get => _timeout;
+        init => _timeout = value is < 1 and not -1 ? throw new ArgumentOutOfRangeException(nameof(Timeout), "Timeout must be at least 1 minute, or -1 for infinite.") : value;
+    }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to continue with coverage analysis even if the command fails.
+    /// </summary>
+    [Option("continue-on-failure", Required = false, HelpText = "Continue with coverage analysis even if the command fails.")]
+    public bool ContinueOnFailure { get; init; }
 }

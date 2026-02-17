@@ -22,6 +22,10 @@ Always verify changes using these commands.
 *   **`tests/`**: Contains `Unit` (isolated) and `EndToEnd` (integration) test projects.
 
 ## 4. Coding & Architectural Standards
+*   **CLI Subcommand Architecture:**
+    *   **Verbs:** Use `[Verb]` attributes on record types (`CheckOptions`, `RunOptions`) that inherit from a base `CommandLineOptions` record.
+    *   **Default Command:** The `check` command is the default (`isDefault: true`).
+    *   **Process Execution:** The `run` command executes external processes using `Process.Start()` (via `cmd.exe` on Windows or `sh` on Unix) to generate coverage data. Use the `{output}` placeholder in command strings to specify a managed results directory.
 *   **Polymorphism over Conditionals:**
     *   **Strong Preference:** Use interfaces/abstract classes instead of `is`, `as`, `GetType()`, or enums to determine behavior.
     *   *Example:* `parser.Parse()` (polymorphic) is preferred over `if (type == Cobertura) ...`.

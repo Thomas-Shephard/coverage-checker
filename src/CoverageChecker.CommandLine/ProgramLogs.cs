@@ -55,6 +55,24 @@ internal static partial class ProgramLogs
     [LoggerMessage(Level = LogLevel.Error, Message = "Failed to perform delta coverage analysis.")]
     public static partial void LogDeltaAnalysisFailed(this ILogger logger, Exception exception);
 
+    [LoggerMessage(Level = LogLevel.Information, Message = "Running command: {Command}")]
+    public static partial void LogRunningCommand(this ILogger logger, string command);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Command failed with exit code {ExitCode}.")]
+    public static partial void LogCommandFailed(this ILogger logger, int exitCode);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Command timed out after {Timeout} minutes.")]
+    public static partial void LogCommandTimedOut(this ILogger logger, int timeout);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Command failed with exit code {ExitCode}. Continuing with coverage analysis as requested.")]
+    public static partial void LogCommandFailedWarning(this ILogger logger, int exitCode);
+
+    [LoggerMessage(Level = LogLevel.Critical, Message = "An error occurred while running the command.")]
+    public static partial void LogCriticalError(this ILogger logger, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to clean up temporary directory {TempDir}")]
+    public static partial void LogCleanupFailed(this ILogger logger, Exception exception, string tempDir);
+
     [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to write GitHub summary to {SummaryPath}")]
     public static partial void LogGitHubSummaryWriteFailed(this ILogger logger, Exception exception, string summaryPath);
 }
