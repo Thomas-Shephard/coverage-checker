@@ -3,7 +3,7 @@ using CommandLine;
 namespace CoverageChecker.CommandLine;
 
 /// <summary>
-/// Base class for command line options.
+/// Base record for command line options.
 /// </summary>
 public abstract record CommandLineOptions
 {

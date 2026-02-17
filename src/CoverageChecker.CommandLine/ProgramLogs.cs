@@ -61,6 +61,9 @@ internal static partial class ProgramLogs
     [LoggerMessage(Level = LogLevel.Error, Message = "Command failed with exit code {ExitCode}.")]
     public static partial void LogCommandFailed(this ILogger logger, int exitCode);
 
+    [LoggerMessage(Level = LogLevel.Error, Message = "Command timed out after {Timeout} minutes.")]
+    public static partial void LogCommandTimedOut(this ILogger logger, int timeout);
+
     [LoggerMessage(Level = LogLevel.Warning, Message = "Command failed with exit code {ExitCode}. Continuing with coverage analysis as requested.")]
     public static partial void LogCommandFailedWarning(this ILogger logger, int exitCode);
 

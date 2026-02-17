@@ -210,7 +210,7 @@ static async Task<int> ExecuteCommand(string command, string workingDirectory, i
     catch (OperationCanceledException)
     {
         process.Kill(true);
-        logger.LogCommandFailed(1);
+        logger.LogCommandTimedOut(timeoutMinutes);
         return 1;
     }
 
