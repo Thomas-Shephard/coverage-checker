@@ -135,7 +135,7 @@ static async Task<int> RunCommandAndCheck(RunOptions options)
 
     try
     {
-        string command = PrepareCommand(options.Command, outputDir, logger);
+        string command = CommandUtils.PrepareCommand(options.Command, outputDir, logger);
 
         int exitCode = await ExecuteCommand(command, Environment.CurrentDirectory, options.Timeout, logger);
 
@@ -164,14 +164,6 @@ static async Task<int> RunCommandAndCheck(RunOptions options)
     {
         CleanupTempDirectory(tempDir, logger);
     }
-}
-
-static string PrepareCommand(string commandTemplate, string outputDir, ILogger logger)
-{
-    string escapedPath = $"\"{outputDir.Replace("\"", "\\\"")}\"";
-    string command = commandTemplate.Replace("{output}", escapedPath);
-    logger.LogRunningCommand(command);
-    return command;
 }
 
 static async Task<int> ExecuteCommand(string command, string workingDirectory, int timeoutMinutes, ILogger logger)

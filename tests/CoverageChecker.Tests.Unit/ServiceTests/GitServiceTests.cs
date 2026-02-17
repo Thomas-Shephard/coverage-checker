@@ -80,6 +80,11 @@ public class GitServiceTests
                 ? (DiffExitCode, DiffOutput, Stderr)
                 : (1, "", "Unknown arguments");
         }
+
+        public (int ExitCode, string StandardOutput, string StandardError) ExecuteShell(string command, string? workingDirectory = null, TimeSpan? timeout = null)
+        {
+            return (0, "", "");
+        }
     }
 
     private MockProcessExecutor _mockExecutor;

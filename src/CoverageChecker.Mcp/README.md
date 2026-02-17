@@ -46,13 +46,13 @@ Orchestrates a full test run followed by delta coverage analysis. Ideal for AI a
   - `directory` (Root dir)
   - `reportPath` (Glob to the report)
   - `baseBranch` (Optional)
-  - `cleanup` (Boolean, Optional): If `true`, deletes the report files after analysis to keep the workspace clean.
+  - `cleanup` (Boolean, Optional): Default: `true`. Deletes the report files after analysis to keep the workspace clean.
 - **Output**: The console output of the test run followed by the Delta Coverage report.
 
 ## Tips for AI Agents
 
 - **Absolute Paths**: When using `directory`, it is highly recommended to provide the **absolute path** to the repository root. AI agents often operate in a virtualized or relative context, and absolute paths ensure the underlying Git commands resolve correctly.
-- **Iterative Testing**: Use `run_tests_and_analyze` with `cleanup: true` to verify your new tests without leaving XML artifacts in the developer's workspace.
+- **Iterative Testing**: Use `run_tests_and_analyze` with its default `cleanup: true` to verify your new tests without leaving XML artifacts in the developer's workspace.
 - **Delta Focus**: Always prefer `analyze_delta` over `get_coverage_summary` when fixing specific bugs or implementing features. It helps keep your context window clean by only showing the lines you actually touched.
 
 ## Requirements

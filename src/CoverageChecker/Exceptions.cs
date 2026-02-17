@@ -61,4 +61,7 @@ public class GitException : CoverageException
 /// <summary>
 /// Thrown when a process fails to execute.
 /// </summary>
-internal class ProcessExecutionException(string message) : CoverageException(message);
+public class ProcessExecutionException : CoverageException
+{
+    internal ProcessExecutionException(string message) : base(message) { }
+}

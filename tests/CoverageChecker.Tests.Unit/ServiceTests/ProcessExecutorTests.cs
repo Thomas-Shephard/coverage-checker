@@ -140,4 +140,27 @@ public class ProcessExecutorTests
         ProcessExecutionException? ex = Assert.Throws<ProcessExecutionException>(() => _sut.Execute("git", ["status"], (string?)null, (TimeSpan?)null));
         Assert.That(ex.Message, Does.Contain("30 seconds"));
     }
+
+    [Test]
+    public void ExecuteShellShouldSetShellInfo()
+    {
+        _mockProcess.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(true);
+        bool isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
+        string expectedShell = isWindows ? "cmd.exe" : "sh";
+
+        _sut.ExecuteShell("echo hello");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(_mockProcess.Object.StartInfo.FileName, Is.EqualTo(expectedShell));
+            if (isWindows)
+            {
+                Assert.That(_mockProcess.Object.StartInfo.Arguments, Is.EqualTo("/s /c \"echo hello\""));
+            }
+            else
+            {
+                Assert.That(_mockProcess.Object.StartInfo.ArgumentList, Contains.Item("echo hello"));
+            }
+        });
+    }
 }

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Runtime.InteropServices;
 
 namespace CoverageChecker.Services;
 
@@ -7,6 +8,7 @@ internal interface IProcessExecutor
 {
     (int ExitCode, string StandardOutput, string StandardError) Execute(string fileName, IEnumerable<string> arguments, TimeSpan? timeout = null);
     (int ExitCode, string StandardOutput, string StandardError) Execute(string fileName, IEnumerable<string> arguments, string? workingDirectory, TimeSpan? timeout = null);
+    (int ExitCode, string StandardOutput, string StandardError) ExecuteShell(string command, string? workingDirectory = null, TimeSpan? timeout = null);
 }
 
 internal partial class ProcessExecutor : IProcessExecutor
@@ -47,6 +49,44 @@ internal partial class ProcessExecutor : IProcessExecutor
         process.StartInfo.UseShellExecute = false;
         process.StartInfo.CreateNoWindow = true;
 
+        return InternalExecute(process, fileName, timeout);
+    }
+
+    public (int ExitCode, string StandardOutput, string StandardError) ExecuteShell(string command, string? workingDirectory = null, TimeSpan? timeout = null)
+    {
+        using ISystemProcess process = _processFactory();
+
+        string? effectiveWorkingDirectory = workingDirectory ?? _workingDirectory;
+        if (!string.IsNullOrEmpty(effectiveWorkingDirectory))
+        {
+            process.StartInfo.WorkingDirectory = effectiveWorkingDirectory;
+        }
+
+        bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        process.StartInfo.FileName = isWindows ? "cmd.exe" : "sh";
+
+        if (isWindows)
+        {
+            // Use /s and wrap the command in quotes to ensure cmd.exe 
+            // preserves the internal quoting of the command string.
+            process.StartInfo.Arguments = $"/s /c \"{command}\"";
+        }
+        else
+        {
+            process.StartInfo.ArgumentList.Add("-c");
+            process.StartInfo.ArgumentList.Add(command);
+        }
+
+        process.StartInfo.RedirectStandardOutput = true;
+        process.StartInfo.RedirectStandardError = true;
+        process.StartInfo.UseShellExecute = false;
+        process.StartInfo.CreateNoWindow = true;
+
+        return InternalExecute(process, command, timeout);
+    }
+
+    private (int ExitCode, string StandardOutput, string StandardError) InternalExecute(ISystemProcess process, string name, TimeSpan? timeout)
+    {
         process.Start();
 
         Task<string> stdoutTask = process.StandardOutput.ReadToEndAsync();
@@ -62,7 +102,7 @@ internal partial class ProcessExecutor : IProcessExecutor
             }
             catch (Exception ex)
             {
-                LogProcessKillFailed(ex, fileName);
+                LogProcessKillFailed(ex, name);
             }
 
             // Wait a short time for tasks to complete to avoid unobserved task exceptions
@@ -73,7 +113,7 @@ internal partial class ProcessExecutor : IProcessExecutor
             _ = stderrTask.ContinueWith(task => task.Exception, TaskContinuationOptions.OnlyOnFaulted);
 
             int timeoutSeconds = (int)(timeout ?? DefaultTimeout).TotalSeconds;
-            throw new ProcessExecutionException($"Process '{fileName}' timed out after {timeoutSeconds} second{(timeoutSeconds == 1 ? string.Empty : "s")}.");
+            throw new ProcessExecutionException($"Process '{name}' timed out after {timeoutSeconds} second{(timeoutSeconds == 1 ? string.Empty : "s")}.");
         }
 
         Task.WaitAll(stdoutTask, stderrTask);
