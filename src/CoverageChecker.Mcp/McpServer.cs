@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 
 namespace CoverageChecker.Mcp;
 
-internal partial class McpServer(
+internal class McpServer(
     ILoggerFactory loggerFactory,
     IProcessExecutor? processExecutor = null,
     Func<IEnumerable<string>, IFileFinder>? fileFinderFactory = null) : IDisposable
@@ -39,7 +39,7 @@ internal partial class McpServer(
     {
         while (await reader.ReadLineAsync() is { } line)
         {
-            LogReceivedLine(line);
+            _logger.LogReceivedLine(line);
             await HandleRequestAsync(line, writer);
         }
     }
@@ -71,7 +71,7 @@ internal partial class McpServer(
         }
         catch (Exception ex)
         {
-            LogMcpRequestProcessingError(ex);
+            _logger.LogMcpRequestProcessingError(ex);
         }
     }
 
@@ -88,7 +88,7 @@ internal partial class McpServer(
                 });
             case "notifications/initialized":
             case "initialized":
-                LogClientInitialized();
+                _logger.LogClientInitialized();
                 return null;
             case "tools/list":
                 return new McpResponse("2.0", request.Id, ListTools());
@@ -405,7 +405,7 @@ internal partial class McpServer(
         }
         catch (Exception ex)
         {
-            LogCleanupError(ex, reportPath);
+            _logger.LogCleanupError(ex, reportPath);
         }
     }
 
@@ -444,16 +444,4 @@ internal partial class McpServer(
         }
         return sb.Length == 0 ? "No gaps found!" : sb.ToString();
     }
-
-    [LoggerMessage(Level = LogLevel.Trace, Message = "Received: {Line}")]
-    private partial void LogReceivedLine(string line);
-
-    [LoggerMessage(Level = LogLevel.Information, Message = "Client initialized.")]
-    private partial void LogClientInitialized();
-
-    [LoggerMessage(Level = LogLevel.Error, Message = "Error processing MCP request")]
-    private partial void LogMcpRequestProcessingError(Exception ex);
-
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to cleanup coverage reports matching {ReportPath}")]
-    private partial void LogCleanupError(Exception ex, string reportPath);
 }
