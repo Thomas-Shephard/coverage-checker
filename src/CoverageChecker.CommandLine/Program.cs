@@ -30,60 +30,21 @@ static async Task<int> Run(CommandLineOptions options, ILoggerFactory? loggerFac
     {
         ILogger logger = loggerFactory.CreateLogger("CoverageChecker.CommandLine");
 
-        CoverageAnalyserOptions analyserOptions = new()
-        {
-            CoverageFormat = options.CoverageFormat,
-            Directory = options.Directory,
-            GlobPatterns = options.GlobPatterns,
-            Include = options.Include,
-            Exclude = options.Exclude,
-            RenameThreshold = options.RenameThreshold
-        };
-
-        CoverageAnalyser coverageAnalyser = new(analyserOptions, loggerFactory);
+        CoverageAnalyser coverageAnalyser = CreateCoverageAnalyser(options, loggerFactory);
 
         if (!TryAnalyseCoverage(coverageAnalyser, logger, out Coverage? coverage))
         {
             return 1;
         }
 
-        CoverageResult result = new(
-            coverage,
-            coverage.CalculateOverallCoverage(),
-            coverage.CalculateOverallCoverage(CoverageType.Branch),
-            null,
-            double.NaN,
-            double.NaN,
-            false
-        );
+        CoverageResult result = CreateInitialResult(coverage);
 
         logger.LogLineCoverage(result.LineCoverage);
         logger.LogBranchCoverage(result.BranchCoverage);
 
-        if (options.Delta)
+        if (options.Delta && !TryHandleDeltaCoverage(coverageAnalyser, coverage, options, logger, ref result))
         {
-            if (!TryAnalyseDeltaCoverage(coverageAnalyser, coverage, options, logger, out Coverage? deltaCoverage, out bool hasDeltaChangedLines))
-            {
-                return 1;
-            }
-
-            if (hasDeltaChangedLines && deltaCoverage != null)
-            {
-                result = result with
-                {
-                    DeltaCoverage = deltaCoverage,
-                    HasDeltaChangedLines = true,
-                    DeltaLineCoverage = deltaCoverage.CalculateOverallCoverage(),
-                    DeltaBranchCoverage = deltaCoverage.CalculateOverallCoverage(CoverageType.Branch)
-                };
-
-                logger.LogDeltaLineCoverage(result.DeltaLineCoverage);
-                logger.LogDeltaBranchCoverage(result.DeltaBranchCoverage);
-            }
-            else
-            {
-                logger.LogNoDeltaLinesFound();
-            }
+            return 1;
         }
 
         if (isGitHubActions)
@@ -102,10 +63,66 @@ static async Task<int> Run(CommandLineOptions options, ILoggerFactory? loggerFac
     }
 }
 
+static CoverageAnalyser CreateCoverageAnalyser(CommandLineOptions options, ILoggerFactory loggerFactory)
+{
+    CoverageAnalyserOptions analyserOptions = new()
+    {
+        CoverageFormat = options.CoverageFormat,
+        Directory = options.Directory,
+        GlobPatterns = options.GlobPatterns,
+        Include = options.Include,
+        Exclude = options.Exclude,
+        RenameThreshold = options.RenameThreshold
+    };
+
+    return new CoverageAnalyser(analyserOptions, loggerFactory);
+}
+
+static CoverageResult CreateInitialResult(Coverage coverage)
+{
+    return new CoverageResult(
+        coverage,
+        coverage.CalculateOverallCoverage(),
+        coverage.CalculateOverallCoverage(CoverageType.Branch),
+        null,
+        double.NaN,
+        double.NaN,
+        false
+    );
+}
+
+static bool TryHandleDeltaCoverage(CoverageAnalyser coverageAnalyser, Coverage coverage, CommandLineOptions options, ILogger logger, ref CoverageResult result)
+{
+    if (!TryAnalyseDeltaCoverage(coverageAnalyser, coverage, options, logger, out Coverage? deltaCoverage, out bool hasDeltaChangedLines))
+    {
+        return false;
+    }
+
+    if (hasDeltaChangedLines && deltaCoverage != null)
+    {
+        result = result with
+        {
+            DeltaCoverage = deltaCoverage,
+            HasDeltaChangedLines = true,
+            DeltaLineCoverage = deltaCoverage.CalculateOverallCoverage(),
+            DeltaBranchCoverage = deltaCoverage.CalculateOverallCoverage(CoverageType.Branch)
+        };
+
+        logger.LogDeltaLineCoverage(result.DeltaLineCoverage);
+        logger.LogDeltaBranchCoverage(result.DeltaBranchCoverage);
+    }
+    else
+    {
+        logger.LogNoDeltaLinesFound();
+    }
+
+    return true;
+}
+
 static async Task<int> RunCommandAndCheck(RunOptions options)
 {
-    string? tempDir = null;
-    string outputDir = options.Output ?? (tempDir = Path.Combine(Path.GetTempPath(), "coverage-checker", Guid.NewGuid().ToString()));
+    string outputDir = options.Output ?? Path.Combine(Path.GetTempPath(), "coverage-checker", Guid.NewGuid().ToString());
+    string? tempDir = options.Output == null ? outputDir : null;
 
     if (!Directory.Exists(outputDir))
     {
@@ -118,53 +135,9 @@ static async Task<int> RunCommandAndCheck(RunOptions options)
 
     try
     {
-        // Safely replace {output} placeholder. We should ensure the directory is quoted to avoid shell injection or path issues, unless already quoted.
-        string escapedOutputDir = outputDir;
-        if (!options.Command.Contains("\"{output}\"") && !options.Command.Contains("'{output}'"))
-        {
-            escapedOutputDir = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-                ? $"\"{outputDir}\""
-                : $"'{outputDir.Replace("'", "'\\''")}'";
-        }
+        string command = PrepareCommand(options.Command, outputDir, logger);
 
-        string command = options.Command.Replace("{output}", escapedOutputDir);
-        logger.LogRunningCommand(command);
-
-        using Process process = new();
-        process.StartInfo.FileName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "cmd.exe" : "sh";
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            process.StartInfo.ArgumentList.Add("/c");
-            process.StartInfo.ArgumentList.Add(command);
-        }
-        else
-        {
-            process.StartInfo.ArgumentList.Add("-c");
-            process.StartInfo.ArgumentList.Add(command);
-        }
-        
-        process.StartInfo.UseShellExecute = false;
-        process.StartInfo.CreateNoWindow = true;
-        process.StartInfo.WorkingDirectory = outputDir;
-        // Do not redirect to allow inheriting the parent console's stdout/stderr (real-time output)
-        process.StartInfo.RedirectStandardOutput = false;
-        process.StartInfo.RedirectStandardError = false;
-
-        process.Start();
-        
-        using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(options.Timeout));
-        try
-        {
-            await process.WaitForExitAsync(cts.Token);
-        }
-        catch (OperationCanceledException)
-        {
-            process.Kill(true);
-            logger.LogCommandFailed(1);
-            return 1;
-        }
-
-        int exitCode = process.ExitCode;
+        int exitCode = await ExecuteCommand(command, outputDir, options.Timeout, logger);
 
         if (exitCode != 0)
         {
@@ -189,16 +162,70 @@ static async Task<int> RunCommandAndCheck(RunOptions options)
     }
     finally
     {
-        if (!string.IsNullOrEmpty(tempDir) && Directory.Exists(tempDir))
+        CleanupTempDirectory(tempDir, logger);
+    }
+}
+
+static string PrepareCommand(string commandTemplate, string outputDir, ILogger logger)
+{
+    // Replace {output} with the raw path. The user is responsible for quoting "{output}" 
+    // in their command string if the path might contain spaces.
+    string command = commandTemplate.Replace("{output}", outputDir);
+    logger.LogRunningCommand(command);
+    return command;
+}
+
+static async Task<int> ExecuteCommand(string command, string workingDirectory, int timeoutMinutes, ILogger logger)
+{
+    using Process process = new();
+    process.StartInfo.FileName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "cmd.exe" : "sh";
+    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+    {
+        // Use Arguments property for cmd.exe to ensure exact pass-through of the command string
+        // without .NET's automatic argument escaping interfering with the user's shell syntax.
+        process.StartInfo.Arguments = $"/c {command}";
+    }
+    else
+    {
+        process.StartInfo.ArgumentList.Add("-c");
+        process.StartInfo.ArgumentList.Add(command);
+    }
+
+    process.StartInfo.UseShellExecute = false;
+    process.StartInfo.CreateNoWindow = true;
+    process.StartInfo.WorkingDirectory = workingDirectory;
+    // Do not redirect to allow inheriting the parent console's stdout/stderr (real-time output)
+    process.StartInfo.RedirectStandardOutput = false;
+    process.StartInfo.RedirectStandardError = false;
+
+    process.Start();
+
+    using CancellationTokenSource cts = new(TimeSpan.FromMinutes(timeoutMinutes));
+    try
+    {
+        await process.WaitForExitAsync(cts.Token);
+    }
+    catch (OperationCanceledException)
+    {
+        process.Kill(true);
+        logger.LogCommandFailed(1);
+        return 1;
+    }
+
+    return process.ExitCode;
+}
+
+static void CleanupTempDirectory(string? tempDir, ILogger logger)
+{
+    if (!string.IsNullOrEmpty(tempDir) && Directory.Exists(tempDir))
+    {
+        try
         {
-            try
-            {
-                Directory.Delete(tempDir, true);
-            }
-            catch (Exception ex)
-            {
-                logger.LogCleanupFailed(ex, tempDir);
-            }
+            Directory.Delete(tempDir, true);
+        }
+        catch (Exception ex)
+        {
+            logger.LogCleanupFailed(ex, tempDir);
         }
     }
 }
