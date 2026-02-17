@@ -27,9 +27,10 @@ public class CommandLineRunTests
         string exeName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "CoverageChecker.CommandLine.exe" : "CoverageChecker.CommandLine";
 
         // Try to find the executable in a directory that matches the current configuration (Debug/Release)
-        string configuration = new DirectoryInfo(baseDir).Name;
+        // baseDir example: .../bin/Debug/net8.0
+        string configName = new DirectoryInfo(baseDir).Parent?.Name ?? "Debug";
         string? exePath = Directory.GetFiles(artifactsDir, exeName, SearchOption.AllDirectories)
-                                   .FirstOrDefault(f => f.Contains(configuration) && !f.Contains("publish"));
+                                   .FirstOrDefault(f => f.Contains(configName) && !f.Contains("publish"));
 
         // Fallback to any match if configuration-specific one isn't found
         exePath ??= Directory.GetFiles(artifactsDir, exeName, SearchOption.AllDirectories)

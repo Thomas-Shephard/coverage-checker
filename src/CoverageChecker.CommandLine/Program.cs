@@ -106,11 +106,15 @@ static async Task<int> RunCommandAndCheck(RunOptions options)
 
     try
     {
-        // Safely replace {output} placeholder. Check if the PLACEHOLDER is already quoted in the command string.
-        string escapedOutputDir = outputDir.Contains(' ') && !options.Command.Contains("\"{output}\"") && !options.Command.Contains("'{output}'")
-            ? $"\"{outputDir}\""
-            : outputDir;
-            
+        // Safely replace {output} placeholder. We should ensure the directory is quoted to avoid shell injection or path issues, unless already quoted.
+        string escapedOutputDir = outputDir;
+        if (!options.Command.Contains("\"{output}\"") && !options.Command.Contains("'{output}'"))
+        {
+            escapedOutputDir = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                ? $"\"{outputDir}\""
+                : $"'{outputDir.Replace("'", "'\\''")}'";
+        }
+
         string command = options.Command.Replace("{output}", escapedOutputDir);
         logger.LogRunningCommand(command);
 
