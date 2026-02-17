@@ -17,24 +17,68 @@ dotnet tool install --global CoverageChecker.CommandLine
 
 ## Usage
 
-The CoverageChecker.CommandLine tool can be invoked by running `coveragechecker` from the command line.
+The CoverageChecker.CommandLine tool supports two commands: `check` (default) and `run`.
+
+### `check` Command
+
+Analyzes existing coverage files. This is the default command if no command is specified.
+
+```bash
+coveragechecker check [options]
+# or simply
+coveragechecker [options]
+```
+
+### `run` Command
+
+Runs a specified command (e.g., your test runner), captures the coverage results, and then performs the analysis. It automatically handles temporary directory creation and cleanup.
+
+```bash
+coveragechecker run --command "dotnet test --collect 'XPlat Code Coverage' --results-directory {output}" [options]
+```
+
+### Common Options (Base)
+
+These options apply to both `check` and `run` commands.
 
 | Option                     | Description                                                                   | Required | Default               |
 |----------------------------|-------------------------------------------------------------------------------|----------|-----------------------|
 | `-f`, `--format`           | The format of the coverage file(s). Options: `Auto`, `SonarQube`, `Cobertura` | No       | `Auto`                |
-| `-d`, `--directory`        | The directory to search for the coverage file(s) within.                      | No       | The current directory |
 | `-g`, `--glob-patterns`    | The glob pattern(s) to use to search for the coverage file(s).                | No       | `**/*.xml`            |
 | `-i`, `--include`          | Glob patterns of files to include in the coverage analysis.                   | No       |                       |
 | `-e`, `--exclude`          | Glob patterns of files to exclude from the coverage analysis.                 | No       |                       |
 | `-l`, `--line-threshold`   | The line coverage threshold. Default: 80                                      | No       | 80                    |
 | `-b`, `--branch-threshold` | The branch coverage threshold. Default: 80                                    | No       | 80                    |
-| `-r`, `--rename-threshold` | The similarity threshold for rename detection (percentage). Default: 50       | No       | 50                    |
+| `--rename-threshold`       | The similarity threshold for rename detection (percentage). Default: 50       | No       | 50                    |
 | `--delta`                  | Calculate coverage for changed lines only.                                    | No       | `false`               |
 | `--delta-base`             | Base branch or commit to compare against for delta coverage.                  | No       | `origin/main`         |
+
+### `check` Specific Options
+
+| Option              | Description                                               | Required | Default               |
+|---------------------|-----------------------------------------------------------|----------|-----------------------|
+| `-d`, `--directory` | The directory to search for the coverage file(s) within.  | No       | The current directory |
+
+### `run` Specific Options
+
+| Option                  | Description                                                                                           | Required | Default |
+|-------------------------|-------------------------------------------------------------------------------------------------------|----------|---------|
+| `-c`, `--command`       | The command to execute. Use `{output}` as a placeholder for the results directory.                    | Yes      |         |
+| `-o`, `--output`        | The directory where coverage results will be stored. If not specified, a temporary directory is used. | No       |         |
+| `-t`, `--timeout`       | The maximum amount of time, in minutes, that the specified command is allowed to run.                 | No       | 30      |
+| `--continue-on-failure` | Continue with coverage analysis even if the command fails.                                            | No       | `false` |
 
 The `--delta` and `--delta-base` options require Git to be installed and available on the system `PATH`.
 
 ## Examples
+
+### Integrated Workflow (Run & Check)
+
+Run tests and check coverage in a single command. The `{output}` placeholder will be replaced with a managed temporary directory that is automatically cleaned up after analysis.
+
+```bash
+coveragechecker run --command "dotnet test --collect 'XPlat Code Coverage' --results-directory {output}" --line-threshold 90
+```
 
 ### Filtering Source Files
 

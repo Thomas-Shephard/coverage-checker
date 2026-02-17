@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Globalization;
+using System.Runtime.InteropServices;
 using System.Text;
 using CommandLine;
 using CommandLine.Text;
@@ -10,17 +12,59 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 
 Parser parser = new(with => with.HelpWriter = null);
-ParserResult<CommandLineOptions> parserResult = parser.ParseArguments<CommandLineOptions>(args);
+ParserResult<object> parserResult = parser.ParseArguments<CheckOptions, RunOptions>(args);
 
-return await parserResult.MapResult(Run, _ => Task.FromResult(DisplayHelp(parserResult)));
+return await parserResult.MapResult(
+    (CheckOptions options) => Run(options),
+    (RunOptions options) => RunCommandAndCheck(options),
+    _ => Task.FromResult(DisplayHelp(parserResult)));
 
-static async Task<int> Run(CommandLineOptions options)
+static async Task<int> Run(CommandLineOptions options, bool? isGitHubActionsParam = null, ILoggerFactory? loggerFactory = null)
 {
-    bool isGitHubActions = Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true";
+    bool isGitHubActions = isGitHubActionsParam ?? Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true";
 
-    using ILoggerFactory loggerFactory = CreateLoggerFactory(isGitHubActions);
-    ILogger logger = loggerFactory.CreateLogger("CoverageChecker.CommandLine");
+    bool shouldDispose = loggerFactory == null;
+    loggerFactory ??= CreateLoggerFactory(isGitHubActions);
 
+    try
+    {
+        ILogger logger = loggerFactory.CreateLogger("CoverageChecker.CommandLine");
+
+        CoverageAnalyser coverageAnalyser = CreateCoverageAnalyser(options, loggerFactory);
+
+        if (!TryAnalyseCoverage(coverageAnalyser, logger, out Coverage? coverage))
+        {
+            return 1;
+        }
+
+        CoverageResult result = CreateInitialResult(coverage);
+
+        logger.LogLineCoverage(result.LineCoverage);
+        logger.LogBranchCoverage(result.BranchCoverage);
+
+        if (options.Delta && !TryHandleDeltaCoverage(coverageAnalyser, coverage, options, logger, ref result))
+        {
+            return 1;
+        }
+
+        if (isGitHubActions)
+        {
+            await WriteGitHubSummary(result, options, logger);
+        }
+
+        return CheckThresholds(result, options, isGitHubActions, logger);
+    }
+    finally
+    {
+        if (shouldDispose)
+        {
+            loggerFactory.Dispose();
+        }
+    }
+}
+
+static CoverageAnalyser CreateCoverageAnalyser(CommandLineOptions options, ILoggerFactory loggerFactory)
+{
     CoverageAnalyserOptions analyserOptions = new()
     {
         CoverageFormat = options.CoverageFormat,
@@ -31,14 +75,12 @@ static async Task<int> Run(CommandLineOptions options)
         RenameThreshold = options.RenameThreshold
     };
 
-    CoverageAnalyser coverageAnalyser = new(analyserOptions, loggerFactory);
+    return new CoverageAnalyser(analyserOptions, loggerFactory);
+}
 
-    if (!TryAnalyseCoverage(coverageAnalyser, logger, out Coverage? coverage))
-    {
-        return 1;
-    }
-
-    CoverageResult result = new(
+static CoverageResult CreateInitialResult(Coverage coverage)
+{
+    return new CoverageResult(
         coverage,
         coverage.CalculateOverallCoverage(),
         coverage.CalculateOverallCoverage(CoverageType.Branch),
@@ -47,42 +89,147 @@ static async Task<int> Run(CommandLineOptions options)
         double.NaN,
         false
     );
+}
 
-    logger.LogLineCoverage(result.LineCoverage);
-    logger.LogBranchCoverage(result.BranchCoverage);
-
-    if (options.Delta)
+static bool TryHandleDeltaCoverage(CoverageAnalyser coverageAnalyser, Coverage coverage, CommandLineOptions options, ILogger logger, ref CoverageResult result)
+{
+    if (!TryAnalyseDeltaCoverage(coverageAnalyser, coverage, options, logger, out Coverage? deltaCoverage, out bool hasDeltaChangedLines))
     {
-        if (!TryAnalyseDeltaCoverage(coverageAnalyser, coverage, options, logger, out Coverage? deltaCoverage, out bool hasDeltaChangedLines))
-        {
-            return 1;
-        }
+        return false;
+    }
 
-        if (hasDeltaChangedLines && deltaCoverage != null)
+    if (hasDeltaChangedLines && deltaCoverage != null)
+    {
+        result = result with
         {
-            result = result with
+            DeltaCoverage = deltaCoverage,
+            HasDeltaChangedLines = true,
+            DeltaLineCoverage = deltaCoverage.CalculateOverallCoverage(),
+            DeltaBranchCoverage = deltaCoverage.CalculateOverallCoverage(CoverageType.Branch)
+        };
+
+        logger.LogDeltaLineCoverage(result.DeltaLineCoverage);
+        logger.LogDeltaBranchCoverage(result.DeltaBranchCoverage);
+    }
+    else
+    {
+        logger.LogNoDeltaLinesFound();
+    }
+
+    return true;
+}
+
+static async Task<int> RunCommandAndCheck(RunOptions options)
+{
+    string outputDir = options.Output ?? Path.Combine(Path.GetTempPath(), "coverage-checker", Guid.NewGuid().ToString());
+    string? tempDir = options.Output == null ? outputDir : null;
+
+    if (!Directory.Exists(outputDir))
+    {
+        Directory.CreateDirectory(outputDir);
+    }
+
+    bool isGitHubActions = Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true";
+    using ILoggerFactory loggerFactory = CreateLoggerFactory(isGitHubActions);
+    ILogger logger = loggerFactory.CreateLogger("CoverageChecker.CommandLine");
+
+    try
+    {
+        string command = PrepareCommand(options.Command, outputDir, logger);
+
+        int exitCode = await ExecuteCommand(command, Environment.CurrentDirectory, options.Timeout, logger);
+
+        if (exitCode != 0)
+        {
+            if (options.ContinueOnFailure)
             {
-                DeltaCoverage = deltaCoverage,
-                HasDeltaChangedLines = true,
-                DeltaLineCoverage = deltaCoverage.CalculateOverallCoverage(),
-                DeltaBranchCoverage = deltaCoverage.CalculateOverallCoverage(CoverageType.Branch)
-            };
+                logger.LogCommandFailedWarning(exitCode);
+            }
+            else
+            {
+                logger.LogCommandFailed(exitCode);
+                return exitCode;
+            }
+        }
 
-            logger.LogDeltaLineCoverage(result.DeltaLineCoverage);
-            logger.LogDeltaBranchCoverage(result.DeltaBranchCoverage);
-        }
-        else
-        {
-            logger.LogNoDeltaLinesFound();
-        }
+        CommandLineOptions effectiveOptions = options with { Directory = outputDir };
+        return await Run(effectiveOptions, isGitHubActions, loggerFactory);
     }
-
-    if (isGitHubActions)
+    catch (Exception ex)
     {
-        await WriteGitHubSummary(result, options, logger);
+        logger.LogCriticalError(ex);
+        return 1;
+    }
+    finally
+    {
+        CleanupTempDirectory(tempDir, logger);
+    }
+}
+
+static string PrepareCommand(string commandTemplate, string outputDir, ILogger logger)
+{
+    string escapedPath = $"\"{outputDir.Replace("\"", "\\\"")}\"";
+    string command = commandTemplate.Replace("{output}", escapedPath);
+    logger.LogRunningCommand(command);
+    return command;
+}
+
+static async Task<int> ExecuteCommand(string command, string workingDirectory, int timeoutMinutes, ILogger logger)
+{
+    using Process process = new();
+    process.StartInfo.FileName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "cmd.exe" : "sh";
+    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+    {
+        // Use /s and wrap the command in quotes to ensure cmd.exe 
+        // preserves the internal quoting of the command string.
+        process.StartInfo.Arguments = $"/s /c \"{command}\"";
+    }
+    else
+    {
+        process.StartInfo.ArgumentList.Add("-c");
+        process.StartInfo.ArgumentList.Add(command);
     }
 
-    return CheckThresholds(result, options, logger, isGitHubActions);
+    process.StartInfo.UseShellExecute = false;
+    process.StartInfo.CreateNoWindow = true;
+    process.StartInfo.WorkingDirectory = workingDirectory;
+    // Do not redirect to allow inheriting the parent console's stdout/stderr (real-time output)
+    process.StartInfo.RedirectStandardOutput = false;
+    process.StartInfo.RedirectStandardError = false;
+
+    process.Start();
+
+    TimeSpan timeout = timeoutMinutes == -1
+        ? Timeout.InfiniteTimeSpan
+        : TimeSpan.FromMinutes(timeoutMinutes);
+    using CancellationTokenSource cts = new(timeout);
+    try
+    {
+        await process.WaitForExitAsync(cts.Token);
+    }
+    catch (OperationCanceledException)
+    {
+        process.Kill(true);
+        logger.LogCommandTimedOut(timeoutMinutes);
+        return 1;
+    }
+
+    return process.ExitCode;
+}
+
+static void CleanupTempDirectory(string? tempDir, ILogger logger)
+{
+    if (!string.IsNullOrEmpty(tempDir) && Directory.Exists(tempDir))
+    {
+        try
+        {
+            Directory.Delete(tempDir, true);
+        }
+        catch (Exception ex)
+        {
+            logger.LogCleanupFailed(ex, tempDir);
+        }
+    }
 }
 
 static bool TryAnalyseDeltaCoverage(CoverageAnalyser analyser, Coverage coverage, CommandLineOptions options, ILogger logger, out Coverage? deltaCoverage, out bool hasChangedLines)
@@ -103,7 +250,7 @@ static bool TryAnalyseDeltaCoverage(CoverageAnalyser analyser, Coverage coverage
     }
 }
 
-static int CheckThresholds(CoverageResult result, CommandLineOptions options, ILogger logger, bool isGitHubActions)
+static int CheckThresholds(CoverageResult result, CommandLineOptions options, bool isGitHubActions, ILogger logger)
 {
     bool failed = EvaluateOverallThresholds(result, options, logger);
 
