@@ -168,9 +168,10 @@ static async Task<int> RunCommandAndCheck(RunOptions options)
 
 static string PrepareCommand(string commandTemplate, string outputDir, ILogger logger)
 {
-    // Replace {output} with the raw path. The user is responsible for quoting "{output}" 
-    // in their command string if the path might contain spaces.
-    string command = commandTemplate.Replace("{output}", outputDir);
+    // Wrap the output directory in quotes and escape any internal quotes to ensure
+    // it is handled correctly by the shell, even if it contains spaces.
+    string escapedPath = $"\"{outputDir.Replace("\"", "\\\"")}\"";
+    string command = commandTemplate.Replace("{output}", escapedPath);
     logger.LogRunningCommand(command);
     return command;
 }

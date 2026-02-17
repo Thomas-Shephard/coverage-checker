@@ -34,7 +34,7 @@ coveragechecker [options]
 Runs a specified command (e.g., your test runner), captures the coverage results, and then performs the analysis. It automatically handles temporary directory creation and cleanup.
 
 ```bash
-coveragechecker run --command "dotnet test --collect 'XPlat Code Coverage' --results-directory \"{output}\"" [options]
+coveragechecker run --command "dotnet test --collect 'XPlat Code Coverage' --results-directory {output}" [options]
 ```
 
 ### Common Options (Base)
@@ -77,7 +77,7 @@ The `--delta` and `--delta-base` options require Git to be installed and availab
 Run tests and check coverage in a single command. The `{output}` placeholder will be replaced with a managed temporary directory that is automatically cleaned up after analysis.
 
 ```bash
-coveragechecker run --command "dotnet test --collect 'XPlat Code Coverage' --results-directory \"{output}\"" --line-threshold 90
+coveragechecker run --command "dotnet test --collect 'XPlat Code Coverage' --results-directory {output}" --line-threshold 90
 ```
 
 ### Filtering Source Files
