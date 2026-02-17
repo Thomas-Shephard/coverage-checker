@@ -39,7 +39,7 @@ public class CommandLineRunTests
     }
 
     [Test]
-    public void RunCommandExecutesAndAttemptsAnalysis()
+    public async Task RunCommandExecutesAndAttemptsAnalysis()
     {
         string cliPath = GetCliPath();
         
@@ -61,8 +61,13 @@ public class CommandLineRunTests
         
         using Process? process = Process.Start(psi);
         Assert.That(process, Is.Not.Null);
-        string stdout = process.StandardOutput.ReadToEnd();
-        process.WaitForExit();
+        
+        Task<string> stdoutTask = process.StandardOutput.ReadToEndAsync();
+        Task<string> stderrTask = process.StandardError.ReadToEndAsync();
+        await process.WaitForExitAsync();
+        
+        string stdout = await stdoutTask;
+        await stderrTask;
         
         // We expect it to find the file but fail to parse it
         // Note: With log level Warning, we won't see "Found 1 coverage files" in stdout
@@ -71,7 +76,7 @@ public class CommandLineRunTests
     }
 
     [Test]
-    public void RunCommandFailsWhenNoFilesFound()
+    public async Task RunCommandFailsWhenNoFilesFound()
     {
         string cliPath = GetCliPath();
         
@@ -92,8 +97,13 @@ public class CommandLineRunTests
         
         using Process? process = Process.Start(psi);
         Assert.That(process, Is.Not.Null);
-        string stdout = process.StandardOutput.ReadToEnd();
-        process.WaitForExit();
+        
+        Task<string> stdoutTask = process.StandardOutput.ReadToEndAsync();
+        Task<string> stderrTask = process.StandardError.ReadToEndAsync();
+        await process.WaitForExitAsync();
+        
+        string stdout = await stdoutTask;
+        await stderrTask;
         
         Assert.Multiple(() => {
             Assert.That(process.ExitCode, Is.Not.Zero);

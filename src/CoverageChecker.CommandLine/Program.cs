@@ -143,8 +143,8 @@ static async Task<int> RunCommandAndCheck(RunOptions options)
         catch (OperationCanceledException)
         {
             process.Kill(true);
-            logger.LogCommandFailed(-1);
-            return -1;
+            logger.LogCommandFailed(1);
+            return 1;
         }
 
         int exitCode = process.ExitCode;

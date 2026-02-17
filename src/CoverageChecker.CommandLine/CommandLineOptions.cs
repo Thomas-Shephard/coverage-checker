@@ -16,8 +16,7 @@ public abstract record CommandLineOptions
     /// <summary>
     /// Gets or sets the directory where coverage files are located.
     /// </summary>
-    [Option('d', "directory", Required = false, HelpText = "Directory where coverage files are located. Default: Current directory")]
-    public string Directory { get; init; } = Environment.CurrentDirectory;
+    public virtual string Directory { get; init; } = Environment.CurrentDirectory;
 
     /// <summary>
     /// Gets or sets the glob patterns of coverage file locations.
@@ -102,6 +101,11 @@ public abstract record CommandLineOptions
 [Verb("check", isDefault: true, HelpText = "Check coverage of existing files.")]
 public record CheckOptions : CommandLineOptions
 {
+    /// <summary>
+    /// Gets or sets the directory where coverage files are located.
+    /// </summary>
+    [Option('d', "directory", Required = false, HelpText = "Directory where coverage files are located. Default: Current directory")]
+    public override string Directory { get; init; } = Environment.CurrentDirectory;
 }
 
 /// <summary>
