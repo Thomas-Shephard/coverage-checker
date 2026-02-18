@@ -10,6 +10,7 @@ public class McpServerTests
     private McpServer _sut;
     private Mock<IProcessExecutor> _mockExecutor;
     private Mock<IFileFinder> _mockFinder;
+    private Mock<IGitService> _mockGit;
     private StringReader? _reader;
     private StringWriter? _writer;
 
@@ -21,7 +22,13 @@ public class McpServerTests
     {
         _mockExecutor = new Mock<IProcessExecutor>();
         _mockFinder = new Mock<IFileFinder>();
-        _sut = new McpServer(NullLoggerFactory.Instance, _mockExecutor.Object);
+        _mockGit = new Mock<IGitService>();
+
+        // Mock Git repo root to current directory by default
+        _mockGit.Setup(g => g.GetRepoRoot()).Returns(Directory.GetCurrentDirectory());
+
+        // Default SUT uses real FileFinder but mocked Git and Executor
+        _sut = new McpServer(NullLoggerFactory.Instance, _mockExecutor.Object, null, _mockGit.Object);
     }
 
     [TearDown]
@@ -45,19 +52,9 @@ public class McpServerTests
         await target.RunAsync(_reader, _writer);
     }
 
-    private static string GetRepoRoot()
-    {
-        string? current = AppContext.BaseDirectory;
-        while (current != null && !Directory.Exists(Path.Combine(current, ".git")))
-        {
-            current = Path.GetDirectoryName(current);
-        }
-        return current?.Replace('\\', '/') ?? throw new InvalidOperationException("Could not find repo root");
-    }
-
     private McpServer CreateSutWithMockFinder()
     {
-        return new McpServer(NullLoggerFactory.Instance, _mockExecutor.Object, _ => _mockFinder.Object);
+        return new McpServer(NullLoggerFactory.Instance, _mockExecutor.Object, _ => _mockFinder.Object, _mockGit.Object);
     }
 
     [Test]
@@ -161,66 +158,84 @@ public class McpServerTests
     [Test]
     public async Task RunAsyncShouldExecuteRunTestsAndAnalyzeWithCleanup()
     {
-        McpServer sut = CreateSutWithMockFinder();
-        var request = new
+        string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(tempDir);
+        try
         {
-            jsonrpc = "2.0",
-            method = "tools/call",
-            @params = new
+            McpServer sut = CreateSutWithMockFinder();
+            var request = new
             {
-                name = "run_tests_and_analyze",
-                arguments = new Dictionary<string, object>
+                jsonrpc = "2.0",
+                method = "tools/call",
+                @params = new
                 {
-                    { "testCommand", "dotnet test" },
-                    { "format", "Cobertura" },
-                    { "directory", "/repo" },
-                    { "reportPath", "coverage.xml" },
-                    { "cleanup", true }
-                }
-            },
-            id = 6
-        };
-        SetupCommunication(JsonSerializer.Serialize(request) + "\n");
+                    name = "run_tests_and_analyze",
+                    arguments = new Dictionary<string, object>
+                    {
+                        { "testCommand", "dotnet test" },
+                        { "format", "Cobertura" },
+                        { "directory", tempDir },
+                        { "reportPath", "coverage.xml" },
+                        { "cleanup", true }
+                    }
+                },
+                id = 6
+            };
+            SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        _mockExecutor.Setup(e => e.ExecuteShellAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan?>()))
-                     .ReturnsAsync((0, "Test Output", ""));
-        
-        _mockFinder.Setup(f => f.FindFiles(It.IsAny<string>())).Returns(["/repo/coverage.xml"]);
+            _mockExecutor.Setup(e => e.ExecuteShellAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan?>()))
+                         .ReturnsAsync((0, "Test Output", ""));
+            
+            _mockFinder.Setup(f => f.FindFiles(It.IsAny<string>())).Returns([Path.Combine(tempDir, "coverage.xml")]);
 
-        await RunSutAsync(sut);
+            await RunSutAsync(sut);
 
-        _mockExecutor.Verify(e => e.ExecuteShellAsync(It.Is<string>(c => c.Contains("dotnet test")), "/repo", It.IsAny<TimeSpan?>()), Times.Once);
-        _mockFinder.Verify(f => f.FindFiles("/repo"), Times.AtLeastOnce);
+            _mockExecutor.Verify(e => e.ExecuteShellAsync(It.Is<string>(c => c.Contains("dotnet test")), tempDir, It.IsAny<TimeSpan?>()), Times.Once);
+            _mockFinder.Verify(f => f.FindFiles(tempDir), Times.AtLeastOnce);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+        }
     }
 
     [Test]
     public async Task RunAsyncShouldExecuteRunTestsAndAnalyzeWithPlaceholder()
     {
-        var request = new
+        string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(tempDir);
+        try
         {
-            jsonrpc = "2.0",
-            method = "tools/call",
-            @params = new
+            var request = new
             {
-                name = "run_tests_and_analyze",
-                arguments = new Dictionary<string, object>
+                jsonrpc = "2.0",
+                method = "tools/call",
+                @params = new
                 {
-                    { "testCommand", "run --out {output}" },
-                    { "format", "Cobertura" },
-                    { "directory", "/repo" },
-                    { "reportPath", "{output}/coverage.xml" }
-                }
-            },
-            id = 200
-        };
-        SetupCommunication(JsonSerializer.Serialize(request) + "\n");
+                    name = "run_tests_and_analyze",
+                    arguments = new Dictionary<string, object>
+                    {
+                        { "testCommand", "run --out {output}" },
+                        { "format", "Cobertura" },
+                        { "directory", tempDir },
+                        { "reportPath", "{output}/coverage.xml" }
+                    }
+                },
+                id = 200
+            };
+            SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        _mockExecutor.Setup(e => e.ExecuteShellAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan?>()))
-                     .ReturnsAsync((0, "Test Output", ""));
+            _mockExecutor.Setup(e => e.ExecuteShellAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan?>()))
+                         .ReturnsAsync((0, "Test Output", ""));
 
-        await RunSutAsync();
+            await RunSutAsync();
 
-        _mockExecutor.Verify(e => e.ExecuteShellAsync(It.Is<string>(c => c.Contains("run --out") && c.Contains(".coverage-checker-mcp")), "/repo", It.IsAny<TimeSpan?>()), Times.Once);
+            _mockExecutor.Verify(e => e.ExecuteShellAsync(It.Is<string>(c => c.Contains("run --out") && c.Contains(".coverage-checker-mcp")), tempDir, It.IsAny<TimeSpan?>()), Times.Once);  
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+        }
     }
 
     [Test]
@@ -251,6 +266,10 @@ public class McpServerTests
     public async Task RunAsyncShouldExecuteAnalyzeDeltaWithValidArgs()
     {
         string coverageDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CoverageFiles", "Cobertura");
+        
+        // Mock Git Service to avoid real Git calls
+        _mockGit.Setup(g => g.GetChangedLines(It.IsAny<string>())).Returns(new Dictionary<string, HashSet<int>>());
+
         var request = new
         {
             jsonrpc = "2.0",
@@ -378,80 +397,106 @@ public class McpServerTests
     [Test]
     public async Task RunAsyncShouldExecuteAnalyzeDeltaWithRealGaps()
     {
-        string repoRoot = GetRepoRoot();
-        string tempDir = Path.Combine(repoRoot, "src", "CoverageChecker.Mcp");
-        string coverageFile = Path.Combine(tempDir, $"temp_delta_{Path.GetRandomFileName()}.xml");
-        
-        string xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-                     "<coverage>\n" +
-                     "    <sources>\n" +
-                     "<source>" + repoRoot + "</source>\n    </sources>\n    <packages>\n        <package name=\"Mcp\">\n            <classes>\n                <class name=\"McpServer\" filename=\"src/CoverageChecker.Mcp/McpServer.cs\">\n                    <lines>\n                        <line number=\"226\" hits=\"0\"/>\n                    </lines>\n                </class>\n            </classes>\n        </package>\n    </packages>\n</coverage>";
-        await File.WriteAllTextAsync(coverageFile, xml);
-
-        var request = new
+        string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(tempDir);
+        try
         {
-            jsonrpc = "2.0",
-            method = "tools/call",
-            @params = new
+            string coverageFile = Path.Combine(tempDir, $"temp_delta_{Path.GetRandomFileName()}.xml");
+            string sourcePath = tempDir.Replace('\\', '/').TrimEnd('/');
+            string relativeFilePath = "src/CoverageChecker.Mcp/McpServer.cs";
+            string fullPath = $"{sourcePath}/{relativeFilePath}";
+            
+            string xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+                         "<coverage>\n" +
+                         "    <sources>\n" +
+                         "<source>" + sourcePath + "</source>\n    </sources>\n    <packages>\n        <package name=\"Mcp\">\n            <classes>\n                <class name=\"McpServer\" filename=\"" + relativeFilePath + "\">\n                    <lines>\n                        <line number=\"226\" hits=\"0\"/>\n                    </lines>\n                </class>\n            </classes>\n        </package>\n    </packages>\n</coverage>";
+            await File.WriteAllTextAsync(coverageFile, xml);
+
+            // Mock Git Service
+            _mockGit.Setup(g => g.GetChangedLines(It.IsAny<string>())).Returns(new Dictionary<string, HashSet<int>>
             {
-                name = "analyze_delta",
-                arguments = new Dictionary<string, object>
+                { fullPath, [226] }
+            });
+
+            var request = new
+            {
+                jsonrpc = "2.0",
+                method = "tools/call",
+                @params = new
                 {
-                    { "format", "Cobertura" },
-                    { "directory", tempDir },
-                    { "globPatterns", new[] { Path.GetFileName(coverageFile) } },
-                    { "baseBranch", "main" }
-                }
-            },
-            id = 12
-        };
-        SetupCommunication(JsonSerializer.Serialize(request) + "\n");
+                    name = "analyze_delta",
+                    arguments = new Dictionary<string, object>
+                    {
+                        { "format", "Cobertura" },
+                        { "directory", tempDir },
+                        { "globPatterns", new[] { Path.GetFileName(coverageFile) } },
+                        { "baseBranch", "main" }
+                    }
+                },
+                id = 12
+            };
+            SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        await RunSutAsync();
+            await RunSutAsync();
 
-        string responseJson = _writer?.ToString() ?? string.Empty;
-        JsonElement response = JsonSerializer.Deserialize<JsonElement>(responseJson);
-        JsonElement result = response.GetProperty("result");
-        string? text = result.GetProperty("content")[0].GetProperty("text").GetString();
-        
-        Assert.That(text, Does.Contain("Delta Coverage Results"));
+            string responseJson = _writer?.ToString() ?? string.Empty;
+            JsonElement response = JsonSerializer.Deserialize<JsonElement>(responseJson);
+            JsonElement result = response.GetProperty("result");
+            string? text = result.GetProperty("content")[0].GetProperty("text").GetString();
+            
+            Assert.That(text, Does.Contain("Delta Coverage Results"));
 
-        File.Delete(coverageFile);
+            File.Delete(coverageFile);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+        }
     }
 
     [Test]
     public async Task RunAsyncShouldHandleCleanup()
     {
-        McpServer sut = CreateSutWithMockFinder();
-        var request = new
+        string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(tempDir);
+        try
         {
-            jsonrpc = "2.0",
-            method = "tools/call",
-            @params = new
+            McpServer sut = CreateSutWithMockFinder();
+            var request = new
             {
-                name = "run_tests_and_analyze",
-                arguments = new Dictionary<string, object>
+                jsonrpc = "2.0",
+                method = "tools/call",
+                @params = new
                 {
-                    { "testCommand", "dotnet test" },
-                    { "format", "Cobertura" },
-                    { "directory", "." },
-                    { "reportPath", "temp.xml" },
-                    { "cleanup", true }
-                }
-            },
-            id = 13
-        };
-        SetupCommunication(JsonSerializer.Serialize(request) + "\n");
+                    name = "run_tests_and_analyze",
+                    arguments = new Dictionary<string, object>
+                    {
+                        { "testCommand", "dotnet test" },
+                        { "format", "Cobertura" },
+                        { "directory", tempDir },
+                        { "reportPath", "temp.xml" },
+                        { "cleanup", true }
+                    }
+                },
+                id = 13
+            };
+            SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        _mockExecutor.Setup(e => e.ExecuteShell(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan?>()))
-                     .Returns((0, "OK", ""));
+            _mockExecutor.Setup(e => e.ExecuteShellAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan?>()))
+                         .ReturnsAsync((0, "OK", ""));
 
-        string tempFile = Path.GetTempFileName();
-        _mockFinder.Setup(f => f.FindFiles(It.IsAny<string>())).Returns([tempFile]);
+            string tempFile = Path.Combine(tempDir, "temp.xml");
+            await File.WriteAllTextAsync(tempFile, "test");
+            _mockFinder.Setup(f => f.FindFiles(It.IsAny<string>())).Returns([tempFile]);
 
-        await RunSutAsync(sut);
+            await RunSutAsync(sut);
 
-        Assert.That(File.Exists(tempFile), Is.False);
+            Assert.That(File.Exists(tempFile), Is.False);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+        }
     }
 
     [Test]
@@ -480,8 +525,8 @@ public class McpServerTests
         };
         SetupCommunication(JsonSerializer.Serialize(request) + "\n");
 
-        _mockExecutor.Setup(e => e.ExecuteShell(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan?>()))
-                     .Returns((0, "OK", ""));
+        _mockExecutor.Setup(e => e.ExecuteShellAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan?>()))
+                     .ReturnsAsync((0, "OK", ""));
 
         await RunSutAsync(sut);
 
@@ -540,6 +585,10 @@ public class McpServerTests
     public async Task RunAsyncShouldExecuteAnalyzeDeltaWithOmittedBaseBranch()
     {
         string coverageDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CoverageFiles", "Cobertura");
+        
+        // Mock Git Service
+        _mockGit.Setup(g => g.GetChangedLines(It.IsAny<string>())).Returns(new Dictionary<string, HashSet<int>>());
+
         var request = new
         {
             jsonrpc = "2.0",

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using CoverageChecker.Parsers;
 using CoverageChecker.Results;
 using CoverageChecker.Services;
 using CoverageChecker.Utils;
@@ -9,14 +10,15 @@ using Microsoft.Extensions.Logging;
 
 namespace CoverageChecker.Mcp;
 
-internal class McpServer(
-    ILoggerFactory loggerFactory,
-    IProcessExecutor? processExecutor = null,
-    Func<IEnumerable<string>, IFileFinder>? fileFinderFactory = null) : IDisposable
+internal class McpServer : IDisposable
 {
-    private readonly ILogger _logger = loggerFactory.CreateLogger<McpServer>();
-    private readonly IProcessExecutor _processExecutor = processExecutor ?? new ProcessExecutor();
-    private readonly Func<IEnumerable<string>, IFileFinder> _fileFinderFactory = fileFinderFactory ?? (patterns => new FileFinder(patterns));
+    private readonly ILogger _logger;
+    private readonly ILoggerFactory _loggerFactory;
+    private readonly IProcessExecutor _processExecutor;
+    private readonly Func<IEnumerable<string>, IFileFinder> _fileFinderFactory;
+    private readonly IGitService? _gitService;
+    private readonly Func<CoverageAnalyserOptions, IFileFinder, CoverageAnalyser>? _analyserFactory;
+
     private readonly JsonSerializerOptions _jsonOptions = new() 
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
@@ -30,6 +32,21 @@ internal class McpServer(
 
     private readonly SemaphoreSlim _writeLock = new(1, 1);
     private readonly SemaphoreSlim _concurrencyLimiter = new(10, 10);
+
+    public McpServer(
+        ILoggerFactory loggerFactory,
+        IProcessExecutor? processExecutor = null,
+        Func<IEnumerable<string>, IFileFinder>? fileFinderFactory = null,
+        IGitService? gitService = null,
+        Func<CoverageAnalyserOptions, IFileFinder, CoverageAnalyser>? analyserFactory = null)
+    {
+        _logger = loggerFactory.CreateLogger<McpServer>();
+        _loggerFactory = loggerFactory;
+        _processExecutor = processExecutor ?? new ProcessExecutor();
+        _fileFinderFactory = fileFinderFactory ?? (patterns => new FileFinder(patterns));
+        _gitService = gitService;
+        _analyserFactory = analyserFactory;
+    }
 
     public void Dispose()
     {
@@ -198,6 +215,29 @@ internal class McpServer(
         }
     }
 
+    private CoverageAnalyser CreateAnalyser(CoverageAnalyserOptions options)
+    {
+        IFileFinder finder = _fileFinderFactory(options.GlobPatterns);
+        if (_analyserFactory != null)
+        {
+            return _analyserFactory(options, finder);
+        }
+
+        if (_gitService != null)
+        {
+            return new CoverageAnalyser(
+                options,
+                finder,
+                new ParserFactory(new CoverageMergeService(_loggerFactory.CreateLogger<CoverageMergeService>())),
+                _gitService,
+                new DeltaCoverageService(new CoverageMergeService(_loggerFactory.CreateLogger<CoverageMergeService>())),
+                new CoverageRegressionService(),
+                _loggerFactory);
+        }
+
+        return new CoverageAnalyser(options, finder, _loggerFactory);
+    }
+
     private async Task<McpCallToolResponse> ExecuteRunTestsAndAnalyze(IDictionary<string, object?>? args)
     {
         if (args == null || 
@@ -269,7 +309,7 @@ internal class McpServer(
                     Directory = directory,
                     GlobPatterns = [reportPath]
                 };
-                CoverageAnalyser analyser = new(options, _fileFinderFactory(options.GlobPatterns), loggerFactory);
+                CoverageAnalyser analyser = CreateAnalyser(options);
                 DeltaResult delta = analyser.AnalyseDeltaCoverage(baseBranch);
 
                 outputBuilder.AppendLine("\n--- Delta Coverage Analysis ---");
@@ -325,7 +365,7 @@ internal class McpServer(
             Directory = directory,
             GlobPatterns = globPatterns
         };
-        CoverageAnalyser analyser = new(options, _fileFinderFactory(options.GlobPatterns), loggerFactory);
+        CoverageAnalyser analyser = CreateAnalyser(options);
         DeltaResult delta = analyser.AnalyseDeltaCoverage(baseBranch);
 
         if (!delta.HasChangedLines)
@@ -353,7 +393,7 @@ internal class McpServer(
             Directory = directory,
             GlobPatterns = globPatterns
         };
-        CoverageAnalyser analyser = new(options, _fileFinderFactory(options.GlobPatterns), loggerFactory);
+        CoverageAnalyser analyser = CreateAnalyser(options);
         Coverage coverage = analyser.AnalyseCoverage();
 
         double line = coverage.CalculateOverallCoverage();
