@@ -2,7 +2,7 @@ using Microsoft.Extensions.Logging;
 
 namespace CoverageChecker.CommandLine;
 
-internal static partial class ProgramLogs
+internal static partial class CommandLineLogs
 {
     [LoggerMessage(Level = LogLevel.Error, Message = "No coverage files found.")]
     public static partial void LogNoCoverageFilesFound(this ILogger logger);

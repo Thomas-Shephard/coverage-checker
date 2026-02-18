@@ -2,7 +2,7 @@ using Microsoft.Extensions.Logging;
 
 namespace CoverageChecker.Mcp;
 
-internal static partial class ProgramLogs
+internal static partial class McpLogs
 {
     [LoggerMessage(Level = LogLevel.Information, Message = "Coverage Checker MCP Server starting...")]
     public static partial void LogServerStarting(this ILogger logger);
