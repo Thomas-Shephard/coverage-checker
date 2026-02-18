@@ -24,15 +24,17 @@ internal class McpServer(
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
-    private static readonly string[] CoverageFormats = ["Auto", "SonarQube", "Cobertura"];
+    private static readonly string[] CoverageFormats = Enum.GetNames<CoverageFormat>();
     private static readonly string[] FormatRequiredArgs = ["format"];
     private static readonly string[] RunTestsRequiredArgs = ["testCommand", "format", "directory", "reportPath"];
 
     private readonly SemaphoreSlim _writeLock = new(1, 1);
+    private readonly SemaphoreSlim _concurrencyLimiter = new(10, 10);
 
     public void Dispose()
     {
         _writeLock.Dispose();
+        _concurrencyLimiter.Dispose();
     }
 
     public async Task RunAsync(TextReader reader, TextWriter writer)
@@ -41,10 +43,25 @@ internal class McpServer(
         while (await reader.ReadLineAsync() is { } line)
         {
             _logger.LogReceivedLine(line);
-            tasks.Add(HandleRequestAsync(line, writer));
+            
+            await _concurrencyLimiter.WaitAsync();
             tasks.RemoveAll(t => t.IsCompleted);
+            
+            tasks.Add(HandleRequestWithLimitAsync(line, writer));
         }
         await Task.WhenAll(tasks);
+    }
+
+    private async Task HandleRequestWithLimitAsync(string line, TextWriter writer)
+    {
+        try
+        {
+            await HandleRequestAsync(line, writer);
+        }
+        finally
+        {
+            _concurrencyLimiter.Release();
+        }
     }
 
     private async Task HandleRequestAsync(string line, TextWriter writer)
@@ -283,10 +300,15 @@ internal class McpServer(
             // 4. Cleanup
             if (cleanup)
             {
-                TryCleanupReports(directory, reportPath);
                 if (Directory.Exists(outputDir))
                 {
                     try { Directory.Delete(outputDir, recursive: true); } catch { /* Ignore */ }
+                }
+
+                // Only cleanup external reports if they aren't inside the output dir we just deleted
+                if (!PathUtils.IsSubPathOf(outputDir, reportPath))
+                {
+                    TryCleanupReports(directory, reportPath);
                 }
             }
         }

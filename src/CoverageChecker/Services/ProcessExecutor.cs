@@ -21,6 +21,8 @@ internal partial class ProcessExecutor : IProcessExecutor
     private readonly string? _workingDirectory;
     private readonly ILogger<ProcessExecutor> _logger;
 
+    public bool RedirectOutput { get; init; } = true;
+
     public ProcessExecutor(string? workingDirectory = null, ILogger<ProcessExecutor>? logger = null) : this(() => new SystemProcess(), workingDirectory, logger) { }
 
     internal ProcessExecutor(Func<ISystemProcess> processFactory, string? workingDirectory, ILogger<ProcessExecutor>? logger = null)
@@ -81,8 +83,8 @@ internal partial class ProcessExecutor : IProcessExecutor
         {
             startInfo.ArgumentList.Add(argument);
         }
-        startInfo.RedirectStandardOutput = true;
-        startInfo.RedirectStandardError = true;
+        startInfo.RedirectStandardOutput = RedirectOutput;
+        startInfo.RedirectStandardError = RedirectOutput;
         startInfo.UseShellExecute = false;
         startInfo.CreateNoWindow = true;
     }
@@ -110,8 +112,8 @@ internal partial class ProcessExecutor : IProcessExecutor
             startInfo.ArgumentList.Add(command);
         }
 
-        startInfo.RedirectStandardOutput = true;
-        startInfo.RedirectStandardError = true;
+        startInfo.RedirectStandardOutput = RedirectOutput;
+        startInfo.RedirectStandardError = RedirectOutput;
         startInfo.UseShellExecute = false;
         startInfo.CreateNoWindow = true;
     }
@@ -120,8 +122,8 @@ internal partial class ProcessExecutor : IProcessExecutor
     {
         process.Start();
 
-        Task<string> stdoutTask = process.StandardOutput.ReadToEndAsync();
-        Task<string> stderrTask = process.StandardError.ReadToEndAsync();
+        Task<string> stdoutTask = RedirectOutput ? process.StandardOutput.ReadToEndAsync() : Task.FromResult(string.Empty);
+        Task<string> stderrTask = RedirectOutput ? process.StandardError.ReadToEndAsync() : Task.FromResult(string.Empty);
 
         bool exited = process.WaitForExit((int)(timeout ?? DefaultTimeout).TotalMilliseconds);
 
@@ -155,8 +157,8 @@ internal partial class ProcessExecutor : IProcessExecutor
     {
         process.Start();
 
-        Task<string> stdoutTask = process.StandardOutput.ReadToEndAsync();
-        Task<string> stderrTask = process.StandardError.ReadToEndAsync();
+        Task<string> stdoutTask = RedirectOutput ? process.StandardOutput.ReadToEndAsync() : Task.FromResult(string.Empty);
+        Task<string> stderrTask = RedirectOutput ? process.StandardError.ReadToEndAsync() : Task.FromResult(string.Empty);
 
         TimeSpan effectiveTimeout = timeout ?? DefaultTimeout;
         using CancellationTokenSource cts = new(effectiveTimeout);

@@ -13,7 +13,9 @@ internal static partial class CommandUtils
     /// <returns>The prepared command.</returns>
     public static string PrepareCommand(string commandTemplate, string outputDir, ILogger logger)
     {
-        string escapedPath = $"\"{outputDir.Replace("\"", "\\\"")}\"";
+        // Remove trailing directory separator to prevent \" at the end of the path being interpreted as an escaped quote
+        string cleanPath = outputDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        string escapedPath = $"\"{cleanPath.Replace("\"", "\\\"")}\"";
         string command = commandTemplate.Replace("{output}", escapedPath);
         
         LogRunningCommand(logger, command);

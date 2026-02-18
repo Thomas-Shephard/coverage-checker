@@ -70,15 +70,31 @@ internal static class PathUtils
         string fullPath = GetNormalizedFullPath(path);
         string fullDirectory = GetNormalizedFullPath(directory);
 
-        if (fullPath.StartsWith(fullDirectory, PathComparer == StringComparer.OrdinalIgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
+        if (IsSubPathOf(fullDirectory, fullPath))
         {
-            // Ensure we don't match "C:/repo_suffix" when directory is "C:/repo"
-            if (fullPath.Length == fullDirectory.Length || fullPath[fullDirectory.Length] == '/')
-            {
-                return Path.GetRelativePath(fullDirectory, fullPath).Replace('\\', '/');
-            }
+            return Path.GetRelativePath(fullDirectory, fullPath).Replace('\\', '/');
         }
 
         return path;
+    }
+
+    /// <summary>
+    /// Checks if a path is a sub-path of a parent directory.
+    /// </summary>
+    /// <param name="parentDirectory">The parent directory.</param>
+    /// <param name="path">The path to check.</param>
+    /// <returns>True if the path is a sub-path of the parent directory.</returns>
+    public static bool IsSubPathOf(string parentDirectory, string path)
+    {
+        string fullPath = GetNormalizedFullPath(path);
+        string fullParent = GetNormalizedFullPath(parentDirectory);
+
+        if (fullPath.StartsWith(fullParent, PathComparer == StringComparer.OrdinalIgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
+        {
+            // Ensure we don't match "C:/repo_suffix" when directory is "C:/repo"
+            return fullPath.Length == fullParent.Length || fullPath[fullParent.Length] == '/';
+        }
+
+        return false;
     }
 }

@@ -1,12 +1,11 @@
-using System.Diagnostics;
 using System.Globalization;
-using System.Runtime.InteropServices;
 using System.Text;
 using CommandLine;
 using CommandLine.Text;
 using CoverageChecker;
 using CoverageChecker.CommandLine;
 using CoverageChecker.Results;
+using CoverageChecker.Services;
 using CoverageChecker.Utils;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
@@ -168,45 +167,21 @@ static async Task<int> RunCommandAndCheck(RunOptions options)
 
 static async Task<int> ExecuteCommand(string command, string workingDirectory, int timeoutMinutes, ILogger logger)
 {
-    using Process process = new();
-    process.StartInfo.FileName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "cmd.exe" : "sh";
-    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-    {
-        // Use /s and wrap the command in quotes to ensure cmd.exe 
-        // preserves the internal quoting of the command string.
-        process.StartInfo.Arguments = $"/s /c \"{command}\"";
-    }
-    else
-    {
-        process.StartInfo.ArgumentList.Add("-c");
-        process.StartInfo.ArgumentList.Add(command);
-    }
-
-    process.StartInfo.UseShellExecute = false;
-    process.StartInfo.CreateNoWindow = true;
-    process.StartInfo.WorkingDirectory = workingDirectory;
-    // Do not redirect to allow inheriting the parent console's stdout/stderr (real-time output)
-    process.StartInfo.RedirectStandardOutput = false;
-    process.StartInfo.RedirectStandardError = false;
-
-    process.Start();
-
+    ProcessExecutor executor = new(workingDirectory) { RedirectOutput = false };
     TimeSpan timeout = timeoutMinutes == -1
         ? Timeout.InfiniteTimeSpan
         : TimeSpan.FromMinutes(timeoutMinutes);
-    using CancellationTokenSource cts = new(timeout);
+
     try
     {
-        await process.WaitForExitAsync(cts.Token);
+        (int exitCode, _, _) = await executor.ExecuteShellAsync(command, workingDirectory, timeout);
+        return exitCode;
     }
-    catch (OperationCanceledException)
+    catch (ProcessExecutionException)
     {
-        process.Kill(true);
         logger.LogCommandTimedOut(timeoutMinutes);
         return 1;
     }
-
-    return process.ExitCode;
 }
 
 static void CleanupTempDirectory(string? tempDir, ILogger logger)
