@@ -263,10 +263,7 @@ internal sealed class McpServer : IDisposable
         string testCommand = CommandUtils.PrepareCommand(runArgs.TestCommandTemplate, outputDir, _logger);
         string reportPath = PathUtils.MakeRelativeIfInside(runArgs.Directory, runArgs.ReportPathTemplate.Replace("{output}", outputDir));
 
-        if (!Directory.Exists(outputDir))
-        {
-            Directory.CreateDirectory(outputDir);
-        }
+        Directory.CreateDirectory(outputDir);
 
         try
         {
@@ -400,11 +397,22 @@ internal sealed class McpServer : IDisposable
             try { Directory.Delete(outputDir, recursive: true); } catch { /* Ignore */ }
         }
 
-        // Only cleanup external reports if they aren't inside the output dir we just deleted
-        if (!PathUtils.IsSubPathOf(outputDir, reportPath))
+        string fullReportPath = Path.IsPathRooted(reportPath) ? reportPath : Path.GetFullPath(Path.Combine(directory, reportPath));
+
+        // If the report is inside the output directory that was just deleted, we're done.
+        if (PathUtils.IsSubPathOf(outputDir, fullReportPath))
         {
-            TryCleanupReports(directory, reportPath);
+            return;
         }
+
+        // If the report is outside the temporary output directory,
+        // only allow cleanup of specific files (no wildcards) to avoid accidental broad deletions.
+        if (reportPath.Contains('*') || reportPath.Contains('?'))
+        {
+            return;
+        }
+
+        TryCleanupReports(directory, reportPath);
     }
 
     private Task<McpCallToolResponse> ExecuteAnalyzeDelta(IDictionary<string, object?>? args)

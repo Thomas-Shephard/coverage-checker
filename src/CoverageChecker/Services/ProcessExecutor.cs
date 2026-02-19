@@ -181,6 +181,10 @@ internal partial class ProcessExecutor : IProcessExecutor
             // Wait a short time for tasks to complete to avoid unobserved task exceptions
             await Task.WhenAny(Task.WhenAll(stdoutTask, stderrTask), Task.Delay(TimeSpan.FromSeconds(1)));
 
+            // Ensure any late-faulting tasks are observed
+            _ = stdoutTask.ContinueWith(t => t.Exception, TaskContinuationOptions.OnlyOnFaulted);
+            _ = stderrTask.ContinueWith(t => t.Exception, TaskContinuationOptions.OnlyOnFaulted);
+
             int timeoutSeconds = (int)effectiveTimeout.TotalSeconds;
             throw new ProcessExecutionException($"Process '{name}' timed out after {timeoutSeconds} second{(timeoutSeconds == 1 ? string.Empty : "s")}.");
         }
