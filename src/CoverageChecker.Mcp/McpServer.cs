@@ -509,8 +509,15 @@ internal sealed class McpServer : IDisposable
         CoverageFormat format = Enum.Parse<CoverageFormat>(formatStr ?? "Auto", true);
         string directory = GetDirectory(args);
         
+        string[] globPatterns = ParseGlobPatterns(args, directory);
+
+        return (format, directory, globPatterns);
+    }
+
+    private static string[] ParseGlobPatterns(IDictionary<string, object?> args, string directory)
+    {
         List<string> globPatterns = [];
-        if (args.TryGetValue("globPatterns", out object? gp))
+        if (args.TryGetValue("globPatterns", out object? gp) && gp != null)
         {
             if (gp is JsonElement { ValueKind: JsonValueKind.Array } element)
             {
@@ -539,7 +546,7 @@ internal sealed class McpServer : IDisposable
             globPatterns.Add("*.xml");
         }
 
-        return (format, directory, globPatterns.ToArray());
+        return globPatterns.ToArray();
     }
 
     private void TryCleanupReports(string directory, string reportPath)
