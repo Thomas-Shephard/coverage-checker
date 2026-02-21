@@ -39,6 +39,7 @@ internal sealed class PathUtilTests
 
     [TestCase(PathStyle.Windows, @"C:\base", "subdir/file.cs", "C:/base/subdir/file.cs")]
     [TestCase(PathStyle.Unix, "/base", "subdir/file.cs", "/base/subdir/file.cs")]
+    [TestCase(PathStyle.Windows, @"\\server\share", "subdir/file.cs", @"//server/share/subdir/file.cs")]
     public void GetNormalizedFullPathResolvesRelativePathAgainstBase(PathStyle style, string basePath, string relativePath, string expected)
     {
         using (PathUtils.OverrideStyle(style))

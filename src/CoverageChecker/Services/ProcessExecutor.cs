@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
+using CoverageChecker.Utils;
 
 namespace CoverageChecker.Services;
 
@@ -20,6 +21,7 @@ internal partial class ProcessExecutor : IProcessExecutor
     private readonly Func<ISystemProcess> _processFactory;
     private readonly string? _workingDirectory;
     private readonly ILogger<ProcessExecutor> _logger;
+    private PathStyle? _styleOverride;
 
     public bool RedirectOutput { get; init; } = true;
 
@@ -31,6 +33,15 @@ internal partial class ProcessExecutor : IProcessExecutor
         _workingDirectory = workingDirectory;
         _logger = logger ?? NullLogger<ProcessExecutor>.Instance;
     }
+
+    internal void OverridePathStyle(PathStyle style) => _styleOverride = style;
+
+    private bool IsWindows => _styleOverride switch
+    {
+        PathStyle.Windows => true,
+        PathStyle.Unix    => false,
+        _                 => RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+    };
 
     public (int ExitCode, string StandardOutput, string StandardError) Execute(string fileName, IEnumerable<string> arguments, TimeSpan? timeout = null)
         => Execute(fileName, arguments, null, timeout);
@@ -97,10 +108,9 @@ internal partial class ProcessExecutor : IProcessExecutor
             startInfo.WorkingDirectory = effectiveWorkingDirectory;
         }
 
-        bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-        startInfo.FileName = isWindows ? "cmd.exe" : "sh";
+        startInfo.FileName = IsWindows ? "cmd.exe" : "sh";
 
-        if (isWindows)
+        if (IsWindows)
         {
             // Use /s and wrap the command in quotes to ensure cmd.exe 
             // preserves the internal quoting of the command string.
