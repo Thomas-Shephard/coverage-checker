@@ -11,22 +11,37 @@ internal enum PathStyle
 internal static class PathUtils
 {
     private static PathStyle? _styleOverride;
+    private static bool? _isWindowsOverride;
 
     internal static IDisposable OverrideStyle(PathStyle style)
     {
         PathStyle? previous = _styleOverride;
         SetStyleOverride(style);
-        return new StyleOverrideScope(previous);
+        return new StyleOverrideScope(previous, _isWindowsOverride);
+    }
+
+    internal static IDisposable OverrideOs(bool isWindows)
+    {
+        bool? previous = _isWindowsOverride;
+        SetOsOverride(isWindows);
+        return new StyleOverrideScope(_styleOverride, previous);
     }
 
     private static void SetStyleOverride(PathStyle? style) => _styleOverride = style;
+    private static void SetOsOverride(bool? isWindows) => _isWindowsOverride = isWindows;
 
-    private sealed class StyleOverrideScope(PathStyle? previous) : IDisposable
+    private sealed class StyleOverrideScope(PathStyle? previousStyle, bool? previousOs) : IDisposable
     {
-        public void Dispose() => SetStyleOverride(previous);
+        public void Dispose()
+        {
+            SetStyleOverride(previousStyle);
+            SetOsOverride(previousOs);
+        }
     }
 
-    private static PathStyle CurrentStyle => _styleOverride ?? (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? PathStyle.Windows : PathStyle.Unix);
+    private static bool IsWindows => _isWindowsOverride ?? RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+
+    private static PathStyle CurrentStyle => _styleOverride ?? (IsWindows ? PathStyle.Windows : PathStyle.Unix);
 
     /// <summary>
     /// Gets a string comparer that is appropriate for the current operating system's file system.
@@ -86,8 +101,8 @@ internal static class PathUtils
         {
             // Only call Path.GetFullPath if the path style matches the current OS
             // to avoid prepending current drive letters to Unix paths on Windows.
-            bool isCurrentOsStyle = (CurrentStyle == PathStyle.Windows && RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) ||
-                                    (CurrentStyle == PathStyle.Unix && !RuntimeInformation.IsOSPlatform(OSPlatform.Windows));
+            bool isCurrentOsStyle = (CurrentStyle == PathStyle.Windows && IsWindows) ||
+                                    (CurrentStyle == PathStyle.Unix && !IsWindows);
 
             if (isCurrentOsStyle)
             {

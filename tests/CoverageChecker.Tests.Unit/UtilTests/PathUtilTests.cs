@@ -149,8 +149,13 @@ internal sealed class PathUtilTests
     [TestCase("", false)]
     [TestCase("/", true)]
     [TestCase(@"\", true)]
+    [TestCase(@"\\server\share", true)]
+    [TestCase("//server/share", true)]
     [TestCase("C:", true)]
     [TestCase("C:/", true)]
+    [TestCase("A", false)]
+    [TestCase("AB", false)]
+    [TestCase("1:", false)]
     [TestCase("rel/path", false)]
     [TestCase("C", false)]
     public void IsPathRootedChecksVariousPathStyles(string? path, bool expected)
@@ -174,5 +179,66 @@ internal sealed class PathUtilTests
         string child = Path.Combine(dir, "child");
 
         Assert.That(PathUtils.IsSubPathOf(dir, child), Is.True);
+    }
+
+    [Test]
+    public void CurrentStyleDefaultsToUnixOnNonWindows()
+    {
+        using (PathUtils.OverrideOs(false))
+        {
+            Assert.That(PathUtils.PathComparer, Is.EqualTo(StringComparer.Ordinal));
+        }
+    }
+
+    [Test]
+    public void GetNormalizedFullPathUsesSimpleNormalizationOnMismatchedOsStyle()
+    {
+        using (PathUtils.OverrideOs(true))
+        using (PathUtils.OverrideStyle(PathStyle.Unix))
+        {
+            string path = "/unix/path/file.txt";
+            string result = PathUtils.GetNormalizedFullPath(path);
+
+            Assert.That(result, Is.EqualTo("/unix/path/file.txt"));
+        }
+    }
+
+    [Test]
+    public void GetNormalizedFullPathUsesSimpleNormalizationOnMismatchedOsStyleWindowsOnUnix()
+    {
+        using (PathUtils.OverrideOs(false))
+        using (PathUtils.OverrideStyle(PathStyle.Windows))
+        {
+            string path = @"C:\windows\path\file.txt";
+            string result = PathUtils.GetNormalizedFullPath(path);
+
+            Assert.That(result, Is.EqualTo("C:/windows/path/file.txt"));
+        }
+    }
+
+    [Test]
+    public void GetNormalizedFullPathCallsGetFullPathOnUnixWhenOsIsUnix()
+    {
+        using (PathUtils.OverrideOs(false))
+        using (PathUtils.OverrideStyle(PathStyle.Unix))
+        {
+            string path = "relative/path";
+            string result = PathUtils.GetNormalizedFullPath(path);
+
+            Assert.That(result, Is.EqualTo(PathUtils.NormalizePath(Path.GetFullPath(path))));
+        }
+    }
+
+    [Test]
+    public void GetNormalizedFullPathHandlesCurrentOsStyleExplicitly()
+    {
+        using (PathUtils.OverrideOs(true))
+        using (PathUtils.OverrideStyle(PathStyle.Windows))
+        {
+            string path = "relative/path";
+            string result = PathUtils.GetNormalizedFullPath(path);
+
+            Assert.That(result, Is.EqualTo(PathUtils.NormalizePath(Path.GetFullPath(path))));
+        }
     }
 }
