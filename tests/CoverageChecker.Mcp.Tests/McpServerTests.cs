@@ -406,10 +406,25 @@ public class McpServerTests
             string relativeFilePath = "src/CoverageChecker.Mcp/McpServer.cs";
             string fullPath = $"{sourcePath}/{relativeFilePath}";
             
-            string xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-                         "<coverage>\n" +
-                         "    <sources>\n" +
-                         "<source>" + sourcePath + "</source>\n    </sources>\n    <packages>\n        <package name=\"Mcp\">\n            <classes>\n                <class name=\"McpServer\" filename=\"" + relativeFilePath + "\">\n                    <lines>\n                        <line number=\"226\" hits=\"0\"/>\n                    </lines>\n                </class>\n            </classes>\n        </package>\n    </packages>\n</coverage>";
+            string xml = $"""
+                <?xml version="1.0" encoding="utf-8"?>
+                <coverage>
+                  <sources>
+                    <source>{sourcePath}</source>
+                  </sources>
+                  <packages>
+                    <package name="Mcp">
+                      <classes>
+                        <class name="McpServer" filename="{relativeFilePath}">
+                          <lines>
+                            <line number="226" hits="0"/>
+                          </lines>
+                        </class>
+                      </classes>
+                    </package>
+                  </packages>
+                </coverage>
+                """;
             await File.WriteAllTextAsync(coverageFile, xml);
 
             // Mock Git Service
@@ -728,20 +743,22 @@ public class McpServerTests
         try
         {
             string coverageFile = Path.Combine(tempDir, "coverage.xml");
-            string xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-                         "<coverage line-rate=\"1.0\" branch-rate=\"1.0\" lines-covered=\"1\" lines-valid=\"1\" branches-covered=\"0\" branches-valid=\"0\" complexity=\"0\" version=\"0\" timestamp=\"0\">\n" +
-                         "  <packages>\n" +
-                         "    <package name=\"Test\" line-rate=\"1.0\" branch-rate=\"1.0\" complexity=\"0\">\n" +
-                         "      <classes>\n" +
-                         "        <class name=\"TestClass\" filename=\"Test.cs\" line-rate=\"1.0\" branch-rate=\"1.0\" complexity=\"0\">\n" +
-                         "          <lines>\n" +
-                         "            <line number=\"1\" hits=\"1\" branch=\"False\"/>\n" +
-                         "          </lines>\n" +
-                         "        </class>\n" +
-                         "      </classes>\n" +
-                         "    </package>\n" +
-                         "  </packages>\n" +
-                         "</coverage>";
+            string xml = """
+                <?xml version="1.0" encoding="utf-8"?>
+                <coverage line-rate="1.0" branch-rate="1.0" lines-covered="1" lines-valid="1" branches-covered="0" branches-valid="0" complexity="0" version="0" timestamp="0">
+                  <packages>
+                    <package name="Test" line-rate="1.0" branch-rate="1.0" complexity="0">
+                      <classes>
+                        <class name="TestClass" filename="Test.cs" line-rate="1.0" branch-rate="1.0" complexity="0">
+                          <lines>
+                            <line number="1" hits="1" branch="False"/>
+                          </lines>
+                        </class>
+                      </classes>
+                    </package>
+                  </packages>
+                </coverage>
+                """;
             await File.WriteAllTextAsync(coverageFile, xml);
 
             _mockGit.Setup(g => g.GetChangedLines(It.IsAny<string>())).Returns(new Dictionary<string, HashSet<int>>());
