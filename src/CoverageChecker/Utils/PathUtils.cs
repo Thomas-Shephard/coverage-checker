@@ -15,13 +15,15 @@ internal static class PathUtils
     internal static IDisposable OverrideStyle(PathStyle style)
     {
         PathStyle? previous = _styleOverride;
-        _styleOverride = style;
+        SetStyleOverride(style);
         return new StyleOverrideScope(previous);
     }
 
+    private static void SetStyleOverride(PathStyle? style) => _styleOverride = style;
+
     private sealed class StyleOverrideScope(PathStyle? previous) : IDisposable
     {
-        public void Dispose() => _styleOverride = previous;
+        public void Dispose() => SetStyleOverride(previous);
     }
 
     private static PathStyle CurrentStyle => _styleOverride ?? (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? PathStyle.Windows : PathStyle.Unix);
@@ -77,7 +79,7 @@ internal static class PathUtils
     {
         if (basePath != null && !IsPathRooted(path))
         {
-            path = NormalizePath(basePath).TrimEnd('/') + "/" + NormalizePath(path).TrimStart('/');
+            path = Path.Combine(basePath, path);
         }
 
         try
