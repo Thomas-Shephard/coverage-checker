@@ -99,32 +99,47 @@ internal sealed class McpServer : IDisposable
 
     private async Task HandleRequestAsync(string line, TextWriter writer)
     {
+        McpRequest? request = null;
         try
         {
-            McpRequest? request = JsonSerializer.Deserialize<McpRequest>(line, _jsonOptions);
+            request = JsonSerializer.Deserialize<McpRequest>(line, _jsonOptions);
             if (request == null) return;
 
             McpResponse? response = await HandleRequest(request);
 
             // Only respond to requests with an ID (notifications have null ID and don't get a response)
-            if (response != null && request.Id != null)
+            if (response != null && (request.Id != null || response.Error != null))
             {
-                string responseJson = JsonSerializer.Serialize(response, _jsonOptions);
-                await _writeLock.WaitAsync();
-                try
-                {
-                    await writer.WriteLineAsync(responseJson);
-                    await writer.FlushAsync();
-                }
-                finally
-                {
-                    _writeLock.Release();
-                }
+                await SendResponse(response, writer);
             }
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogMcpRequestProcessingError(ex);
+            await SendResponse(new McpResponse("2.0", null, Error: new McpError(-32700, $"Parse error: {ex.Message}")), writer);
         }
         catch (Exception ex)
         {
             _logger.LogMcpRequestProcessingError(ex);
+            if (request?.Id != null)
+            {
+                await SendResponse(new McpResponse("2.0", request.Id, Error: new McpError(-32603, $"Internal error: {ex.Message}")), writer);
+            }
+        }
+    }
+
+    private async Task SendResponse(McpResponse response, TextWriter writer)
+    {
+        string responseJson = JsonSerializer.Serialize(response, _jsonOptions);
+        await _writeLock.WaitAsync();
+        try
+        {
+            await writer.WriteLineAsync(responseJson);
+            await writer.FlushAsync();
+        }
+        finally
+        {
+            _writeLock.Release();
         }
     }
 
@@ -501,6 +516,9 @@ internal sealed class McpServer : IDisposable
             {
                 foreach (JsonElement item in element.EnumerateArray())
                 {
+                    if (item.ValueKind != JsonValueKind.String)
+                        continue;
+
                     string pattern = item.GetString() ?? string.Empty;
                     globPatterns.Add(PathUtils.MakeRelativeIfInside(directory, pattern));
                 }
@@ -509,6 +527,10 @@ internal sealed class McpServer : IDisposable
             {
                 string pattern = s.GetString() ?? string.Empty;
                 globPatterns.Add(PathUtils.MakeRelativeIfInside(directory, pattern));
+            }
+            else if (gp is string str)
+            {
+                globPatterns.Add(PathUtils.MakeRelativeIfInside(directory, str));
             }
         }
 

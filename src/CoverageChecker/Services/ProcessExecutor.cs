@@ -179,7 +179,11 @@ internal partial class ProcessExecutor : IProcessExecutor
             }
 
             // Wait a short time for tasks to complete to avoid unobserved task exceptions
-            await Task.WhenAny(Task.WhenAll(stdoutTask, stderrTask), Task.Delay(TimeSpan.FromSeconds(1)));
+            if (await Task.WhenAny(Task.WhenAll(stdoutTask, stderrTask), Task.Delay(TimeSpan.FromSeconds(1))) != Task.WhenAll(stdoutTask, stderrTask))
+            {
+                _ = stdoutTask.ContinueWith(task => task.Exception, TaskContinuationOptions.OnlyOnFaulted);
+                _ = stderrTask.ContinueWith(task => task.Exception, TaskContinuationOptions.OnlyOnFaulted);
+            }
 
             // Ensure any late-faulting tasks are observed
             _ = stdoutTask.ContinueWith(t => t.Exception, TaskContinuationOptions.OnlyOnFaulted);

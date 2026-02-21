@@ -59,16 +59,17 @@ internal static class PathUtils
     /// </summary>
     /// <param name="directory">The directory to make the path relative to.</param>
     /// <param name="path">The path to process.</param>
+    /// <param name="basePath">Optional: The base path to resolve the path against if it is relative.</param>
     /// <returns>The relative path if it was inside the directory, otherwise the original path.</returns>
-    public static string MakeRelativeIfInside(string directory, string path)
+    public static string MakeRelativeIfInside(string directory, string path, string? basePath = null)
     {
         if (string.IsNullOrEmpty(path) || !Path.IsPathRooted(path))
         {
             return path;
         }
 
-        string fullPath = GetNormalizedFullPath(path);
-        string fullDirectory = GetNormalizedFullPath(directory);
+        string fullPath = GetNormalizedFullPath(path, basePath);
+        string fullDirectory = GetNormalizedFullPath(directory, basePath);
 
         if (IsSubPathOf(fullDirectory, fullPath))
         {
