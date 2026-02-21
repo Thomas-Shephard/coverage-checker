@@ -926,6 +926,10 @@ public class McpServerTests
             _mockFinder.Setup(f => f.FindFiles(It.IsAny<string>())).Returns([tempFile]);
 
             await RunSutAsync(sut);
+
+            string response = _writer?.ToString() ?? string.Empty;
+            Assert.That(response, Does.Contain("\"id\":208"));
+            Assert.That(response, Does.Contain("Delta Coverage Analysis"));
         }
         finally
         {
