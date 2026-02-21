@@ -144,4 +144,35 @@ internal sealed class PathUtilTests
             Assert.That(PathUtils.IsSubPathOf(dir, child), Is.EqualTo(expected));
         }
     }
+
+    [TestCase(null, false)]
+    [TestCase("", false)]
+    [TestCase("/", true)]
+    [TestCase(@"\", true)]
+    [TestCase("C:", true)]
+    [TestCase("C:/", true)]
+    [TestCase("rel/path", false)]
+    [TestCase("C", false)]
+    public void IsPathRootedChecksVariousPathStyles(string? path, bool expected)
+    {
+        Assert.That(PathUtils.IsPathRooted(path), Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void PathComparerReturnsAppropriateComparerForCurrentOs()
+    {
+        bool isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
+        StringComparer expected = isWindows ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+
+        Assert.That(PathUtils.PathComparer, Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void IsSubPathOfWorksWithoutStyleOverride()
+    {
+        string dir = Path.GetTempPath();
+        string child = Path.Combine(dir, "child");
+
+        Assert.That(PathUtils.IsSubPathOf(dir, child), Is.True);
+    }
 }
