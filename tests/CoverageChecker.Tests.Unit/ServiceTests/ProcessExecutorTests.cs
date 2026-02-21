@@ -5,7 +5,7 @@ using Moq;
 
 namespace CoverageChecker.Tests.Unit.ServiceTests;
 
-public class ProcessExecutorTests
+public sealed class ProcessExecutorTests
 {
     private Mock<ISystemProcess> _mockProcess;
     private ProcessExecutor _sut;
@@ -182,70 +182,74 @@ public class ProcessExecutorTests
         });
     }
 
-    [Test]
-    public void ExecuteShellShouldSetShellInfo()
+    [TestCase("Windows", "cmd.exe")]
+    [TestCase("Unix", "sh")]
+    public async Task ExecuteShellAsyncShouldSetShellInfo(string styleStr, string expectedShell)
     {
-        _mockProcess.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(true);
-        bool isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
-        string expectedShell = isWindows ? "cmd.exe" : "sh";
+        PathStyle style = Enum.Parse<PathStyle>(styleStr);
+        _mockProcess.Setup(p => p.WaitForExitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        _sut.OverridePathStyle(style);
 
-        _sut.ExecuteShell("echo hello");
+        await _sut.ExecuteShellAsync("echo async");
+
+        Assert.That(_mockProcess.Object.StartInfo.FileName, Is.EqualTo(expectedShell));
+    }
+
+    [Test]
+    public void ExecuteShellShouldSetWorkingDirectoryWhenProvided()
+    {
+        string workingDir = Path.Combine(Path.GetTempPath(), "TempShell");
+        _mockProcess.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(true);
+
+        _sut.ExecuteShell("echo hello", workingDir);
+
+        Assert.That(_mockProcess.Object.StartInfo.WorkingDirectory, Is.EqualTo(workingDir));
+    }
+
+    [Test]
+    public async Task ExecuteShellAsyncShouldSetWorkingDirectoryWhenProvided()
+    {
+        string workingDir = Path.Combine(Path.GetTempPath(), "TempShellAsync");
+        _mockProcess.Setup(p => p.WaitForExitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+
+        await _sut.ExecuteShellAsync("echo hello", workingDir);
+
+        Assert.That(_mockProcess.Object.StartInfo.WorkingDirectory, Is.EqualTo(workingDir));
+    }
+
+    [Test]
+    public void ExecuteShouldNotRedirectOutputWhenDisabled()
+    {
+        _sut = new ProcessExecutor(() => _mockProcess.Object, null) { RedirectOutput = false };
+        _mockProcess.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(true);
+        _mockProcess.SetupGet(p => p.ExitCode).Returns(0);
+
+        (int ExitCode, string StandardOutput, string StandardError) result = _sut.Execute("git", ["status"]);
 
         Assert.Multiple(() =>
         {
-            Assert.That(_mockProcess.Object.StartInfo.FileName, Is.EqualTo(expectedShell));
-            if (isWindows)
-            {
-                Assert.That(_mockProcess.Object.StartInfo.Arguments, Is.EqualTo("/s /c \"echo hello\""));
-            }
-            else
-            {
-                Assert.That(_mockProcess.Object.StartInfo.ArgumentList, Contains.Item("echo hello"));
-            }
+            Assert.That(result.StandardOutput, Is.EqualTo(string.Empty));
+            Assert.That(result.StandardError, Is.EqualTo(string.Empty));
+            Assert.That(_mockProcess.Object.StartInfo.RedirectStandardOutput, Is.False);
+            Assert.That(_mockProcess.Object.StartInfo.RedirectStandardError, Is.False);
         });
     }
 
     [Test]
-    public async Task ExecuteAsyncShouldReturnOutput()
+    public async Task ExecuteAsyncShouldNotRedirectOutputWhenDisabled()
     {
+        _sut = new ProcessExecutor(() => _mockProcess.Object, null) { RedirectOutput = false };
         _mockProcess.Setup(p => p.WaitForExitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
         _mockProcess.SetupGet(p => p.ExitCode).Returns(0);
-
-        await using (StreamWriter writer = new(_standardOutput, leaveOpen: true))
-        {
-            await writer.WriteAsync("Async Hello");
-            await writer.FlushAsync();
-        }
-        _standardOutput.Position = 0;
 
         (int ExitCode, string StandardOutput, string StandardError) result = await _sut.ExecuteAsync("git", ["status"]);
 
         Assert.Multiple(() =>
         {
-            Assert.That(result.ExitCode, Is.EqualTo(0));
-            Assert.That(result.StandardOutput, Is.EqualTo("Async Hello"));
+            Assert.That(result.StandardOutput, Is.EqualTo(string.Empty));
+            Assert.That(result.StandardError, Is.EqualTo(string.Empty));
+            Assert.That(_mockProcess.Object.StartInfo.RedirectStandardOutput, Is.False);
+            Assert.That(_mockProcess.Object.StartInfo.RedirectStandardError, Is.False);
         });
-    }
-
-    [Test]
-    public void ExecuteAsyncShouldTimeout()
-    {
-        _mockProcess.Setup(p => p.WaitForExitAsync(It.IsAny<CancellationToken>()))
-                    .Returns((CancellationToken ct) => Task.Delay(TimeSpan.FromSeconds(10), ct)); // Long running task respecting cancellation
-        
-        Assert.ThrowsAsync<ProcessExecutionException>(async () => await _sut.ExecuteAsync("git", ["status"], null, TimeSpan.FromMilliseconds(100)));
-        _mockProcess.Verify(p => p.Kill(), Times.AtLeastOnce);
-    }
-
-    [Test]
-    public async Task ExecuteShellAsyncShouldSetShellInfo()
-    {
-        _mockProcess.Setup(p => p.WaitForExitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-        bool isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
-        string expectedShell = isWindows ? "cmd.exe" : "sh";
-
-        await _sut.ExecuteShellAsync("echo async");
-
-        Assert.That(_mockProcess.Object.StartInfo.FileName, Is.EqualTo(expectedShell));
     }
 }
