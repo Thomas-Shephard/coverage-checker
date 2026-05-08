@@ -75,7 +75,7 @@ public class FileCoverageTests
         using (Assert.EnterMultipleScope())
         {
             Assert.That(retrievedLine.IsCovered, Is.True);
-            Assert.That(retrievedLine.CoveredBranches, Is.EqualTo(0));
+            Assert.That(retrievedLine.CoveredBranches, Is.Zero);
         }
 
         fileCoverage.AddOrMergeLine(new LineCoverage(1, true, 1, 1), service);
@@ -179,7 +179,7 @@ public class FileCoverageTests
 
         double coverage = fileCoverage.CalculateClassCoverage($"{CoverageTestData.ClassName}-1", CoverageType.Branch);
 
-        Assert.That(coverage, Is.EqualTo(0));
+        Assert.That(coverage, Is.Zero);
     }
 
     [Test]
