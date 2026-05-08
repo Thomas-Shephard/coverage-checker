@@ -112,7 +112,7 @@ public class CoverageCalculationUtilFileTests
 
         double coverage = lines.CalculateCoverage(CoverageType.Line);
 
-        Assert.That(coverage, Is.EqualTo(0));
+        Assert.That(coverage, Is.Zero);
     }
 
     [Test]
@@ -127,7 +127,7 @@ public class CoverageCalculationUtilFileTests
 
         double coverage = files.CalculateCoverage(CoverageType.Line);
 
-        Assert.That(coverage, Is.EqualTo(0));
+        Assert.That(coverage, Is.Zero);
     }
 
     [Test]
@@ -137,7 +137,7 @@ public class CoverageCalculationUtilFileTests
 
         double coverage = lines.CalculateCoverage(CoverageType.Branch);
 
-        Assert.That(coverage, Is.EqualTo(0));
+        Assert.That(coverage, Is.Zero);
     }
 
     [Test]
@@ -151,7 +151,7 @@ public class CoverageCalculationUtilFileTests
 
         double coverage = files.CalculateCoverage(CoverageType.Branch);
 
-        Assert.That(coverage, Is.EqualTo(0));
+        Assert.That(coverage, Is.Zero);
     }
 
     [Test]

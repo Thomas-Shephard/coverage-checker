@@ -73,7 +73,7 @@ public class ProcessExecutorTests
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(result.ExitCode, Is.EqualTo(0));
+            Assert.That(result.ExitCode, Is.Zero);
             Assert.That(result.StandardOutput, Is.EqualTo("Hello World"));
         }
     }
