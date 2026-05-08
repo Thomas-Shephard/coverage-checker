@@ -71,11 +71,11 @@ public class ProcessExecutorTests
 
         (int ExitCode, string StandardOutput, string StandardError) result = _sut.Execute(fileName, arguments, timeout);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.ExitCode, Is.EqualTo(0));
             Assert.That(result.StandardOutput, Is.EqualTo("Hello World"));
-        });
+        }
     }
 
     [Test]

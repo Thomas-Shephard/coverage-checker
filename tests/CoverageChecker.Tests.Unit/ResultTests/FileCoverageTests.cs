@@ -25,12 +25,12 @@ public class FileCoverageTests
         LineCoverage[] lines = [];
         FileCoverage fileCoverage = CoverageTestData.CreateFile(lines, CoverageTestData.FilePath, CoverageTestData.PackageName);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(fileCoverage.Lines, Is.EqualTo(lines));
             Assert.That(fileCoverage.Path, Is.EqualTo(CoverageTestData.FilePath));
             Assert.That(fileCoverage.PackageName, Is.EqualTo(CoverageTestData.PackageName));
-        });
+        }
     }
 
     [Test]
@@ -43,24 +43,24 @@ public class FileCoverageTests
         fileCoverage.AddOrMergeLine(line, service);
 
         LineCoverage retrievedLine = fileCoverage.Lines.Single(l => l.LineNumber == 1);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(retrievedLine.IsCovered, Is.True);
             Assert.That(retrievedLine.CoveredBranches, Is.Null);
             Assert.That(retrievedLine, Is.SameAs(line)); // Should be same object initially
-        });
+        }
 
         // Add same line again
         fileCoverage.AddOrMergeLine(line, service);
 
         retrievedLine = fileCoverage.Lines.Single(l => l.LineNumber == 1);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(retrievedLine.IsCovered, Is.True);
             Assert.That(retrievedLine.CoveredBranches, Is.Null);
             // Should still be the same line object as merge returns existing if equal
             Assert.That(retrievedLine, Is.SameAs(line));
-        });
+        }
     }
 
     [Test]
@@ -72,29 +72,29 @@ public class FileCoverageTests
         fileCoverage.AddOrMergeLine(new LineCoverage(1, true, 1, 0), service);
 
         LineCoverage retrievedLine = fileCoverage.Lines.Single(l => l.LineNumber == 1);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(retrievedLine.IsCovered, Is.True);
             Assert.That(retrievedLine.CoveredBranches, Is.EqualTo(0));
-        });
+        }
 
         fileCoverage.AddOrMergeLine(new LineCoverage(1, true, 1, 1), service);
 
         retrievedLine = fileCoverage.Lines.Single(l => l.LineNumber == 1);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(retrievedLine.IsCovered, Is.True);
             Assert.That(retrievedLine.CoveredBranches, Is.EqualTo(1));
-        });
+        }
 
         fileCoverage.AddOrMergeLine(new LineCoverage(1, false, 1, 0), service);
 
         retrievedLine = fileCoverage.Lines.Single(l => l.LineNumber == 1);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(retrievedLine.IsCovered, Is.True);
             Assert.That(retrievedLine.CoveredBranches, Is.EqualTo(1));
-        });
+        }
     }
 
     [Test]
@@ -106,20 +106,20 @@ public class FileCoverageTests
         fileCoverage.AddOrMergeLine(new LineCoverage(2, false), service);
 
         LineCoverage retrievedLine = fileCoverage.Lines.Single(l => l.LineNumber == 2);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(retrievedLine.IsCovered, Is.False);
             Assert.That(retrievedLine.CoveredBranches, Is.Null);
-        });
+        }
 
         fileCoverage.AddOrMergeLine(new LineCoverage(2, true), service);
 
         retrievedLine = fileCoverage.Lines.Single(l => l.LineNumber == 2);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(retrievedLine.IsCovered, Is.True);
             Assert.That(retrievedLine.CoveredBranches, Is.Null);
-        });
+        }
     }
 
     [Test]

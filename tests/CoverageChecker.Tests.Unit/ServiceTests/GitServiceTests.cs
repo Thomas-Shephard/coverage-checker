@@ -17,11 +17,11 @@ public class GitServiceTests
         string oldPath = PathUtils.GetNormalizedFullPath(Path.Combine(_mockExecutor.RepoRoot, "old_file.cs"));
         string newPath = PathUtils.GetNormalizedFullPath(Path.Combine(_mockExecutor.RepoRoot, "new_file.cs"));
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result, Has.Count.EqualTo(1));
             Assert.That(result[oldPath], Is.EqualTo(newPath));
-        });
+        }
     }
 
     [Test]
@@ -35,11 +35,11 @@ public class GitServiceTests
         string oldPath = PathUtils.GetNormalizedFullPath(Path.Combine(_mockExecutor.RepoRoot, "old file.cs"));
         string newPath = PathUtils.GetNormalizedFullPath(Path.Combine(_mockExecutor.RepoRoot, "new file.cs"));
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result, Has.Count.EqualTo(1));
             Assert.That(result[oldPath], Is.EqualTo(newPath));
-        });
+        }
     }
 
     [TestCase(-0.1)]
@@ -125,7 +125,7 @@ public class GitServiceTests
         string path2 = PathUtils.NormalizePath(Path.GetFullPath(Path.Combine(_mockExecutor.RepoRoot, "file2.cs")));
         string path3 = PathUtils.NormalizePath(Path.GetFullPath(Path.Combine(_mockExecutor.RepoRoot, "file3.cs")));
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result, Contains.Key(path1), "file1 should be present");
             Assert.That(result[path1], Is.EquivalentTo((int[])[11]), "file1 changes");
@@ -134,7 +134,7 @@ public class GitServiceTests
 
             Assert.That(result, Contains.Key(path3), "file3 should be present");
             Assert.That(result[path3], Is.EquivalentTo((int[])[6]), "file3 changes");
-        });
+        }
     }
 
     [Test]
@@ -227,11 +227,11 @@ public class GitServiceTests
 
         string path1 = PathUtils.NormalizePath(Path.GetFullPath(Path.Combine(_mockExecutor.RepoRoot, "file1.cs")));
         string path2 = PathUtils.NormalizePath(Path.GetFullPath(Path.Combine(_mockExecutor.RepoRoot, "file2.cs")));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result[path1], Is.EquivalentTo((int[])[1]));
             Assert.That(result[path2], Is.EquivalentTo((int[])[5, 6]));
-        });
+        }
     }
 
     [Test]
@@ -273,11 +273,11 @@ public class GitServiceTests
         GitService sut = new(mockExecutor.Object);
 
         GitException? ex = Assert.Throws<GitException>(() => sut.GetChangedLines("main"));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(ex.Message, Does.Contain("Failed to execute 'git'"));
             Assert.That(ex.InnerException, Is.TypeOf<System.ComponentModel.Win32Exception>());
-        });
+        }
     }
 
     [Test]
@@ -290,11 +290,11 @@ public class GitServiceTests
         GitService sut = new(mockExecutor.Object);
 
         GitException? ex = Assert.Throws<GitException>(() => sut.GetRepoRoot());
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(ex.Message, Does.Contain("Failed to execute 'git'"));
             Assert.That(ex.InnerException, Is.TypeOf<System.ComponentModel.Win32Exception>());
-        });
+        }
     }
 
     [Test]
@@ -599,11 +599,11 @@ public class GitServiceTests
         GitService sut = new(mockExecutor.Object);
 
         GitException? ex = Assert.Throws<GitException>(() => sut.GetRenames("main"));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(ex.Message, Does.Contain("Failed to execute 'git'"));
             Assert.That(ex.InnerException, Is.TypeOf<System.ComponentModel.Win32Exception>());
-        });
+        }
     }
 
     [Test]
@@ -621,11 +621,11 @@ public class GitServiceTests
         GitService sut = new(mockExecutor.Object);
 
         GitException? ex = Assert.Throws<GitException>(() => sut.GetChangedLines("main"));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(ex.Message, Does.Contain("Failed to execute 'git'"));
             Assert.That(ex.InnerException, Is.TypeOf<System.ComponentModel.Win32Exception>());
-        });
+        }
     }
 
     [Test]

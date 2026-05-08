@@ -23,8 +23,8 @@ public class CoverageAnalyserOptionsTests
     public void DefaultValuesAreCorrect()
     {
         CoverageAnalyserOptions options = new();
-        
-        Assert.Multiple(() =>
+
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(options.RenameThreshold, Is.EqualTo(0.5));
             Assert.That(options.CoverageFormat, Is.EqualTo(CoverageFormat.Auto));
@@ -32,6 +32,6 @@ public class CoverageAnalyserOptionsTests
             Assert.That(options.GlobPatterns, Is.EquivalentTo((string[])["**/*.xml"]));
             Assert.That(options.Include, Is.Null);
             Assert.That(options.Exclude, Is.Null);
-        });
+        }
     }
 }

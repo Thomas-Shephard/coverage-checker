@@ -35,7 +35,7 @@ public class CoverageAnalyserCoberturaTests
     {
         Coverage coverage = CreateAnalyser("FullLineCoverage.xml", NullLoggerFactory.Instance).AnalyseCoverage();
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(coverage.Files, Has.Count.EqualTo(3));
             Assert.That(coverage.Files[0].Lines, Has.Count.EqualTo(6));
@@ -43,7 +43,7 @@ public class CoverageAnalyserCoberturaTests
             Assert.That(coverage.Files[2].Lines, Has.Count.EqualTo(2));
             Assert.That(coverage.CalculateOverallCoverage(), Is.EqualTo(1));
             Assert.That(coverage.CalculateOverallCoverage(CoverageType.Branch), Is.EqualTo((double)5 / 6));
-        });
+        }
     }
 
     [Test]
@@ -51,7 +51,7 @@ public class CoverageAnalyserCoberturaTests
     {
         Coverage coverage = CreateAnalyser("FullLineCoverage.xml").AnalyseCoverage();
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(coverage.Files, Has.Count.EqualTo(3));
             Assert.That(coverage.Files[0].Lines, Has.Count.EqualTo(6));
@@ -59,7 +59,7 @@ public class CoverageAnalyserCoberturaTests
             Assert.That(coverage.Files[2].Lines, Has.Count.EqualTo(2));
             Assert.That(coverage.CalculateOverallCoverage(), Is.EqualTo(1));
             Assert.That(coverage.CalculateOverallCoverage(CoverageType.Branch), Is.EqualTo((double)5 / 6));
-        });
+        }
     }
 
     [Test]
@@ -67,14 +67,14 @@ public class CoverageAnalyserCoberturaTests
     {
         Coverage coverage = CreateAnalyser("FullBranchCoverage.xml").AnalyseCoverage();
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(coverage.Files, Has.Count.EqualTo(2));
             Assert.That(coverage.Files[0].Lines, Has.Count.EqualTo(5));
             Assert.That(coverage.Files[1].Lines, Has.Count.EqualTo(2));
             Assert.That(coverage.CalculateOverallCoverage(), Is.EqualTo(1));
             Assert.That(coverage.CalculateOverallCoverage(CoverageType.Branch), Is.EqualTo(1));
-        });
+        }
     }
 
     [Test]
@@ -82,13 +82,13 @@ public class CoverageAnalyserCoberturaTests
     {
         Coverage coverage = CreateAnalyser("PartialLineCoverage.xml").AnalyseCoverage();
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(coverage.Files, Has.Count.EqualTo(1));
             Assert.That(coverage.Files[0].Lines, Has.Count.EqualTo(5));
             Assert.That(coverage.CalculateOverallCoverage(), Is.EqualTo((double)1 / 5));
             Assert.That(coverage.CalculateOverallCoverage(CoverageType.Branch), Is.NaN);
-        });
+        }
     }
 
     [Test]
@@ -96,12 +96,12 @@ public class CoverageAnalyserCoberturaTests
     {
         Coverage coverage = CreateAnalyser("NoPackages.xml").AnalyseCoverage();
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(coverage.Files, Is.Empty);
             Assert.That(coverage.CalculateOverallCoverage(), Is.NaN);
             Assert.That(coverage.CalculateOverallCoverage(CoverageType.Branch), Is.NaN);
-        });
+        }
     }
 
     [Test]
@@ -109,12 +109,12 @@ public class CoverageAnalyserCoberturaTests
     {
         Coverage coverage = CreateAnalyser("NoClasses.xml").AnalyseCoverage();
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(coverage.Files, Is.Empty);
             Assert.That(coverage.CalculateOverallCoverage(), Is.NaN);
             Assert.That(coverage.CalculateOverallCoverage(CoverageType.Branch), Is.NaN);
-        });
+        }
     }
 
     [Test]
@@ -122,14 +122,14 @@ public class CoverageAnalyserCoberturaTests
     {
         Coverage coverage = CreateAnalyser("NoLines.xml").AnalyseCoverage();
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(coverage.Files, Has.Count.EqualTo(2));
             Assert.That(coverage.Files[0].Lines, Is.Empty);
             Assert.That(coverage.Files[1].Lines, Is.Empty);
             Assert.That(coverage.CalculateOverallCoverage(), Is.NaN);
             Assert.That(coverage.CalculateOverallCoverage(CoverageType.Branch), Is.NaN);
-        });
+        }
     }
 
     [Test]
@@ -137,13 +137,13 @@ public class CoverageAnalyserCoberturaTests
     {
         Coverage coverage = CreateAnalyser(["Sources1.xml", "Sources2.xml"]).AnalyseCoverage();
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(coverage.Files, Has.Count.EqualTo(1));
             Assert.That(coverage.Files[0].Lines, Has.Count.EqualTo(3));
             Assert.That(coverage.CalculateOverallCoverage(), Is.EqualTo(1));
             Assert.That(coverage.CalculateOverallCoverage(CoverageType.Branch), Is.NaN);
-        });
+        }
     }
 
     [Test]

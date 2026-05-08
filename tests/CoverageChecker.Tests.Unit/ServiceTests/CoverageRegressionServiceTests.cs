@@ -69,13 +69,13 @@ public class CoverageRegressionServiceTests
 
         RegressionResult result = _service.CheckRegression(baseline, current);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.HasRegressions, Is.True);
             Assert.That(result.RegressedFiles, Has.Count.EqualTo(1));
             Assert.That(result.RegressedFiles[0].BaselineCoverage, Is.EqualTo(1.0));
             Assert.That(result.RegressedFiles[0].NewCoverage, Is.EqualTo(0.75));
-        });
+        }
     }
 
     [Test]
@@ -98,13 +98,13 @@ public class CoverageRegressionServiceTests
 
         RegressionResult result = _service.CheckRegression(baseline, current);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.HasRegressions, Is.True);
             Assert.That(result.RegressedFiles, Has.Count.EqualTo(1));
             // PackageName should be null because it's ambiguous (Package1 and Package2)
             Assert.That(result.RegressedFiles[0].PackageName, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -118,11 +118,11 @@ public class CoverageRegressionServiceTests
         Coverage current = new([]);
 
         RegressionResult result = _service.CheckRegression(baseline, current);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.HasRegressions, Is.False);
             Assert.That(result.RegressedFiles, Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -137,12 +137,12 @@ public class CoverageRegressionServiceTests
         Coverage current = new([currentFile]);
 
         RegressionResult result = _service.CheckRegression(baseline, current);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.HasRegressions, Is.True);
             Assert.That(result.RegressedFiles, Has.Count.EqualTo(1));
             Assert.That(result.RegressedFiles[0].CoverageType, Is.EqualTo(CoverageType.Line));
-        });
+        }
     }
 
     [Test]
@@ -159,12 +159,12 @@ public class CoverageRegressionServiceTests
         Coverage current = new([currentFile]);
 
         RegressionResult result = _service.CheckRegression(baseline, current);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.HasRegressions, Is.True);
             // Line coverage is the same (100%), but branch regressed
             Assert.That(result.RegressedFiles, Has.Count.EqualTo(1));
-        });
+        }
         Assert.That(result.RegressedFiles[0].CoverageType, Is.EqualTo(CoverageType.Branch));
     }
 
@@ -180,11 +180,11 @@ public class CoverageRegressionServiceTests
         Coverage current = new([currentFile]);
 
         RegressionResult result = _service.CheckRegression(baseline, current);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.HasRegressions, Is.False);
             Assert.That(result.RegressedFiles, Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -201,13 +201,13 @@ public class CoverageRegressionServiceTests
         Coverage current = new([currentFile1, currentFile2]);
 
         RegressionResult result = _service.CheckRegression(baseline, current);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.HasRegressions, Is.True);
             Assert.That(result.RegressedFiles, Has.Count.EqualTo(1));
             Assert.That(result.RegressedFiles[0].Path, Is.EqualTo("File1.cs"));
             Assert.That(result.RegressedFiles[0].CoverageType, Is.EqualTo(CoverageType.Line));
-        });
+        }
     }
 
     [Test]
@@ -234,11 +234,11 @@ public class CoverageRegressionServiceTests
 
         RegressionResult result = _service.CheckRegression(baseline, current);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.HasRegressions, Is.False);
             Assert.That(result.RegressedFiles, Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -251,11 +251,11 @@ public class CoverageRegressionServiceTests
 
         RegressionResult result = _service.CheckRegression(baseline, current);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.HasRegressions, Is.False);
             Assert.That(result.RegressedFiles, Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -274,17 +274,17 @@ public class CoverageRegressionServiceTests
 
         RegressionResult result = _service.CheckRegression(baseline, current, renames);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.HasRegressions, Is.True);
             Assert.That(result.RegressedFiles, Has.Count.EqualTo(1));
-        });
+        }
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.RegressedFiles[0].Path, Is.EqualTo("NewPath.cs"));
             Assert.That(result.RegressedFiles[0].NewCoverage, Is.EqualTo(0.6));
-        });
+        }
     }
 
     [Test]
@@ -303,13 +303,13 @@ public class CoverageRegressionServiceTests
 
         RegressionResult result = _service.CheckRegression(baseline, current, renames);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.HasRegressions, Is.True);
             Assert.That(result.RegressedFiles, Has.Count.EqualTo(1));
             Assert.That(result.RegressedFiles[0].Path, Is.EqualTo("NewPath.cs"));
             Assert.That(result.RegressedFiles[0].NewCoverage, Is.EqualTo(0.6));
-        });
+        }
     }
 
     [Test]
@@ -328,11 +328,11 @@ public class CoverageRegressionServiceTests
 
         RegressionResult result = _service.CheckRegression(baseline, current);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.HasRegressions, Is.True);
             Assert.That(result.RegressedFiles[0].PackageName, Is.EqualTo("NewPackage"));
-        });
+        }
     }
 
     [Test]
@@ -366,12 +366,12 @@ public class CoverageRegressionServiceTests
         Coverage current = new([currentFilePart1, currentFilePart2]);
 
         RegressionResult result = _service.CheckRegression(baseline, current);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.HasRegressions, Is.True);
             Assert.That(result.RegressedFiles[0].CoverageType, Is.EqualTo(CoverageType.Branch));
             Assert.That(result.RegressedFiles[0].NewCoverage, Is.EqualTo(0.0));
-        });
+        }
     }
 
     [Test]
@@ -389,11 +389,12 @@ public class CoverageRegressionServiceTests
         Coverage current = new([currentFilePart1, currentFilePart2]);
 
         RegressionResult result = _service.CheckRegression(baseline, current);
-        Assert.Multiple(() => {
+        using (Assert.EnterMultipleScope())
+        {
             Assert.That(result.HasRegressions, Is.True);
             Assert.That(result.RegressedFiles, Has.Count.EqualTo(1));
             Assert.That(result.RegressedFiles[0].CoverageType, Is.EqualTo(CoverageType.Branch));
             Assert.That(result.RegressedFiles[0].NewCoverage, Is.EqualTo(0.5));
-        });
+        }
     }
 }

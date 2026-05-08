@@ -13,7 +13,7 @@ public class LineCoverageTests
     {
         LineCoverage lineCoverage = new(lineNumber, isCovered, branches, coveredBranches, className, methodName, methodSignature);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(lineCoverage.LineNumber, Is.EqualTo(lineNumber));
             Assert.That(lineCoverage.IsCovered, Is.EqualTo(isCovered));
@@ -23,7 +23,7 @@ public class LineCoverageTests
             Assert.That(lineCoverage.MethodName, Is.EqualTo(methodName));
             Assert.That(lineCoverage.MethodSignature, Is.EqualTo(methodSignature));
             Assert.That(lineCoverage.Lines, Is.EqualTo(new List<LineCoverage>([lineCoverage])));
-        });
+        }
     }
 
     [TestCase(null, 0)]
