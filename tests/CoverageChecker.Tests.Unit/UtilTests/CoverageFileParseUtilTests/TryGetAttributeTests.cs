@@ -18,11 +18,11 @@ public class TryGetAttributeTests
 
         bool attributeFound = reader.TryGetAttribute(XmlReaderTestUtils.AttributeName, out string? attribute);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(attributeFound, Is.True);
             Assert.That(attribute, Is.EqualTo(attributeValue));
-        });
+        }
     }
 
     [Test]
@@ -36,11 +36,11 @@ public class TryGetAttributeTests
 
         bool attributeFound = reader.TryGetAttribute(XmlReaderTestUtils.AttributeName, out string? attribute);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(attributeFound, Is.False);
             Assert.That(attribute, Is.Default);
-        });
+        }
     }
 
     [Test]
@@ -55,11 +55,11 @@ public class TryGetAttributeTests
 
         bool attributeFound = reader.TryGetAttribute(XmlReaderTestUtils.AttributeName, out int attribute);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(attributeFound, Is.True);
             Assert.That(attribute, Is.EqualTo(int.Parse(attributeValue, CultureInfo.InvariantCulture)));
-        });
+        }
     }
 
     [Test]
@@ -73,11 +73,11 @@ public class TryGetAttributeTests
 
         bool attributeFound = reader.TryGetAttribute(XmlReaderTestUtils.AttributeName, out int attribute);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(attributeFound, Is.False);
             Assert.That(attribute, Is.Default);
-        });
+        }
     }
 
     [Test]

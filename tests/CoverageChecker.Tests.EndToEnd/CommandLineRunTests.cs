@@ -105,10 +105,11 @@ public class CommandLineRunTests
         
         string stdout = await stdoutTask;
         await stderrTask;
-        
-        Assert.Multiple(() => {
+
+        using (Assert.EnterMultipleScope())
+        {
             Assert.That(process.ExitCode, Is.Not.Zero);
             Assert.That(stdout, Does.Contain("No coverage files found."));
-        });
+        }
     }
 }

@@ -9,11 +9,11 @@ public class RegressionResultTests
     {
         RegressionResult result = new(null);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.RegressedFiles, Is.Empty);
             Assert.That(result.HasRegressions, Is.False);
-        });
+        }
     }
 
     [Test]
@@ -21,10 +21,10 @@ public class RegressionResultTests
     {
         RegressionResult result = new([]);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.RegressedFiles, Is.Empty);
             Assert.That(result.HasRegressions, Is.False);
-        });
+        }
     }
 }

@@ -37,10 +37,10 @@ internal static class XmlReaderTestUtils
 
     internal static void CheckPosition(this IXmlLineInfo lineInfo, int lineNumber, int linePosition)
     {
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(lineInfo.LineNumber, Is.EqualTo(lineNumber));
             Assert.That(lineInfo.LinePosition, Is.EqualTo(linePosition));
-        });
+        }
     }
 }

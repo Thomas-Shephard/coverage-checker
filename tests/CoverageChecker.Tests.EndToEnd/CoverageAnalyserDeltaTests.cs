@@ -158,11 +158,11 @@ public class CoverageAnalyserDeltaTests
         CoverageAnalyser analyser = new(options, NullLoggerFactory.Instance);
         DeltaResult result = analyser.AnalyseDeltaCoverage(baseCommit);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.HasChangedLines, Is.True);
             Assert.That(result.Coverage.Files, Has.Count.EqualTo(1));
-        });
+        }
 
         FileCoverage file = result.Coverage.Files[0];
         Assert.That(file.Lines, Has.Count.EqualTo(1), "Should only detect one changed line");
@@ -224,11 +224,11 @@ public class CoverageAnalyserDeltaTests
         CoverageAnalyser analyser = new(options, NullLoggerFactory.Instance);
         DeltaResult result = analyser.AnalyseDeltaCoverage(baseCommit);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.HasChangedLines, Is.True);
             Assert.That(result.Coverage.Files, Has.Count.EqualTo(1));
-        });
+        }
 
         FileCoverage file = result.Coverage.Files[0];
         Assert.That(file.Lines, Has.Count.EqualTo(1));

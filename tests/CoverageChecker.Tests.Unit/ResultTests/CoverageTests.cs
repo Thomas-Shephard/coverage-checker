@@ -16,11 +16,11 @@ public class CoverageTests
 
         Coverage coverage = new(files);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(coverage.Files, Is.EqualTo(files));
             Assert.That(coverage.Lines, Is.EqualTo(new List<LineCoverage>([.. files[0].Lines, .. files[1].Lines])));
-        });
+        }
     }
 
     [Test]
@@ -30,11 +30,11 @@ public class CoverageTests
 
         Coverage coverage = new(files);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(coverage.Files, Is.Empty);
             Assert.That(coverage.Lines, Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -55,12 +55,12 @@ public class CoverageTests
         coverageFile2.AddOrMergeLine(new LineCoverage(2, true, 3, 2), service);
         coverageFile2.AddOrMergeLine(new LineCoverage(3, false, 4, 3), service);
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(coverage.GetOrCreateFile($"{CoverageTestData.FilePath}-1"), Is.EqualTo(coverageFile1));
             Assert.That(coverage.GetOrCreateFile($"{CoverageTestData.FilePath}-2"), Is.EqualTo(coverageFile2));
             Assert.That(coverage.GetOrCreateFile($"{CoverageTestData.FilePath}-3").Lines, Is.Empty);
-        });
+        }
     }
 
     [Test]
