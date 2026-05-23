@@ -108,6 +108,8 @@ coveragechecker -d ./coverage-results -g "**/cobertura-coverage.xml" -l 90 -b 85
 
 The CoverageChecker Command Line tool reads the specified coverage files and outputs the line and branch coverage of the analyzed files.
 If the line or branch coverage is below the specified threshold, the tool will exit with a non-zero exit code.
+If coverage files are found but no applicable lines remain after parsing or include/exclude filtering, line coverage is reported as unavailable and the tool exits with a non-zero exit code.
+Branch coverage with no branches is reported as unavailable and does not fail the branch threshold.
 
 ### Coverage Gap Reporting
 
