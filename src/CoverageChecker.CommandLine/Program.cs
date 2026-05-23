@@ -287,7 +287,7 @@ static bool TryAnalyseDeltaCoverage(CoverageAnalyser analyser, Coverage coverage
     deltaResult = null;
     try
     {
-        deltaResult = analyser.AnalyseDeltaCoverage(options.DeltaBase, coverage);
+        deltaResult = analyser.AnalyseDeltaCoverage(options.DeltaBase, coverage, options.StrictDelta);
         return true;
     }
     catch (Exception ex) when (ex is GitException or ArgumentException)

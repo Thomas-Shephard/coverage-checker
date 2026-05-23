@@ -110,7 +110,7 @@ public partial class CoverageAnalyser
 
     private void FilterFiles(Coverage coverage, string? rootDirectory)
     {
-        if (_options.Include == null && _options.Exclude == null) return;
+        if (!HasFileFilters()) return;
 
         string root = rootDirectory ?? Environment.CurrentDirectory;
         Matcher matcher = CreateMatcher();
@@ -123,7 +123,7 @@ public partial class CoverageAnalyser
 
     private static FileCoverage[] GetFilesToRemove(Coverage coverage, string root, Matcher matcher)
     {
-        return coverage.Files.Where(file => IsFileExcluded(file, root, matcher)).ToArray();
+        return coverage.Files.Where(file => !IsFileInScope(file.Path, root, matcher)).ToArray();
     }
 
     private Matcher CreateMatcher()
@@ -156,15 +156,15 @@ public partial class CoverageAnalyser
         return matcher;
     }
 
-    private static bool IsFileExcluded(FileCoverage file, string root, Matcher matcher)
+    private static bool IsFileInScope(string filePath, string root, Matcher matcher)
     {
-        if (Path.GetPathRoot(root) != Path.GetPathRoot(file.Path))
+        if (Path.GetPathRoot(root) != Path.GetPathRoot(filePath))
         {
-            return true;
+            return false;
         }
 
-        string relativePath = PathUtils.NormalizePath(Path.GetRelativePath(root, file.Path));
-        return !matcher.Match(relativePath).HasMatches;
+        string relativePath = PathUtils.NormalizePath(Path.GetRelativePath(root, filePath));
+        return matcher.Match(relativePath).HasMatches;
     }
 
     /// <summary>
@@ -177,10 +177,39 @@ public partial class CoverageAnalyser
     /// <exception cref="NoCoverageFilesFoundException">Thrown when no coverage files are found and coverage is not provided.</exception>
     public DeltaResult AnalyseDeltaCoverage(string baseBranch, Coverage? coverage = null)
     {
+        return AnalyseDeltaCoverage(baseBranch, coverage, scopeMissingFiles: false);
+    }
+
+    /// <summary>
+    /// Analyses the coverage information and filters it to only include changed lines.
+    /// </summary>
+    /// <param name="baseBranch">The base branch to compare against for delta coverage.</param>
+    /// <param name="coverage">Optional: The coverage information to filter. If not provided, it will be analysed from the files.</param>
+    /// <param name="scopeMissingFiles">Whether changed files missing from coverage should be limited to the configured include/exclude file scope.</param>
+    /// <returns>The delta coverage information and status.</returns>
+    /// <exception cref="GitException">Thrown when there is an error retrieving changed lines from git.</exception>
+    /// <exception cref="NoCoverageFilesFoundException">Thrown when no coverage files are found and coverage is not provided.</exception>
+    public DeltaResult AnalyseDeltaCoverage(string baseBranch, Coverage? coverage, bool scopeMissingFiles)
+    {
         coverage ??= AnalyseCoverage();
         IDictionary<string, HashSet<int>> changedLines = _gitService.GetChangedLines(baseBranch);
-        return _deltaCoverageService.FilterCoverage(coverage, changedLines);
+        DeltaResult result = _deltaCoverageService.FilterCoverage(coverage, changedLines);
+
+        if (!scopeMissingFiles || !HasFileFilters() || result.ChangedFilesMissingCoverage.Count == 0)
+        {
+            return result;
+        }
+
+        string root = _gitService.GetRepoRoot();
+        Matcher matcher = CreateMatcher();
+        string[] scopedMissingFiles = result.ChangedFilesMissingCoverage
+            .Where(file => IsFileInScope(file, root, matcher))
+            .ToArray();
+
+        return result.WithChangedFilesMissingCoverage(scopedMissingFiles);
     }
+
+    private bool HasFileFilters() => _options.Include != null || _options.Exclude != null;
 
     /// <summary>
     /// Checks for regression between the baseline and current coverage.

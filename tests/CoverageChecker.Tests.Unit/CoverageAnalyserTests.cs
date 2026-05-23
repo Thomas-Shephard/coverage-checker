@@ -82,6 +82,114 @@ public class CoverageAnalyserTests
     }
 
     [Test]
+    public void AnalyseDeltaCoverageScopesStrictMissingFilesToIncludePatterns()
+    {
+        string root = Path.Combine(ValidDirectory, "repo");
+        string readme = Path.Combine(root, "README.md");
+        Coverage coverage = new();
+        Dictionary<string, HashSet<int>> changedLines = [];
+        DeltaResult deltaResult = new(new Coverage(), false, 1, 0, 0, [readme]);
+        Mock<IGitService> mockGitService = new();
+        Mock<IDeltaCoverageService> mockDeltaService = new();
+        mockGitService.Setup(s => s.GetChangedLines("main", "HEAD")).Returns(changedLines);
+        mockGitService.Setup(s => s.GetRepoRoot()).Returns(root);
+        mockDeltaService.Setup(s => s.FilterCoverage(coverage, changedLines)).Returns(deltaResult);
+
+        CoverageAnalyserOptions options = CreateDefaultOptions() with { Include = ["src/**/*.cs"] };
+        CoverageAnalyser sut = new(options, Mock.Of<IFileFinder>(), Mock.Of<IParserFactory>(), mockGitService.Object, mockDeltaService.Object, Mock.Of<ICoverageRegressionService>());
+
+        DeltaResult result = sut.AnalyseDeltaCoverage("main", coverage, scopeMissingFiles: true);
+
+        Assert.That(result.ChangedFilesMissingCoverage, Is.Empty);
+    }
+
+    [Test]
+    public void AnalyseDeltaCoverageKeepsStrictMissingFileWhenItMatchesIncludePatterns()
+    {
+        string root = Path.Combine(ValidDirectory, "repo");
+        string missingSource = Path.Combine(root, "src", "Foo.cs");
+        Coverage coverage = new();
+        Dictionary<string, HashSet<int>> changedLines = [];
+        DeltaResult deltaResult = new(new Coverage(), false, 1, 0, 0, [missingSource]);
+        Mock<IGitService> mockGitService = new();
+        Mock<IDeltaCoverageService> mockDeltaService = new();
+        mockGitService.Setup(s => s.GetChangedLines("main", "HEAD")).Returns(changedLines);
+        mockGitService.Setup(s => s.GetRepoRoot()).Returns(root);
+        mockDeltaService.Setup(s => s.FilterCoverage(coverage, changedLines)).Returns(deltaResult);
+
+        CoverageAnalyserOptions options = CreateDefaultOptions() with { Include = ["src/**/*.cs"] };
+        CoverageAnalyser sut = new(options, Mock.Of<IFileFinder>(), Mock.Of<IParserFactory>(), mockGitService.Object, mockDeltaService.Object, Mock.Of<ICoverageRegressionService>());
+
+        DeltaResult result = sut.AnalyseDeltaCoverage("main", coverage, scopeMissingFiles: true);
+
+        Assert.That(result.ChangedFilesMissingCoverage, Is.EqualTo((string[])[missingSource]));
+    }
+
+    [Test]
+    public void AnalyseDeltaCoverageScopesStrictMissingFilesToExcludePatterns()
+    {
+        string root = Path.Combine(ValidDirectory, "repo");
+        string generatedSource = Path.Combine(root, "src", "Foo.Generated.cs");
+        Coverage coverage = new();
+        Dictionary<string, HashSet<int>> changedLines = [];
+        DeltaResult deltaResult = new(new Coverage(), false, 1, 0, 0, [generatedSource]);
+        Mock<IGitService> mockGitService = new();
+        Mock<IDeltaCoverageService> mockDeltaService = new();
+        mockGitService.Setup(s => s.GetChangedLines("main", "HEAD")).Returns(changedLines);
+        mockGitService.Setup(s => s.GetRepoRoot()).Returns(root);
+        mockDeltaService.Setup(s => s.FilterCoverage(coverage, changedLines)).Returns(deltaResult);
+
+        CoverageAnalyserOptions options = CreateDefaultOptions() with { Exclude = ["**/*.Generated.cs"] };
+        CoverageAnalyser sut = new(options, Mock.Of<IFileFinder>(), Mock.Of<IParserFactory>(), mockGitService.Object, mockDeltaService.Object, Mock.Of<ICoverageRegressionService>());
+
+        DeltaResult result = sut.AnalyseDeltaCoverage("main", coverage, scopeMissingFiles: true);
+
+        Assert.That(result.ChangedFilesMissingCoverage, Is.Empty);
+    }
+
+    [Test]
+    public void AnalyseDeltaCoverageLeavesStrictMissingFilesUnscopedWhenNoIncludeOrExcludePatternsExist()
+    {
+        string missingFile = Path.Combine(ValidDirectory, "repo", "README.md");
+        Coverage coverage = new();
+        Dictionary<string, HashSet<int>> changedLines = [];
+        DeltaResult deltaResult = new(new Coverage(), false, 1, 0, 0, [missingFile]);
+        Mock<IGitService> mockGitService = new();
+        Mock<IDeltaCoverageService> mockDeltaService = new();
+        mockGitService.Setup(s => s.GetChangedLines("main", "HEAD")).Returns(changedLines);
+        mockDeltaService.Setup(s => s.FilterCoverage(coverage, changedLines)).Returns(deltaResult);
+
+        CoverageAnalyser sut = new(CreateDefaultOptions(), Mock.Of<IFileFinder>(), Mock.Of<IParserFactory>(), mockGitService.Object, mockDeltaService.Object, Mock.Of<ICoverageRegressionService>());
+
+        DeltaResult result = sut.AnalyseDeltaCoverage("main", coverage, scopeMissingFiles: true);
+
+        Assert.That(result.ChangedFilesMissingCoverage, Is.EqualTo((string[])[missingFile]));
+        mockGitService.Verify(s => s.GetRepoRoot(), Times.Never);
+    }
+
+    [Test]
+    public void AnalyseDeltaCoverageDoesNotScopeMissingFilesWhenStrictScopeIsNotRequested()
+    {
+        string root = Path.Combine(ValidDirectory, "repo");
+        string readme = Path.Combine(root, "README.md");
+        Coverage coverage = new();
+        Dictionary<string, HashSet<int>> changedLines = [];
+        DeltaResult deltaResult = new(new Coverage(), false, 1, 0, 0, [readme]);
+        Mock<IGitService> mockGitService = new();
+        Mock<IDeltaCoverageService> mockDeltaService = new();
+        mockGitService.Setup(s => s.GetChangedLines("main", "HEAD")).Returns(changedLines);
+        mockDeltaService.Setup(s => s.FilterCoverage(coverage, changedLines)).Returns(deltaResult);
+
+        CoverageAnalyserOptions options = CreateDefaultOptions() with { Include = ["src/**/*.cs"] };
+        CoverageAnalyser sut = new(options, Mock.Of<IFileFinder>(), Mock.Of<IParserFactory>(), mockGitService.Object, mockDeltaService.Object, Mock.Of<ICoverageRegressionService>());
+
+        DeltaResult result = sut.AnalyseDeltaCoverage("main", coverage);
+
+        Assert.That(result.ChangedFilesMissingCoverage, Is.EqualTo((string[])[readme]));
+        mockGitService.Verify(s => s.GetRepoRoot(), Times.Never);
+    }
+
+    [Test]
     public void AnalyseCoverageShouldDetectFormatWhenAutoIsUsed()
     {
         Mock<IFileFinder> mockFileFinder = new();

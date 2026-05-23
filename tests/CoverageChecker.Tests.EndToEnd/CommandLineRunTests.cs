@@ -570,6 +570,100 @@ public class CommandLineRunTests
     }
 
     [Test]
+    public async Task CheckCommandIgnoresStrictDeltaMissingFileOutsideIncludeScope()
+    {
+        using TestDirectory testDirectory = new();
+        string baseCommit = CreateGitRepoWithInitialCommit(testDirectory.Path, ("README.md", "# Project\n"));
+
+        WriteTextFile(testDirectory.Path, "README.md", "# Project\n\nDocs update.\n");
+        RunGit(testDirectory.Path, "add README.md");
+        RunGit(testDirectory.Path, "commit -m \"Update docs\"");
+
+        WriteTextFile(testDirectory.Path, "src/Covered.cs", "public class Covered {}\n");
+        File.WriteAllText(Path.Combine(testDirectory.Path, "coverage.xml"), CreateCoverageXml(testDirectory.Path, "src/Covered.cs"));
+
+        (int exitCode, string stdout) = await RunCliInDirectory(
+            testDirectory.Path,
+            "check",
+            "--directory", testDirectory.Path,
+            "--glob-patterns", "coverage.xml",
+            "--format", "Cobertura",
+            "--delta",
+            "--strict-delta",
+            "--include", "src/**/*.cs",
+            "--delta-base", baseCommit);
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exitCode, Is.Zero);
+            Assert.That(stdout, Does.Not.Contain("Strict delta coverage failed"));
+        }
+    }
+
+    [Test]
+    public async Task CheckCommandFailsStrictDeltaForMissingFileInsideIncludeScope()
+    {
+        using TestDirectory testDirectory = new();
+        string baseCommit = CreateGitRepoWithInitialCommit(testDirectory.Path, ("src/Foo.cs", "public class Foo\n{\n}\n"));
+
+        WriteTextFile(testDirectory.Path, "src/Foo.cs", "public class Foo\n{\n    public void Method() {}\n}\n");
+        RunGit(testDirectory.Path, "add src/Foo.cs");
+        RunGit(testDirectory.Path, "commit -m \"Update source\"");
+
+        WriteTextFile(testDirectory.Path, "src/Covered.cs", "public class Covered {}\n");
+        File.WriteAllText(Path.Combine(testDirectory.Path, "coverage.xml"), CreateCoverageXml(testDirectory.Path, "src/Covered.cs"));
+
+        (int exitCode, string stdout) = await RunCliInDirectory(
+            testDirectory.Path,
+            "check",
+            "--directory", testDirectory.Path,
+            "--glob-patterns", "coverage.xml",
+            "--format", "Cobertura",
+            "--delta",
+            "--strict-delta",
+            "--include", "src/**/*.cs",
+            "--delta-base", baseCommit);
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exitCode, Is.Not.Zero);
+            Assert.That(stdout, Does.Contain("Strict delta coverage failed because 1 changed file(s) were absent from coverage data:"));
+            Assert.That(stdout, Does.Contain("src/Foo.cs"));
+        }
+    }
+
+    [Test]
+    public async Task CheckCommandIgnoresStrictDeltaMissingFileInsideExcludeScope()
+    {
+        using TestDirectory testDirectory = new();
+        string baseCommit = CreateGitRepoWithInitialCommit(testDirectory.Path, ("src/Foo.Generated.cs", "public class FooGenerated\n{\n}\n"));
+
+        WriteTextFile(testDirectory.Path, "src/Foo.Generated.cs", "public class FooGenerated\n{\n    public void Method() {}\n}\n");
+        RunGit(testDirectory.Path, "add src/Foo.Generated.cs");
+        RunGit(testDirectory.Path, "commit -m \"Update generated source\"");
+
+        WriteTextFile(testDirectory.Path, "src/Covered.cs", "public class Covered {}\n");
+        File.WriteAllText(Path.Combine(testDirectory.Path, "coverage.xml"), CreateCoverageXml(testDirectory.Path, "src/Covered.cs"));
+
+        (int exitCode, string stdout) = await RunCliInDirectory(
+            testDirectory.Path,
+            "check",
+            "--directory", testDirectory.Path,
+            "--glob-patterns", "coverage.xml",
+            "--format", "Cobertura",
+            "--delta",
+            "--strict-delta",
+            "--exclude", "**/*.Generated.cs",
+            "--delta-base", baseCommit);
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exitCode, Is.Zero);
+            Assert.That(stdout, Does.Not.Contain("Strict delta coverage failed"));
+        }
+    }
+
+    [Test]
     public async Task CheckCommandFailsInStrictDeltaWhenOneChangedFileMatchesCoverageAndAnotherIsMissing()
     {
         using TestDirectory testDirectory = new();
@@ -687,6 +781,60 @@ public class CommandLineRunTests
         string stderr = process.StandardError.ReadToEnd();
         Assert.That(process.ExitCode, Is.Zero, stderr);
         return stdout;
+    }
+
+    private static string CreateGitRepoWithInitialCommit(string workingDirectory, params (string RelativePath, string Contents)[] files)
+    {
+        RunGit(workingDirectory, "init");
+        RunGit(workingDirectory, "config user.email \"test@example.com\"");
+        RunGit(workingDirectory, "config user.name \"Test User\"");
+        RunGit(workingDirectory, "config commit.gpgsign false");
+        RunGit(workingDirectory, "config core.autocrlf false");
+
+        foreach ((string relativePath, string contents) in files)
+        {
+            WriteTextFile(workingDirectory, relativePath, contents);
+        }
+
+        RunGit(workingDirectory, "add .");
+        RunGit(workingDirectory, "commit -m \"Initial\"");
+        return RunGit(workingDirectory, "rev-parse HEAD").Trim();
+    }
+
+    private static void WriteTextFile(string rootDirectory, string relativePath, string contents)
+    {
+        string path = Path.Combine(rootDirectory, relativePath);
+        string? directory = Path.GetDirectoryName(path);
+        if (!string.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        File.WriteAllText(path, contents);
+    }
+
+    private static string CreateCoverageXml(string sourceDirectory, string fileName)
+    {
+        return $"""
+            <?xml version="1.0" encoding="utf-8"?>
+            <coverage>
+              <sources>
+                <source>{sourceDirectory}</source>
+              </sources>
+              <packages>
+                <package name="package-1">
+                  <classes>
+                    <class name="class-1" filename="{fileName}">
+                      <methods/>
+                      <lines>
+                        <line number="1" hits="1"/>
+                      </lines>
+                    </class>
+                  </classes>
+                </package>
+              </packages>
+            </coverage>
+            """;
     }
 
     private sealed class TestDirectory : IDisposable
