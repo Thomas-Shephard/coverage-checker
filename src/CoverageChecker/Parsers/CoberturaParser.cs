@@ -8,52 +8,46 @@ namespace CoverageChecker.Parsers;
 
 internal partial class CoberturaParser(Coverage coverage, ILogger<CoberturaParser> logger, ICoverageMergeService coverageMergeService) : ParserBase(logger)
 {
+    private readonly Dictionary<string, bool> _fileExistsCache = new(PathUtils.PathComparer);
+
     protected override void LoadCoverage(XmlReader reader)
     {
+        _fileExistsCache.Clear();
+
         if (!reader.ReadToFollowing("coverage") || reader.Depth != 0)
             throw new CoverageParseException("Expected coverage to be the root element");
 
         reader.TryEnterElement("coverage", () =>
         {
-            string? source = GetSource(reader);
-
-            if (source is not null)
-            {
-                source = ResolveFullPath(source);
-            }
+            string[] sources = GetSources(reader)
+                .Select(ResolveFullPath)
+                .ToArray();
 
             reader.TryEnterElement("packages", () =>
             {
                 reader.ParseElements("package", () =>
                 {
-                    LoadPackageCoverage(reader, source);
+                    LoadPackageCoverage(reader, sources);
                 });
             });
         });
     }
 
-    private static string? GetSource(XmlReader reader)
+    private static List<string> GetSources(XmlReader reader)
     {
-        string? source = null;
+        List<string> sources = [];
         reader.TryEnterElement("sources", () =>
         {
             reader.ParseElements("source", () =>
             {
-                if (source is null)
-                {
-                    source = reader.ReadElementContentAsString();
-                }
-                else
-                {
-                    throw new CoverageParseException("Multiple sources are not supported");
-                }
+                sources.Add(reader.ReadElementContentAsString().Trim());
             });
         }, false);
 
-        return source;
+        return sources;
     }
 
-    private void LoadPackageCoverage(XmlReader reader, string? source)
+    private void LoadPackageCoverage(XmlReader reader, IReadOnlyList<string> sources)
     {
         string packageName = reader.GetRequiredAttribute<string>("name");
         LogProcessingPackage(packageName);
@@ -64,7 +58,7 @@ internal partial class CoberturaParser(Coverage coverage, ILogger<CoberturaParse
             {
                 reader.ParseElements("class", () =>
                 {
-                    LoadClassCoverage(reader, packageName, source);
+                    LoadClassCoverage(reader, packageName, sources);
                 });
             });
         });
@@ -73,17 +67,10 @@ internal partial class CoberturaParser(Coverage coverage, ILogger<CoberturaParse
     [LoggerMessage(Level = LogLevel.Debug, Message = "Processing package: {PackageName}")]
     private partial void LogProcessingPackage(string packageName);
 
-    private void LoadClassCoverage(XmlReader reader, string packageName, string? source)
+    private void LoadClassCoverage(XmlReader reader, string packageName, IReadOnlyList<string> sources)
     {
-        string filePath = reader.GetRequiredAttribute<string>("filename");
+        string filePath = ResolveClassFilePath(reader.GetRequiredAttribute<string>("filename"), sources);
         string className = reader.GetRequiredAttribute<string>("name");
-
-        if (source is not null)
-        {
-            filePath = Path.Combine(source, filePath);
-        }
-
-        filePath = ResolveFullPath(filePath);
 
         reader.TryEnterElement("class", () =>
         {
@@ -106,6 +93,47 @@ internal partial class CoberturaParser(Coverage coverage, ILogger<CoberturaParse
             }, false);
         });
     }
+
+    private string ResolveClassFilePath(string filePath, IReadOnlyList<string> sources)
+    {
+        if (Path.IsPathRooted(filePath) || sources.Count is 0)
+        {
+            return ResolveFullPath(filePath);
+        }
+
+        if (sources.Count is 1)
+        {
+            return PathUtils.GetNormalizedFullPath(Path.Combine(sources[0], filePath));
+        }
+
+        foreach (string source in sources)
+        {
+            string candidate = PathUtils.GetNormalizedFullPath(Path.Combine(source, filePath));
+            if (FileExists(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        LogClassFileNotFound(filePath, sources[0]);
+        return PathUtils.GetNormalizedFullPath(Path.Combine(sources[0], filePath));
+    }
+
+    private bool FileExists(string filePath)
+    {
+        if (_fileExistsCache.TryGetValue(filePath, out bool exists))
+        {
+            return exists;
+        }
+
+        exists = File.Exists(filePath);
+        _fileExistsCache[filePath] = exists;
+
+        return exists;
+    }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Cobertura class file '{FilePath}' could not be found under any source. Falling back to first source: {Source}")]
+    private partial void LogClassFileNotFound(string filePath, string source);
 
     private void LoadMethodCoverage(FileCoverage file, XmlReader reader, string className)
     {
