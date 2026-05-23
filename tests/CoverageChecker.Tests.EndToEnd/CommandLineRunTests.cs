@@ -533,7 +533,7 @@ public class CommandLineRunTests
         {
             Assert.That(exitCode, Is.Not.Zero);
             Assert.That(stdout, Does.Contain("::error::"));
-            Assert.That(summary, Does.Contain("| Delta Coverage | N/A (Changed files missing from coverage data) | - | ❌ |"));
+            Assert.That(summary, Does.Contain("| **Delta Coverage** | N/A (Changed files missing from coverage data) | - | ❌ |"));
             Assert.That(summary, Does.Contain("| **Line Coverage** | 100.00 % | 80.00 % | ✅ |"));
         }
     }

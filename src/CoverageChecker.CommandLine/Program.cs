@@ -556,7 +556,7 @@ static void AppendDeltaSummary(StringBuilder summary, CoverageResult result, Com
     }
     else if (options.StrictDelta && result.ChangedFilesMissingCoverage.Count > 0)
     {
-        summary.AppendLine("| Delta Coverage | N/A (Changed files missing from coverage data) | - | ❌ |");
+        summary.AppendLine("| **Delta Coverage** | N/A (Changed files missing from coverage data) | - | ❌ |");
     }
     else
     {
