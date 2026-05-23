@@ -87,29 +87,48 @@ static CoverageResult CreateInitialResult(Coverage coverage)
         null,
         double.NaN,
         double.NaN,
+        false,
+        false,
         false
     );
 }
 
 static bool TryHandleDeltaCoverage(CoverageAnalyser coverageAnalyser, Coverage coverage, CommandLineOptions options, ILogger logger, ref CoverageResult result)
 {
-    if (!TryAnalyseDeltaCoverage(coverageAnalyser, coverage, options, logger, out Coverage? deltaCoverage, out bool hasDeltaChangedLines))
+    if (!TryAnalyseDeltaCoverage(coverageAnalyser, coverage, options, logger, out DeltaResult? deltaResult))
     {
         return false;
     }
 
-    if (hasDeltaChangedLines && deltaCoverage != null)
+    if (deltaResult.HasChangedLines)
     {
+        Coverage deltaCoverage = deltaResult.Coverage;
         result = result with
         {
             DeltaCoverage = deltaCoverage,
             HasDeltaChangedLines = true,
+            HasGitDeltaChangedLines = deltaResult.HasGitChangedLines,
+            HasChangedCoverageFiles = deltaResult.HasChangedCoverageFiles,
             DeltaLineCoverage = deltaCoverage.CalculateOverallCoverage(),
             DeltaBranchCoverage = deltaCoverage.CalculateOverallCoverage(CoverageType.Branch)
         };
 
         logger.LogDeltaLineCoverage(result.DeltaLineCoverage);
         logger.LogDeltaBranchCoverage(result.DeltaBranchCoverage);
+    }
+    else if (deltaResult.HasChangedCoverageFiles)
+    {
+        result = result with
+        {
+            HasGitDeltaChangedLines = deltaResult.HasGitChangedLines,
+            HasChangedCoverageFiles = true
+        };
+        logger.LogDeltaLinesMissingFromCoverage();
+    }
+    else if (deltaResult.HasGitChangedLines)
+    {
+        result = result with { HasGitDeltaChangedLines = true };
+        logger.LogNoDeltaLinesFound();
     }
     else
     {
@@ -232,15 +251,12 @@ static void CleanupTempDirectory(string? tempDir, ILogger logger)
     }
 }
 
-static bool TryAnalyseDeltaCoverage(CoverageAnalyser analyser, Coverage coverage, CommandLineOptions options, ILogger logger, out Coverage? deltaCoverage, out bool hasChangedLines)
+static bool TryAnalyseDeltaCoverage(CoverageAnalyser analyser, Coverage coverage, CommandLineOptions options, ILogger logger, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out DeltaResult? deltaResult)
 {
-    deltaCoverage = null;
-    hasChangedLines = false;
+    deltaResult = null;
     try
     {
-        DeltaResult deltaResult = analyser.AnalyseDeltaCoverage(options.DeltaBase, coverage);
-        deltaCoverage = deltaResult.Coverage;
-        hasChangedLines = deltaResult.HasChangedLines;
+        deltaResult = analyser.AnalyseDeltaCoverage(options.DeltaBase, coverage);
         return true;
     }
     catch (Exception ex) when (ex is GitException or ArgumentException)
@@ -257,6 +273,10 @@ static int CheckThresholds(CoverageResult result, CommandLineOptions options, bo
     if (options.Delta && result is { HasDeltaChangedLines: true, DeltaCoverage: not null })
     {
         failed |= EvaluateDeltaThresholds(result, options, logger);
+    }
+    else if (options.Delta && result.HasChangedCoverageFiles)
+    {
+        failed = true;
     }
 
     if (!failed)
@@ -465,13 +485,22 @@ static void AppendDeltaSummary(StringBuilder summary, CoverageResult result, Com
     }
     else
     {
-        summary.AppendLine("| Delta Coverage | N/A (No changed lines) | - | ✅ |");
+        string message = result.HasChangedCoverageFiles
+            ? "N/A (Changed lines missing from coverage data)"
+            : "N/A (No changed lines)";
+        string status = result.HasChangedCoverageFiles ? "❌" : "✅";
+        summary.AppendLine(CultureInfo.InvariantCulture, $"| Delta Coverage | {message} | - | {status} |");
     }
 }
 
 static bool IsAnyThresholdViolated(CoverageResult result, CommandLineOptions options)
 {
     if (double.IsNaN(result.LineCoverage) || options.LineThreshold > result.LineCoverage || options.BranchThreshold > result.BranchCoverage)
+    {
+        return true;
+    }
+
+    if (options.Delta && result.HasChangedCoverageFiles && !result.HasDeltaChangedLines)
     {
         return true;
     }

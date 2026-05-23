@@ -5,7 +5,10 @@ namespace CoverageChecker.Results;
 /// </summary>
 /// <param name="coverage">The filtered coverage information.</param>
 /// <param name="hasChangedLines">Whether any changed lines were found in the coverage reports.</param>
-public class DeltaResult(Coverage coverage, bool hasChangedLines)
+/// <param name="gitChangedLineCount">The number of changed lines reported by Git.</param>
+/// <param name="matchedCoverageLineCount">The number of changed lines found in the coverage reports.</param>
+/// <param name="changedCoverageFileCount">The number of changed files that were present in the coverage reports.</param>
+public class DeltaResult(Coverage coverage, bool hasChangedLines, int gitChangedLineCount = 0, int matchedCoverageLineCount = 0, int changedCoverageFileCount = 0)
 {
     /// <summary>
     /// The filtered coverage information containing only the changed lines.
@@ -16,4 +19,29 @@ public class DeltaResult(Coverage coverage, bool hasChangedLines)
     /// Gets a value indicating whether any of the changed lines were found in the coverage reports.
     /// </summary>
     public bool HasChangedLines { get; } = hasChangedLines;
+
+    /// <summary>
+    /// Gets a value indicating whether Git reported any changed lines.
+    /// </summary>
+    public bool HasGitChangedLines => GitChangedLineCount > 0;
+
+    /// <summary>
+    /// Gets the number of changed lines reported by Git.
+    /// </summary>
+    public int GitChangedLineCount { get; } = Math.Max(gitChangedLineCount, hasChangedLines ? 1 : 0);
+
+    /// <summary>
+    /// Gets the number of changed lines found in the coverage reports.
+    /// </summary>
+    public int MatchedCoverageLineCount { get; } = Math.Max(matchedCoverageLineCount, hasChangedLines ? 1 : 0);
+
+    /// <summary>
+    /// Gets a value indicating whether any changed files were present in the coverage reports.
+    /// </summary>
+    public bool HasChangedCoverageFiles => ChangedCoverageFileCount > 0;
+
+    /// <summary>
+    /// Gets the number of changed files that were present in the coverage reports.
+    /// </summary>
+    public int ChangedCoverageFileCount { get; } = Math.Max(changedCoverageFileCount, hasChangedLines ? 1 : 0);
 }

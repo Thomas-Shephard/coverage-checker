@@ -110,6 +110,31 @@ public class DeltaCoverageServiceTests
     }
 
     [Test]
+    public void FilterCoverageShouldReportGitAndMatchedLineCounts()
+    {
+        Coverage coverage = new();
+        FileCoverage file = coverage.GetOrCreateFile("file1.cs");
+        file.AddOrMergeLine(new LineCoverage(1, true), _mergeService);
+
+        Dictionary<string, HashSet<int>> changedLines = new()
+        {
+            { "file1.cs", [1, 2] },
+            { "file2.cs", [3] }
+        };
+
+        DeltaResult result = _sut.FilterCoverage(coverage, changedLines);
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.HasGitChangedLines, Is.True);
+            Assert.That(result.GitChangedLineCount, Is.EqualTo(3));
+            Assert.That(result.MatchedCoverageLineCount, Is.EqualTo(1));
+            Assert.That(result.HasChangedCoverageFiles, Is.True);
+            Assert.That(result.ChangedCoverageFileCount, Is.EqualTo(1));
+        }
+    }
+
+    [Test]
     public void FilterCoverageShouldSetHasChangedLinesToFalseWhenNoLinesAreMatched()
     {
         Coverage coverage = new();
@@ -123,7 +148,65 @@ public class DeltaCoverageServiceTests
 
         DeltaResult result = _sut.FilterCoverage(coverage, changedLines);
 
-        Assert.That(result.HasChangedLines, Is.False);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.HasChangedLines, Is.False);
+            Assert.That(result.HasGitChangedLines, Is.True);
+            Assert.That(result.HasChangedCoverageFiles, Is.False);
+            Assert.That(result.GitChangedLineCount, Is.EqualTo(1));
+            Assert.That(result.MatchedCoverageLineCount, Is.Zero);
+            Assert.That(result.ChangedCoverageFileCount, Is.Zero);
+        }
+    }
+
+    [Test]
+    public void FilterCoverageShouldReportChangedCoverageFileWhenFileMatchesButLinesDoNot()
+    {
+        Coverage coverage = new();
+        FileCoverage file = coverage.GetOrCreateFile("file1.cs");
+        file.AddOrMergeLine(new LineCoverage(1, true), _mergeService);
+
+        Dictionary<string, HashSet<int>> changedLines = new()
+        {
+            { "file1.cs", [2] }
+        };
+
+        DeltaResult result = _sut.FilterCoverage(coverage, changedLines);
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.HasChangedLines, Is.False);
+            Assert.That(result.HasGitChangedLines, Is.True);
+            Assert.That(result.HasChangedCoverageFiles, Is.True);
+            Assert.That(result.GitChangedLineCount, Is.EqualTo(1));
+            Assert.That(result.MatchedCoverageLineCount, Is.Zero);
+            Assert.That(result.ChangedCoverageFileCount, Is.EqualTo(1));
+        }
+    }
+
+    [Test]
+    public void FilterCoverageShouldIgnoreChangedCoverageFilesWithNoChangedLineNumbers()
+    {
+        Coverage coverage = new();
+        FileCoverage file = coverage.GetOrCreateFile("file1.cs");
+        file.AddOrMergeLine(new LineCoverage(1, true), _mergeService);
+
+        Dictionary<string, HashSet<int>> changedLines = new()
+        {
+            { "file1.cs", [] }
+        };
+
+        DeltaResult result = _sut.FilterCoverage(coverage, changedLines);
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.HasChangedLines, Is.False);
+            Assert.That(result.HasGitChangedLines, Is.False);
+            Assert.That(result.HasChangedCoverageFiles, Is.False);
+            Assert.That(result.GitChangedLineCount, Is.Zero);
+            Assert.That(result.MatchedCoverageLineCount, Is.Zero);
+            Assert.That(result.ChangedCoverageFileCount, Is.Zero);
+        }
     }
 
     [Test]
