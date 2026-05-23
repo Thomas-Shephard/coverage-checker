@@ -670,11 +670,15 @@ public class CommandLineRunTests
     public async Task CheckCommandIgnoresStrictDeltaMissingFileInsideExcludeScope()
     {
         using TestDirectory testDirectory = new();
-        string baseCommit = CreateGitRepoWithInitialCommit(testDirectory.Path, ("src/Foo.Generated.cs", "public class FooGenerated\n{\n}\n"));
+        string baseCommit = CreateGitRepoWithInitialCommit(
+            testDirectory.Path,
+            ("src/Foo.Generated.cs", "public class FooGenerated\n{\n}\n"),
+            ("src/Bar.cs", "public class Bar\n{\n}\n"));
 
         WriteTextFile(testDirectory.Path, "src/Foo.Generated.cs", "public class FooGenerated\n{\n    public void Method() {}\n}\n");
-        RunGit(testDirectory.Path, "add src/Foo.Generated.cs");
-        RunGit(testDirectory.Path, "commit -m \"Update generated source\"");
+        WriteTextFile(testDirectory.Path, "src/Bar.cs", "public class Bar\n{\n    public void Method() {}\n}\n");
+        RunGit(testDirectory.Path, "add src/Foo.Generated.cs src/Bar.cs");
+        RunGit(testDirectory.Path, "commit -m \"Update source\"");
 
         WriteTextFile(testDirectory.Path, "src/Covered.cs", "public class Covered {}\n");
         File.WriteAllText(Path.Combine(testDirectory.Path, "coverage.xml"), CreateCoverageXml(testDirectory.Path, "src/Covered.cs"));
@@ -692,8 +696,10 @@ public class CommandLineRunTests
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(exitCode, Is.Zero);
-            Assert.That(stdout, Does.Not.Contain("Strict delta coverage failed"));
+            Assert.That(exitCode, Is.Not.Zero);
+            Assert.That(stdout, Does.Contain("Strict delta coverage failed because 1 changed file(s) were absent from coverage data:"));
+            Assert.That(stdout, Does.Contain("src/Bar.cs"));
+            Assert.That(stdout, Does.Not.Contain("Foo.Generated.cs"));
         }
     }
 

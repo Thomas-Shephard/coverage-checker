@@ -130,9 +130,10 @@ public class CoverageAnalyserTests
     {
         string root = Path.Combine(ValidDirectory, "repo");
         string generatedSource = Path.Combine(root, "src", "Foo.Generated.cs");
+        string normalSource = Path.Combine(root, "src", "Bar.cs");
         Coverage coverage = new();
         Dictionary<string, HashSet<int>> changedLines = [];
-        DeltaResult deltaResult = new(new Coverage(), false, 1, 0, 0, [generatedSource]);
+        DeltaResult deltaResult = new(new Coverage(), false, 2, 0, 0, [generatedSource, normalSource]);
         Mock<IGitService> mockGitService = new();
         Mock<IDeltaCoverageService> mockDeltaService = new();
         mockGitService.Setup(s => s.GetChangedLines("main", "HEAD")).Returns(changedLines);
@@ -144,7 +145,7 @@ public class CoverageAnalyserTests
 
         DeltaResult result = sut.AnalyseDeltaCoverage("main", coverage, scopeMissingFiles: true);
 
-        Assert.That(result.ChangedFilesMissingCoverage, Is.Empty);
+        Assert.That(result.ChangedFilesMissingCoverage, Is.EqualTo((string[])[normalSource]));
     }
 
     [Test]
