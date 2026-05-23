@@ -60,6 +60,12 @@ Check delta coverage against another branch:
 coveragechecker --delta --delta-base origin/main --glob-patterns "**/coverage.cobertura.xml"
 ```
 
+Fail when any Git-changed file with changed lines is absent from coverage data:
+
+```bash
+coveragechecker --delta --strict-delta --delta-base origin/main --glob-patterns "**/coverage.cobertura.xml"
+```
+
 Limit analysis to selected source files:
 
 ```bash
@@ -115,6 +121,11 @@ added to the job summary.
 - If no branches are present, branch coverage is reported as N/A and the branch threshold does not fail.
 - For delta coverage, changed lines in files that appear in the coverage data must also be present as covered or
   uncovered line entries. If changed coverage files are found but none of their changed lines match the coverage data, the CLI fails.
+- By default, delta coverage ignores Git-changed files that are completely absent from coverage data. This keeps docs and
+  config-only changes from failing existing workflows.
+- Use `--strict-delta` with `--delta` to fail when any Git-changed file with changed lines is absent from coverage data.
+  Strict delta does not classify source vs non-source files; it applies to every changed file reported by Git with changed
+  line numbers.
 - Delta coverage and rename detection require Git on the system `PATH`.
 - Cobertura, SonarQube, and OpenCover reports are supported. Cobertura reports with multiple source roots are supported.
 

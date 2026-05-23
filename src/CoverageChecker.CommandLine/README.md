@@ -51,6 +51,7 @@ These options apply to both `check` and `run` commands.
 | `-b`, `--branch-threshold` | The branch coverage threshold. Default: 80                                                 | No       | 80            |
 | `--rename-threshold`       | The similarity threshold for rename detection (percentage). Default: 50                    | No       | 50            |
 | `--delta`                  | Calculate coverage for changed lines only.                                                 | No       | `false`       |
+| `--strict-delta`           | Fail when Git-changed files with changed lines are absent from coverage data.              | No       | `false`       |
 | `--delta-base`             | Base branch or commit to compare against for delta coverage.                               | No       | `origin/main` |
 
 ### `check` Specific Options
@@ -103,6 +104,12 @@ Check coverage only for changed lines compared to the `develop` branch:
 coveragechecker --delta --delta-base origin/develop
 ```
 
+Fail when a changed file is not represented in the coverage report at all:
+
+```bash
+coveragechecker --delta --strict-delta --delta-base origin/develop
+```
+
 ### Custom Thresholds and Search Patterns
 
 Search for Cobertura files in a specific directory with custom coverage thresholds:
@@ -118,6 +125,8 @@ If the line or branch coverage is below the specified threshold, the tool will e
 If coverage files are found but no applicable lines remain after parsing or include/exclude filtering, line coverage is reported as unavailable and the tool exits with a non-zero exit code.
 Branch coverage with no branches is reported as unavailable and does not fail the branch threshold.
 For delta coverage, changed lines in files that appear in the coverage data must match covered line entries; if changed coverage files are found but none of their changed lines are matched, the tool exits with a non-zero exit code.
+Without `--strict-delta`, changed files that are completely absent from coverage data are ignored so docs and config-only changes remain compatible with existing workflows.
+With `--strict-delta`, every Git-changed file with changed line numbers must be present in the coverage data. The tool does not classify source vs non-source files in strict mode.
 
 ### Coverage Gap Reporting
 

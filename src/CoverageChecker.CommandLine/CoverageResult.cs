@@ -11,4 +11,5 @@ internal sealed record CoverageResult(
     double DeltaBranchCoverage,
     bool HasDeltaChangedLines,
     bool HasGitDeltaChangedLines,
-    bool HasChangedCoverageFiles);
+    bool HasChangedCoverageFiles,
+    IReadOnlyList<string> ChangedFilesMissingCoverage);

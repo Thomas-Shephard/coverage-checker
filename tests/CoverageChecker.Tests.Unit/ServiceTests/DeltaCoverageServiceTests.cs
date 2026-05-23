@@ -131,6 +131,9 @@ public class DeltaCoverageServiceTests
             Assert.That(result.MatchedCoverageLineCount, Is.EqualTo(1));
             Assert.That(result.HasChangedCoverageFiles, Is.True);
             Assert.That(result.ChangedCoverageFileCount, Is.EqualTo(1));
+            Assert.That(result.ChangedFilesMissingCoverage, Has.Count.EqualTo(1));
+            Assert.That(result.ChangedFilesMissingCoverage[0], Is.EqualTo("file2.cs"));
+            Assert.That(result.ChangedFilesMissingCoverageCount, Is.EqualTo(1));
         }
     }
 
@@ -156,6 +159,9 @@ public class DeltaCoverageServiceTests
             Assert.That(result.GitChangedLineCount, Is.EqualTo(1));
             Assert.That(result.MatchedCoverageLineCount, Is.Zero);
             Assert.That(result.ChangedCoverageFileCount, Is.Zero);
+            Assert.That(result.ChangedFilesMissingCoverage, Has.Count.EqualTo(1));
+            Assert.That(result.ChangedFilesMissingCoverage[0], Is.EqualTo("file2.cs"));
+            Assert.That(result.ChangedFilesMissingCoverageCount, Is.EqualTo(1));
         }
     }
 
@@ -181,6 +187,8 @@ public class DeltaCoverageServiceTests
             Assert.That(result.GitChangedLineCount, Is.EqualTo(1));
             Assert.That(result.MatchedCoverageLineCount, Is.Zero);
             Assert.That(result.ChangedCoverageFileCount, Is.EqualTo(1));
+            Assert.That(result.ChangedFilesMissingCoverage, Is.Empty);
+            Assert.That(result.ChangedFilesMissingCoverageCount, Is.Zero);
         }
     }
 
@@ -206,7 +214,24 @@ public class DeltaCoverageServiceTests
             Assert.That(result.GitChangedLineCount, Is.Zero);
             Assert.That(result.MatchedCoverageLineCount, Is.Zero);
             Assert.That(result.ChangedCoverageFileCount, Is.Zero);
+            Assert.That(result.ChangedFilesMissingCoverage, Is.Empty);
+            Assert.That(result.ChangedFilesMissingCoverageCount, Is.Zero);
         }
+    }
+
+    [Test]
+    public void FilterCoverageShouldIgnoreMissingChangedFilesWithNoChangedLineNumbers()
+    {
+        Coverage coverage = new();
+
+        Dictionary<string, HashSet<int>> changedLines = new()
+        {
+            { "file1.cs", [] }
+        };
+
+        DeltaResult result = _sut.FilterCoverage(coverage, changedLines);
+
+        Assert.That(result.ChangedFilesMissingCoverage, Is.Empty);
     }
 
     [Test]

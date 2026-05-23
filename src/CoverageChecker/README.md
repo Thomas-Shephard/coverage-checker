@@ -82,6 +82,8 @@ The `CoverageAnalyser` class returns objects like `Coverage`, `DeltaResult`, or 
 - `MatchedCoverageLineCount` property: The number of changed lines found in the coverage report.
 - `HasChangedCoverageFiles` property: Whether any changed files were present in the coverage report.
 - `ChangedCoverageFileCount` property: The number of changed files present in the coverage report.
+- `ChangedFilesMissingCoverage` property: The changed files that were not present in the coverage report.
+- `ChangedFilesMissingCoverageCount` property: The number of changed files that were not present in the coverage report.
 
 ### RegressionResult Object
 
