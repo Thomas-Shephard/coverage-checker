@@ -60,6 +60,40 @@ public abstract record CommandLineOptions
         init => _branchThreshold = ValidateThreshold(value, nameof(BranchThreshold)) / 100;
     }
 
+    private readonly double? _deltaLineThreshold;
+
+    /// <summary>
+    /// Gets or sets the delta line coverage threshold. The setter expects a percentage (0-100), which is stored as a decimal (0.0-1.0).
+    /// </summary>
+    [Option("delta-line-threshold", Required = false, HelpText = "Delta line coverage threshold (percentage). Defaults to --line-threshold.")]
+    public double? DeltaLineThreshold
+    {
+        get => _deltaLineThreshold;
+        init => _deltaLineThreshold = value is null ? null : ValidateThreshold(value.Value, nameof(DeltaLineThreshold)) / 100;
+    }
+
+    private readonly double? _deltaBranchThreshold;
+
+    /// <summary>
+    /// Gets or sets the delta branch coverage threshold. The setter expects a percentage (0-100), which is stored as a decimal (0.0-1.0).
+    /// </summary>
+    [Option("delta-branch-threshold", Required = false, HelpText = "Delta branch coverage threshold (percentage). Defaults to --branch-threshold.")]
+    public double? DeltaBranchThreshold
+    {
+        get => _deltaBranchThreshold;
+        init => _deltaBranchThreshold = value is null ? null : ValidateThreshold(value.Value, nameof(DeltaBranchThreshold)) / 100;
+    }
+
+    /// <summary>
+    /// Gets the delta line coverage threshold after applying the overall line threshold fallback.
+    /// </summary>
+    public double EffectiveDeltaLineThreshold => DeltaLineThreshold ?? LineThreshold;
+
+    /// <summary>
+    /// Gets the delta branch coverage threshold after applying the overall branch threshold fallback.
+    /// </summary>
+    public double EffectiveDeltaBranchThreshold => DeltaBranchThreshold ?? BranchThreshold;
+
     /// <summary>
     /// Gets or sets a value indicating whether to calculate coverage for changed lines only.
     /// </summary>

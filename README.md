@@ -60,6 +60,12 @@ Check delta coverage against another branch:
 coveragechecker --delta --delta-base origin/main --glob-patterns "**/coverage.cobertura.xml"
 ```
 
+Require changed lines to meet a stricter threshold than overall coverage:
+
+```bash
+coveragechecker --delta --line-threshold 80 --delta-line-threshold 100
+```
+
 Fail when any Git-changed file with changed lines is absent from coverage data:
 
 ```bash
@@ -125,6 +131,7 @@ added to the job summary.
 
 - If coverage files are found but there are no applicable lines after parsing or filtering, line coverage is unavailable and the CLI fails.
 - If no branches are present, branch coverage is reported as N/A and the branch threshold does not fail.
+- Delta coverage uses `--delta-line-threshold` and `--delta-branch-threshold` when provided. If either delta threshold is omitted, it defaults to the corresponding overall threshold.
 - For delta coverage, changed lines in files that appear in the coverage data must also be present as covered or
   uncovered line entries. If changed coverage files are found but none of their changed lines match the coverage data, the CLI fails.
 - By default, delta coverage ignores Git-changed files that are completely absent from coverage data. This keeps docs and

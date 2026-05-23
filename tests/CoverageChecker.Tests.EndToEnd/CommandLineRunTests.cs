@@ -464,6 +464,174 @@ public class CommandLineRunTests
     }
 
     [Test]
+    public async Task CheckCommandFailsDeltaLineThresholdIndependentlyFromOverallThreshold()
+    {
+        using TestDirectory testDirectory = new();
+        string baseCommit = CreateGitRepoWithInitialCommit(testDirectory.Path, ("Changed.cs", CreateChangedClass("1")));
+
+        WriteTextFile(testDirectory.Path, "Changed.cs", CreateChangedClass("2"));
+        RunGit(testDirectory.Path, "add Changed.cs");
+        RunGit(testDirectory.Path, "commit -m \"Update changed line\"");
+
+        File.WriteAllText(Path.Combine(testDirectory.Path, "coverage.xml"), CreateCoverageXml(testDirectory.Path, "Changed.cs", (1, 1), (2, 1), (3, 0), (4, 1), (5, 1)));
+
+        (int exitCode, string stdout) = await RunCliInDirectory(
+            testDirectory.Path,
+            "check",
+            "--directory", testDirectory.Path,
+            "--glob-patterns", "coverage.xml",
+            "--format", "Cobertura",
+            "--delta",
+            "--delta-base", baseCommit,
+            "--line-threshold", "80",
+            "--delta-line-threshold", "100");
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exitCode, Is.Not.Zero);
+            Assert.That(stdout, Does.Contain("Overall line coverage: 80.00"));
+            Assert.That(stdout, Does.Contain("Delta line coverage: 0.00"));
+            Assert.That(stdout, Does.Contain("Delta line coverage of 0.00 % is below the required threshold of 100.00 %"));
+            Assert.That(stdout, Does.Not.Contain("Line coverage of 80.00 % is below"));
+        }
+    }
+
+    [Test]
+    public async Task CheckCommandFailsOverallThresholdIndependentlyFromLowerDeltaThreshold()
+    {
+        using TestDirectory testDirectory = new();
+        string baseCommit = CreateGitRepoWithInitialCommit(testDirectory.Path, ("Changed.cs", CreateChangedClass("1")));
+
+        WriteTextFile(testDirectory.Path, "Changed.cs", CreateChangedClass("2"));
+        RunGit(testDirectory.Path, "add Changed.cs");
+        RunGit(testDirectory.Path, "commit -m \"Update changed line\"");
+
+        File.WriteAllText(Path.Combine(testDirectory.Path, "coverage.xml"), CreateCoverageXml(testDirectory.Path, "Changed.cs", (1, 1), (2, 1), (3, 1), (4, 0), (5, 0)));
+
+        (int exitCode, string stdout) = await RunCliInDirectory(
+            testDirectory.Path,
+            "check",
+            "--directory", testDirectory.Path,
+            "--glob-patterns", "coverage.xml",
+            "--format", "Cobertura",
+            "--delta",
+            "--delta-base", baseCommit,
+            "--line-threshold", "80",
+            "--delta-line-threshold", "0");
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exitCode, Is.Not.Zero);
+            Assert.That(stdout, Does.Contain("Line coverage of 60.00 % is below the required threshold of 80.00 %"));
+            Assert.That(stdout, Does.Contain("Delta line coverage: 100.00"));
+            Assert.That(stdout, Does.Not.Contain("Delta line coverage of 100.00 % is below"));
+        }
+    }
+
+    [Test]
+    public async Task CheckCommandDefaultsDeltaThresholdsToOverallThresholds()
+    {
+        using TestDirectory testDirectory = new();
+        string baseCommit = CreateGitRepoWithInitialCommit(testDirectory.Path, ("Changed.cs", CreateChangedClass("1")));
+
+        WriteTextFile(testDirectory.Path, "Changed.cs", CreateChangedClass("2"));
+        RunGit(testDirectory.Path, "add Changed.cs");
+        RunGit(testDirectory.Path, "commit -m \"Update changed line\"");
+
+        File.WriteAllText(Path.Combine(testDirectory.Path, "coverage.xml"), CreateCoverageXml(testDirectory.Path, "Changed.cs", (1, 1), (2, 1), (3, 0), (4, 1), (5, 1)));
+
+        (int exitCode, string stdout) = await RunCliInDirectory(
+            testDirectory.Path,
+            "check",
+            "--directory", testDirectory.Path,
+            "--glob-patterns", "coverage.xml",
+            "--format", "Cobertura",
+            "--delta",
+            "--delta-base", baseCommit,
+            "--line-threshold", "80");
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exitCode, Is.Not.Zero);
+            Assert.That(stdout, Does.Contain("Delta line coverage of 0.00 % is below the required threshold of 80.00 %"));
+        }
+    }
+
+    [Test]
+    public async Task CheckCommandUsesDeltaBranchThreshold()
+    {
+        using TestDirectory testDirectory = new();
+        string baseCommit = CreateGitRepoWithInitialCommit(testDirectory.Path, ("Changed.cs", CreateChangedClass("1")));
+
+        WriteTextFile(testDirectory.Path, "Changed.cs", CreateChangedClass("2"));
+        RunGit(testDirectory.Path, "add Changed.cs");
+        RunGit(testDirectory.Path, "commit -m \"Update changed line\"");
+
+        string coverageXml = $"""
+            <?xml version="1.0" encoding="utf-8"?>
+            <coverage>
+              <sources>
+                <source>{testDirectory.Path}</source>
+              </sources>
+              <packages>
+                <package name="package-1">
+                  <classes>
+                    <class name="class-1" filename="Changed.cs">
+                      <methods/>
+                      <lines>
+                        <line number="1" hits="1"/>
+                        <line number="2" hits="1"/>
+                        <line number="3" hits="1" branch="True" condition-coverage="50% (1/2)"/>
+                        <line number="4" hits="1"/>
+                        <line number="5" hits="1"/>
+                      </lines>
+                    </class>
+                  </classes>
+                </package>
+              </packages>
+            </coverage>
+            """;
+        File.WriteAllText(Path.Combine(testDirectory.Path, "coverage.xml"), coverageXml);
+
+        (int exitCode, string stdout) = await RunCliInDirectory(
+            testDirectory.Path,
+            "check",
+            "--directory", testDirectory.Path,
+            "--glob-patterns", "coverage.xml",
+            "--format", "Cobertura",
+            "--delta",
+            "--delta-base", baseCommit,
+            "--branch-threshold", "0",
+            "--delta-branch-threshold", "100");
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exitCode, Is.Not.Zero);
+            Assert.That(stdout, Does.Contain("Delta branch coverage: 50.00"));
+            Assert.That(stdout, Does.Contain("Delta branch coverage of 50.00 % is below the required threshold of 100.00 %"));
+            Assert.That(stdout, Does.Not.Contain("Branch coverage of 50.00 % is below"));
+        }
+    }
+
+    [TestCase("--delta-line-threshold", "-1")]
+    [TestCase("--delta-line-threshold", "101")]
+    [TestCase("--delta-line-threshold", "NaN")]
+    [TestCase("--delta-branch-threshold", "-1")]
+    [TestCase("--delta-branch-threshold", "101")]
+    [TestCase("--delta-branch-threshold", "NaN")]
+    public async Task CheckCommandFailsParsingForInvalidDeltaThresholdValues(string option, string value)
+    {
+        using TestDirectory testDirectory = new();
+
+        (int exitCode, string stdout) = await RunCli(
+            "check",
+            "--directory", testDirectory.Path,
+            option, value);
+
+        Assert.That(exitCode, Is.Not.Zero);
+    }
+
+    [Test]
     public async Task CheckCommandPassesWhenOnlyDeltaChangesAreAbsentFromCoverageFiles()
     {
         using TestDirectory testDirectory = new();
@@ -875,6 +1043,45 @@ public class CommandLineRunTests
               </packages>
             </coverage>
             """;
+    }
+
+    private static string CreateCoverageXml(string sourceDirectory, string fileName, params (int Number, int Hits)[] lines)
+    {
+        string lineElements = string.Join(
+            Environment.NewLine,
+            lines.Select(line => $"                        <line number=\"{line.Number}\" hits=\"{line.Hits}\"/>"));
+
+        return $"""
+            <?xml version="1.0" encoding="utf-8"?>
+            <coverage>
+              <sources>
+                <source>{sourceDirectory}</source>
+              </sources>
+              <packages>
+                <package name="package-1">
+                  <classes>
+                    <class name="class-1" filename="{fileName}">
+                      <methods/>
+                      <lines>
+            {lineElements}
+                      </lines>
+                    </class>
+                  </classes>
+                </package>
+              </packages>
+            </coverage>
+            """;
+    }
+
+    private static string CreateChangedClass(string value)
+    {
+        return string.Join(
+            Environment.NewLine,
+            "public class Changed",
+            "{",
+            $"    public int Value => {value};",
+            "}",
+            string.Empty);
     }
 
     private sealed class TestDirectory : IDisposable
