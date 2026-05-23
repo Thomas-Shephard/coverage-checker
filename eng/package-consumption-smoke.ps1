@@ -1,7 +1,7 @@
 param(
     [string] $Configuration = "Release",
     [string] $PackageOutputPath = (Join-Path (Join-Path $PSScriptRoot "..") "nupkg"),
-    [string] $SmokeRoot = (Join-Path ([System.IO.Path]::GetTempPath()) "coveragechecker-package-consumption-smoke"),
+    [string] $SmokeRoot = (Join-Path ([System.IO.Path]::GetTempPath()) "coveragechecker-package-consumption-smoke-$([guid]::NewGuid().ToString('N'))"),
     [switch] $SkipPack
 )
 
