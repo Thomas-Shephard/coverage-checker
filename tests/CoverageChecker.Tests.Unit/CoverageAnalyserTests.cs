@@ -67,7 +67,7 @@ public class CoverageAnalyserTests
         Mock<IDeltaCoverageService> mockDeltaService = new();
         Coverage coverage = new();
         Dictionary<string, HashSet<int>> changedLines = [];
-        DeltaResult deltaResult = new(new Coverage(), true);
+        DeltaResult deltaResult = new(new Coverage(), true, 1, 1, 1);
 
         mockGitService.Setup(s => s.GetChangedLines("main", "HEAD")).Returns(changedLines);
         mockDeltaService.Setup(s => s.FilterCoverage(coverage, changedLines)).Returns(deltaResult);

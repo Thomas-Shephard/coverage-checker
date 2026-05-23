@@ -8,7 +8,12 @@ namespace CoverageChecker.Results;
 /// <param name="gitChangedLineCount">The number of changed lines reported by Git.</param>
 /// <param name="matchedCoverageLineCount">The number of changed lines found in the coverage reports.</param>
 /// <param name="changedCoverageFileCount">The number of changed files that were present in the coverage reports.</param>
-public class DeltaResult(Coverage coverage, bool hasChangedLines, int gitChangedLineCount = 0, int matchedCoverageLineCount = 0, int changedCoverageFileCount = 0)
+public class DeltaResult(
+    Coverage coverage,
+    bool hasChangedLines,
+    int gitChangedLineCount,
+    int matchedCoverageLineCount,
+    int changedCoverageFileCount)
 {
     /// <summary>
     /// The filtered coverage information containing only the changed lines.
@@ -28,12 +33,12 @@ public class DeltaResult(Coverage coverage, bool hasChangedLines, int gitChanged
     /// <summary>
     /// Gets the number of changed lines reported by Git.
     /// </summary>
-    public int GitChangedLineCount { get; } = Math.Max(gitChangedLineCount, hasChangedLines ? 1 : 0);
+    public int GitChangedLineCount { get; } = gitChangedLineCount;
 
     /// <summary>
     /// Gets the number of changed lines found in the coverage reports.
     /// </summary>
-    public int MatchedCoverageLineCount { get; } = Math.Max(matchedCoverageLineCount, hasChangedLines ? 1 : 0);
+    public int MatchedCoverageLineCount { get; } = matchedCoverageLineCount;
 
     /// <summary>
     /// Gets a value indicating whether any changed files were present in the coverage reports.
@@ -43,5 +48,5 @@ public class DeltaResult(Coverage coverage, bool hasChangedLines, int gitChanged
     /// <summary>
     /// Gets the number of changed files that were present in the coverage reports.
     /// </summary>
-    public int ChangedCoverageFileCount { get; } = Math.Max(changedCoverageFileCount, hasChangedLines ? 1 : 0);
+    public int ChangedCoverageFileCount { get; } = changedCoverageFileCount;
 }
