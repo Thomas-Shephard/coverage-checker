@@ -126,6 +126,12 @@ public record RunOptions : CommandLineOptions
     [Option('o', "output", Required = false, HelpText = "The directory where coverage results will be stored. If not specified, a temporary directory will be used.")]
     public string? Output { get; init; }
 
+    /// <summary>
+    /// Gets or sets the working directory where the command will be executed. If not specified, the current directory will be used.
+    /// </summary>
+    [Option("working-directory", Required = false, HelpText = "The working directory where the command will be executed. Default: Current directory")]
+    public string? WorkingDirectory { get; init; }
+
     private readonly int _timeout = 30;
 
     /// <summary>

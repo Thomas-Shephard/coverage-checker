@@ -140,23 +140,31 @@ static bool TryHandleDeltaCoverage(CoverageAnalyser coverageAnalyser, Coverage c
 
 static async Task<int> RunCommandAndCheck(RunOptions options)
 {
-    string outputDir = options.Output ?? Path.Combine(Path.GetTempPath(), "coverage-checker", Guid.NewGuid().ToString());
-    string? tempDir = options.Output == null ? outputDir : null;
-
-    if (!Directory.Exists(outputDir))
-    {
-        Directory.CreateDirectory(outputDir);
-    }
-
     bool isGitHubActions = Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true";
     using ILoggerFactory loggerFactory = CreateLoggerFactory(isGitHubActions);
     ILogger logger = loggerFactory.CreateLogger("CoverageChecker.CommandLine");
+    string? tempDir = null;
 
     try
     {
+        string workingDirectory = Path.GetFullPath(options.WorkingDirectory ?? Environment.CurrentDirectory);
+        string outputDir = Path.GetFullPath(options.Output ?? Path.Combine(Path.GetTempPath(), "coverage-checker", Guid.NewGuid().ToString()));
+        tempDir = options.Output == null ? outputDir : null;
+
+        if (!Directory.Exists(workingDirectory))
+        {
+            logger.LogWorkingDirectoryNotFound(workingDirectory);
+            return 1;
+        }
+
+        if (!Directory.Exists(outputDir))
+        {
+            Directory.CreateDirectory(outputDir);
+        }
+
         string command = PrepareCommand(options.Command, outputDir, logger);
 
-        int exitCode = await ExecuteCommand(command, Environment.CurrentDirectory, options.Timeout, logger);
+        int exitCode = await ExecuteCommand(command, workingDirectory, options.Timeout, logger);
 
         if (exitCode != 0)
         {
