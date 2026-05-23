@@ -310,7 +310,7 @@ static int CheckThresholds(CoverageResult result, CommandLineOptions options, bo
         failed = true;
     }
 
-    if (options is { Delta: true, StrictDelta: true } && result.ChangedFilesMissingCoverage.Count > 0)
+    if (ShouldFailStrictDelta(result, options))
     {
         logger.LogStrictDeltaFilesMissingFromCoverage(
             result.ChangedFilesMissingCoverage.Count,
@@ -333,6 +333,11 @@ static int CheckThresholds(CoverageResult result, CommandLineOptions options, bo
     }
 
     return 1;
+}
+
+static bool ShouldFailStrictDelta(CoverageResult result, CommandLineOptions options)
+{
+    return options is { Delta: true, StrictDelta: true } && result.ChangedFilesMissingCoverage.Count > 0;
 }
 
 static string FormatStrictDeltaMissingFiles(IReadOnlyList<string> files)
