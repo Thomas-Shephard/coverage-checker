@@ -633,6 +633,40 @@ public class CommandLineRunTests
     }
 
     [Test]
+    public async Task CheckCommandUsesSameFilterRootForStrictDeltaWhenRunFromSubdirectory()
+    {
+        using TestDirectory testDirectory = new();
+        string baseCommit = CreateGitRepoWithInitialCommit(testDirectory.Path, ("src/Foo.cs", "public class Foo\n{\n}\n"));
+        string workingDirectory = Path.Combine(testDirectory.Path, "tools");
+        Directory.CreateDirectory(workingDirectory);
+
+        WriteTextFile(testDirectory.Path, "src/Foo.cs", "public class Foo\n{\n    public void Method() {}\n}\n");
+        RunGit(testDirectory.Path, "add src/Foo.cs");
+        RunGit(testDirectory.Path, "commit -m \"Update source\"");
+
+        WriteTextFile(testDirectory.Path, "src/Covered.cs", "public class Covered {}\n");
+        File.WriteAllText(Path.Combine(testDirectory.Path, "coverage.xml"), CreateCoverageXml(testDirectory.Path, "src/Covered.cs"));
+
+        (int exitCode, string stdout) = await RunCliInDirectory(
+            workingDirectory,
+            "check",
+            "--directory", testDirectory.Path,
+            "--glob-patterns", "coverage.xml",
+            "--format", "Cobertura",
+            "--delta",
+            "--strict-delta",
+            "--include", "src/**/*.cs",
+            "--delta-base", baseCommit);
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exitCode, Is.Not.Zero);
+            Assert.That(stdout, Does.Contain("Strict delta coverage failed because 1 changed file(s) were absent from coverage data:"));
+            Assert.That(stdout, Does.Contain("src/Foo.cs"));
+        }
+    }
+
+    [Test]
     public async Task CheckCommandIgnoresStrictDeltaMissingFileInsideExcludeScope()
     {
         using TestDirectory testDirectory = new();

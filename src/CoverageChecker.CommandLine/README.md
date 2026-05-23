@@ -132,7 +132,7 @@ If coverage files are found but no applicable lines remain after parsing or incl
 Branch coverage with no branches is reported as unavailable and does not fail the branch threshold.
 For delta coverage, changed lines in files that appear in the coverage data must match covered line entries; if changed coverage files are found but none of their changed lines are matched, the tool exits with a non-zero exit code.
 Without `--strict-delta`, changed files that are completely absent from coverage data are ignored so docs and config-only changes remain compatible with existing workflows.
-With `--strict-delta`, Git-changed files with changed line numbers must be present in the coverage data. If `--include` or `--exclude` is provided, that same file scope is applied to the strict missing-file check. Without filters, strict delta applies to every changed file reported by Git. The tool does not classify source vs non-source files in strict mode.
+With `--strict-delta`, Git-changed files with changed line numbers must be present in the coverage data. If `--include` or `--exclude` is provided, the strict missing-file check respects that same scope. Otherwise, strict delta applies to every file reported by Git with changed line numbers without distinguishing source from non-source files.
 
 ### Coverage Gap Reporting
 

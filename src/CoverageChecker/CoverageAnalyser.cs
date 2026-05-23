@@ -26,6 +26,7 @@ public partial class CoverageAnalyser
     private readonly ICoverageRegressionService _coverageRegressionService;
     private readonly ILogger<CoverageAnalyser> _logger;
     private readonly ILoggerFactory _loggerFactory;
+    private string? _fileFilterRoot;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CoverageAnalyser"/> class with the specified options.
@@ -112,7 +113,8 @@ public partial class CoverageAnalyser
     {
         if (!HasFileFilters()) return;
 
-        string root = rootDirectory ?? Environment.CurrentDirectory;
+        string root = GetFileFilterRoot(rootDirectory);
+        _fileFilterRoot = root;
         Matcher matcher = CreateMatcher();
 
         foreach (FileCoverage file in GetFilesToRemove(coverage, root, matcher))
@@ -200,7 +202,7 @@ public partial class CoverageAnalyser
             return result;
         }
 
-        string root = _gitService.GetRepoRoot();
+        string root = _fileFilterRoot ?? GetFileFilterRoot(_gitService.GetRepoRoot());
         Matcher matcher = CreateMatcher();
         string[] scopedMissingFiles = result.ChangedFilesMissingCoverage
             .Where(file => IsFileInScope(file, root, matcher))
@@ -210,6 +212,11 @@ public partial class CoverageAnalyser
     }
 
     private bool HasFileFilters() => _options.Include != null || _options.Exclude != null;
+
+    private static string GetFileFilterRoot(string? rootDirectory)
+    {
+        return rootDirectory ?? Environment.CurrentDirectory;
+    }
 
     /// <summary>
     /// Checks for regression between the baseline and current coverage.
