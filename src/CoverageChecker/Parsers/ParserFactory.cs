@@ -48,8 +48,13 @@ internal class ParserFactory(ICoverageMergeService coverageMergeService) : IPars
         }
 
         int rootDepth = reader.Depth;
-        while (reader.Read() && reader.Depth > rootDepth)
+        while (reader.Read())
         {
+            if (reader.Depth <= rootDepth)
+            {
+                break;
+            }
+
             if (reader.NodeType != XmlNodeType.Element)
             {
                 continue;

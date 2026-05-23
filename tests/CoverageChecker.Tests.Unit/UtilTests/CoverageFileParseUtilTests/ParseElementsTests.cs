@@ -151,6 +151,27 @@ public class ParseElementsTests
     }
 
     [Test]
+    public void CoverageFileParseUtilsParseElementsSkipsNonElementNodes()
+    {
+        const string xml = $"""
+                            <{XmlReaderTestUtils.ElementName}><{XmlReaderTestUtils.ChildElementName} index="1"></{XmlReaderTestUtils.ChildElementName}>text<{XmlReaderTestUtils.ChildElementName} index="2"></{XmlReaderTestUtils.ChildElementName}></{XmlReaderTestUtils.ElementName}>
+                            """;
+
+        XmlReader reader = XmlReaderTestUtils.CreateXmlReader(xml);
+
+        reader.MoveTo(XmlReaderTestUtils.ChildElementName, XmlNodeType.Element);
+
+        int childCount = 0;
+        reader.ParseElements(XmlReaderTestUtils.ChildElementName, () =>
+        {
+            childCount++;
+            reader.ConsumeElement(XmlReaderTestUtils.ChildElementName);
+        });
+
+        Assert.That(childCount, Is.EqualTo(2));
+    }
+
+    [Test]
     public void CoverageFileParseUtilsParseElementsStartsAtUnexpectedElementTypeThrowsCoverageParseException()
     {
         const string xml = $"""

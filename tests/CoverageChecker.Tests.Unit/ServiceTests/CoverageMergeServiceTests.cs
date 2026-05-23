@@ -185,6 +185,18 @@ public class CoverageMergeServiceTests
     }
 
     [Test]
+    public void MergeKeepsExistingMetadataWhenIncomingMetadataIsNull()
+    {
+        LineCoverage firstLineCoverage = new(1, true, className: "Class", methodName: "Method", methodSignature: "Signature");
+        LineCoverage secondLineCoverage = new(1, false);
+        LineCoverage expectedLineCoverage = new(1, true, className: "Class", methodName: "Method", methodSignature: "Signature");
+
+        _service.Merge(firstLineCoverage, secondLineCoverage);
+
+        Assert.That(firstLineCoverage, Is.EqualTo(expectedLineCoverage).Using(new LineCoverageComparer()));
+    }
+
+    [Test]
     public void MergeInvalidDifferentBranches1ThrowsCoverageParseException([Values] bool firstIsCovered, [Values] bool secondIsCovered)
     {
         LineCoverage firstLineCoverage = new(1, firstIsCovered, 2, 0);

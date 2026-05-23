@@ -98,13 +98,20 @@ internal class CoverageRegressionService : ICoverageRegressionService
 
         public void MergePackageName(string? otherPackageName)
         {
-            if (PackageName != null && otherPackageName != null && PackageName != otherPackageName)
-            {
-                PackageName = null; // Ambiguous
-            }
-            else if (PackageName == null && otherPackageName != null)
+            if (PackageName == null)
             {
                 PackageName = otherPackageName;
+                return;
+            }
+
+            if (otherPackageName == null)
+            {
+                return;
+            }
+
+            if (PackageName != otherPackageName)
+            {
+                PackageName = null; // Ambiguous
             }
         }
 
@@ -138,8 +145,13 @@ internal class CoverageRegressionService : ICoverageRegressionService
         public double Calculate(CoverageStrategy strategy)
         {
             int covered = 0, total = 0;
-            foreach (LineStats line in _lines.Values.Where(line => strategy.IsApplicable(line)))
+            foreach (LineStats line in _lines.Values)
             {
+                if (!strategy.IsApplicable(line))
+                {
+                    continue;
+                }
+
                 covered += strategy.GetCovered(line);
                 total += strategy.GetTotal(line);
             }
