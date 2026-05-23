@@ -8,9 +8,9 @@ namespace CoverageChecker.Parsers;
 
 internal partial class OpenCoverParser(Coverage coverage, ILogger<OpenCoverParser> logger, ICoverageMergeService coverageMergeService) : ParserBase(logger)
 {
-    private readonly Dictionary<(string FilePath, int LineNumber), OpenCoverLine> _lines = new(PathLineComparer.Instance);
-    private readonly Dictionary<(string FilePath, int LineNumber), int> _knownBranches = new(PathLineComparer.Instance);
-    private readonly Dictionary<(string FilePath, int LineNumber), LineMetadata> _knownMetadata = new(PathLineComparer.Instance);
+    private readonly Dictionary<string, Dictionary<int, OpenCoverLine>> _lines = new(PathUtils.PathComparer);
+    private readonly Dictionary<string, Dictionary<int, int>> _knownBranches = new(PathUtils.PathComparer);
+    private readonly Dictionary<string, Dictionary<int, LineMetadata>> _knownMetadata = new(PathUtils.PathComparer);
 
     protected override void LoadCoverage(XmlReader reader)
     {
@@ -289,11 +289,11 @@ internal partial class OpenCoverParser(Coverage coverage, ILogger<OpenCoverParse
             throw new CoverageParseException($"OpenCover file id '{fileId}' was not found");
 
         LogProcessingFile(filePath);
-        (string FilePath, int LineNumber) key = (filePath, lineNumber);
-        if (!_lines.TryGetValue(key, out OpenCoverLine? line))
+        Dictionary<int, OpenCoverLine> fileLines = GetOrCreateLineMap(_lines, filePath);
+        if (!fileLines.TryGetValue(lineNumber, out OpenCoverLine? line))
         {
             line = new OpenCoverLine(filePath, lineNumber);
-            _lines[key] = line;
+            fileLines[lineNumber] = line;
         }
 
         return line;
@@ -301,24 +301,24 @@ internal partial class OpenCoverParser(Coverage coverage, ILogger<OpenCoverParse
 
     private void FlushLines()
     {
-        foreach (OpenCoverLine line in _lines.Values)
+        foreach (OpenCoverLine line in _lines.Values.SelectMany(fileLines => fileLines.Values))
         {
             FileCoverage file = coverage.GetOrCreateFile(line.FilePath);
 
             int branches = line.Branches;
             int coveredBranches = line.CoveredBranches;
-            (string FilePath, int LineNumber) key = (line.FilePath, line.LineNumber);
             if (branches > 0)
             {
-                _knownBranches[key] = branches;
+                GetOrCreateLineMap(_knownBranches, line.FilePath)[line.LineNumber] = branches;
             }
-            else if (_knownBranches.TryGetValue(key, out int knownBranches))
+            else if (_knownBranches.TryGetValue(line.FilePath, out Dictionary<int, int>? fileBranches) &&
+                     fileBranches.TryGetValue(line.LineNumber, out int knownBranches))
             {
                 branches = knownBranches;
                 coveredBranches = 0;
             }
 
-            LineMetadata metadata = GetStableMetadata(key, line);
+            LineMetadata metadata = GetStableMetadata(line);
             LineCoverage lineCoverage = branches > 0
                 ? new LineCoverage(line.LineNumber, line.IsCovered, branches, coveredBranches, metadata.ClassName, metadata.MethodName, metadata.MethodSignature)
                 : new LineCoverage(line.LineNumber, line.IsCovered, className: metadata.ClassName, methodName: metadata.MethodName, methodSignature: metadata.MethodSignature);
@@ -327,16 +327,28 @@ internal partial class OpenCoverParser(Coverage coverage, ILogger<OpenCoverParse
         }
     }
 
-    private LineMetadata GetStableMetadata((string FilePath, int LineNumber) key, OpenCoverLine line)
+    private LineMetadata GetStableMetadata(OpenCoverLine line)
     {
         LineMetadata metadata = new(line.ClassName, line.MethodName, line.MethodSignature);
-        if (!_knownMetadata.TryGetValue(key, out LineMetadata? known))
+        Dictionary<int, LineMetadata> fileMetadata = GetOrCreateLineMap(_knownMetadata, line.FilePath);
+        if (!fileMetadata.TryGetValue(line.LineNumber, out LineMetadata? known))
         {
-            _knownMetadata[key] = metadata;
+            fileMetadata[line.LineNumber] = metadata;
             return metadata;
         }
 
         return known == metadata ? metadata : new LineMetadata(null, null, null);
+    }
+
+    private static Dictionary<int, TValue> GetOrCreateLineMap<TValue>(Dictionary<string, Dictionary<int, TValue>> maps, string filePath)
+    {
+        if (!maps.TryGetValue(filePath, out Dictionary<int, TValue>? lineMap))
+        {
+            lineMap = [];
+            maps[filePath] = lineMap;
+        }
+
+        return lineMap;
     }
 
     [LoggerMessage(Level = LogLevel.Debug, Message = "Processing file: {FilePath}")]
@@ -360,19 +372,4 @@ internal partial class OpenCoverParser(Coverage coverage, ILogger<OpenCoverParse
     private sealed record OpenCoverPointLocation(int FileId, int LineNumber);
 
     private sealed record LineMetadata(string? ClassName, string? MethodName, string? MethodSignature);
-
-    private sealed class PathLineComparer : IEqualityComparer<(string FilePath, int LineNumber)>
-    {
-        public static PathLineComparer Instance { get; } = new();
-
-        public bool Equals((string FilePath, int LineNumber) x, (string FilePath, int LineNumber) y)
-        {
-            return x.LineNumber == y.LineNumber && PathUtils.PathComparer.Equals(x.FilePath, y.FilePath);
-        }
-
-        public int GetHashCode((string FilePath, int LineNumber) obj)
-        {
-            return HashCode.Combine(PathUtils.PathComparer.GetHashCode(obj.FilePath), obj.LineNumber);
-        }
-    }
 }

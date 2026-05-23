@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CoverageSession>
+  <Modules>
+    <Module>
+      <Files>
+        <File uid="1" fullPath="tests/CoverageChecker.Tests.EndToEnd/CoverageFiles/OpenCoverFormat/file-1.cs" />
+      </Files>
+      <Classes>
+        <Class>
+          <FullName>CoverageChecker.Tests.InvalidFileRef</FullName>
+          <Methods>
+            <Method>
+              <Name>System.Void CoverageChecker.Tests.InvalidFileRef::Bad()</Name>
+              <FileRef uid="99" />
+              <SequencePoints />
+            </Method>
+          </Methods>
+        </Class>
+      </Classes>
+    </Module>
+  </Modules>
+</CoverageSession>

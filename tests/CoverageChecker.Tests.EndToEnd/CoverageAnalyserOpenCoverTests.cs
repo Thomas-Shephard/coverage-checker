@@ -19,6 +19,17 @@ public class CoverageAnalyserOpenCoverTests
         return new CoverageAnalyser(options, loggerFactory);
     }
 
+    private CoverageAnalyser CreateAnalyser(IEnumerable<string> globPatterns)
+    {
+        CoverageAnalyserOptions options = new()
+        {
+            CoverageFormat = CoverageFormat.OpenCover,
+            Directory = _directory,
+            GlobPatterns = globPatterns
+        };
+        return new CoverageAnalyser(options);
+    }
+
     [Test]
     public void CoverageAnalyserAnalyseOpenCoverCoverageWithLoggerReturnsCoverage()
     {
@@ -97,6 +108,130 @@ public class CoverageAnalyserOpenCoverTests
         }
     }
 
+    [Test]
+    public void CoverageAnalyserAnalyseOpenCoverCoverageWithSequencePointBranchTotalsReturnsCoverage()
+    {
+        Coverage coverage = CreateAnalyser("SequencePointBranchTotals.xml").AnalyseCoverage();
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(coverage.Files, Has.Count.EqualTo(1));
+            Assert.That(coverage.CalculateOverallCoverage(), Is.EqualTo(1));
+            Assert.That(coverage.CalculateOverallCoverage(CoverageType.Branch), Is.EqualTo((double)1 / 2));
+            Assert.That(coverage.Files[0].Lines[0].Branches, Is.EqualTo(2));
+            Assert.That(coverage.Files[0].Lines[0].CoveredBranches, Is.EqualTo(1));
+        }
+    }
+
+    [Test]
+    public void CoverageAnalyserAnalyseOpenCoverCoverageIgnoresSequencePointBranchTotalsAfterBranchPoints()
+    {
+        Coverage coverage = CreateAnalyser("BranchTotalsIgnoredAfterBranchPoints.xml").AnalyseCoverage();
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(coverage.Files, Has.Count.EqualTo(1));
+            Assert.That(coverage.Files[0].Lines[0].Branches, Is.EqualTo(2));
+            Assert.That(coverage.Files[0].Lines[0].CoveredBranches, Is.EqualTo(1));
+            Assert.That(coverage.CalculateOverallCoverage(CoverageType.Branch), Is.EqualTo(0.5));
+        }
+    }
+
+    [Test]
+    public void CoverageAnalyserAnalyseOpenCoverCoverageSkipsUnmatchedOffsetBranchPoint()
+    {
+        Coverage coverage = CreateAnalyser("UnmatchedOffsetBranchPoint.xml").AnalyseCoverage();
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(coverage.Files, Has.Count.EqualTo(1));
+            Assert.That(coverage.Files[0].Lines, Has.Count.EqualTo(1));
+            Assert.That(coverage.Files[0].Lines[0].Branches, Is.Null);
+            Assert.That(coverage.CalculateOverallCoverage(CoverageType.Branch), Is.NaN);
+        }
+    }
+
+    [Test]
+    public void CoverageAnalyserAnalyseOpenCoverCoverageUsesMethodFileRefForBranchPointLineNumber()
+    {
+        Coverage coverage = CreateAnalyser("BranchPointLineNumberWithFileRef.xml").AnalyseCoverage();
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(coverage.Files, Has.Count.EqualTo(1));
+            Assert.That(coverage.Files[0].Lines.Single(line => line.LineNumber == 55).Branches, Is.EqualTo(1));
+            Assert.That(coverage.Files[0].Lines.Single(line => line.LineNumber == 55).CoveredBranches, Is.EqualTo(1));
+        }
+    }
+
+    [Test]
+    public void CoverageAnalyserAnalyseOpenCoverCoverageUsesParentSequencePointFileForBranchPointLineNumber()
+    {
+        Coverage coverage = CreateAnalyser("BranchPointLineNumberWithParentSequencePoint.xml").AnalyseCoverage();
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(coverage.Files, Has.Count.EqualTo(1));
+            Assert.That(coverage.Files[0].Lines.Single(line => line.LineNumber == 56).Branches, Is.EqualTo(1));
+            Assert.That(coverage.Files[0].Lines.Single(line => line.LineNumber == 56).CoveredBranches, Is.EqualTo(1));
+        }
+    }
+
+    [Test]
+    public void CoverageAnalyserAnalyseOpenCoverCoverageUsesBranchPointFileAndParentSequencePointLineNumber()
+    {
+        Coverage coverage = CreateAnalyser("BranchPointFileWithParentSequencePointLineNumber.xml").AnalyseCoverage();
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(coverage.Files, Has.Count.EqualTo(1));
+            Assert.That(coverage.Files[0].Lines.Single(line => line.LineNumber == 57).Branches, Is.EqualTo(1));
+            Assert.That(coverage.Files[0].Lines.Single(line => line.LineNumber == 57).CoveredBranches, Is.EqualTo(1));
+        }
+    }
+
+    [Test]
+    public void CoverageAnalyserAnalyseOpenCoverCoverageDuplicateSequencePointKeepsMetadata()
+    {
+        Coverage coverage = CreateAnalyser("DuplicateSequencePointSameLine.xml").AnalyseCoverage();
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(coverage.Files, Has.Count.EqualTo(1));
+            Assert.That(coverage.Files[0].Lines, Has.Count.EqualTo(1));
+            Assert.That(coverage.Files[0].Lines[0].ClassName, Is.EqualTo("CoverageChecker.Tests.DuplicateSequencePoint"));
+            Assert.That(coverage.Files[0].Lines[0].MethodName, Is.EqualTo("System.Void CoverageChecker.Tests.DuplicateSequencePoint::SameLine()"));
+        }
+    }
+
+    [Test]
+    public void CoverageAnalyserAnalyseOpenCoverCoverageMergesKnownBranchCountsAcrossReports()
+    {
+        Coverage coverage = CreateAnalyser(["KnownBranchesWithBranch.xml", "KnownBranchesWithoutBranch.xml"]).AnalyseCoverage();
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(coverage.Files, Has.Count.EqualTo(1));
+            Assert.That(coverage.Files[0].Lines, Has.Count.EqualTo(1));
+            Assert.That(coverage.Files[0].Lines[0].Branches, Is.EqualTo(2));
+            Assert.That(coverage.Files[0].Lines[0].CoveredBranches, Is.EqualTo(1));
+            Assert.That(coverage.CalculateOverallCoverage(CoverageType.Branch), Is.EqualTo(0.5));
+        }
+    }
+
+    [Test]
+    public void CoverageAnalyserAnalyseOpenCoverCoverageConflictingMetadataClearsMetadata()
+    {
+        Coverage coverage = CreateAnalyser(["ConflictingMetadata1.xml", "ConflictingMetadata2.xml"]).AnalyseCoverage();
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(coverage.Files, Has.Count.EqualTo(1));
+            Assert.That(coverage.Files[0].Lines, Has.Count.EqualTo(1));
+            Assert.That(coverage.CalculateOverallCoverage(), Is.EqualTo(1));
+        }
+    }
+
     [TestCase("NoModules.xml")]
     [TestCase("NoFiles.xml")]
     [TestCase("NoSequencePoints.xml")]
@@ -127,5 +262,50 @@ public class CoverageAnalyserOpenCoverTests
 
         Exception e = Assert.Throws<CoverageParseException>(() => coverageAnalyser.AnalyseCoverage());
         Assert.That(e.Message, Is.EqualTo("OpenCover file id '99' was not found"));
+    }
+
+    [Test]
+    public void CoverageAnalyserAnalyseOpenCoverCoverageInvalidBranchPointFileReferenceThrowsCoverageParseException()
+    {
+        CoverageAnalyser coverageAnalyser = CreateAnalyser("InvalidBranchPointFileReference.xml");
+
+        Exception e = Assert.Throws<CoverageParseException>(() => coverageAnalyser.AnalyseCoverage());
+        Assert.That(e.Message, Is.EqualTo("OpenCover file id '99' was not found"));
+    }
+
+    [Test]
+    public void CoverageAnalyserAnalyseOpenCoverCoverageInvalidRootThrowsCoverageParseException()
+    {
+        CoverageAnalyser coverageAnalyser = CreateAnalyser("InvalidRoot.xml");
+
+        Exception e = Assert.Throws<CoverageParseException>(() => coverageAnalyser.AnalyseCoverage());
+        Assert.That(e.Message, Is.EqualTo("Expected CoverageSession to be the root element"));
+    }
+
+    [Test]
+    public void CoverageAnalyserAnalyseOpenCoverCoverageInvalidFileRefThrowsCoverageParseException()
+    {
+        CoverageAnalyser coverageAnalyser = CreateAnalyser("InvalidFileRef.xml");
+
+        Exception e = Assert.Throws<CoverageParseException>(() => coverageAnalyser.AnalyseCoverage());
+        Assert.That(e.Message, Is.EqualTo("OpenCover file id '99' was not found"));
+    }
+
+    [Test]
+    public void CoverageAnalyserAnalyseOpenCoverCoverageMissingSequencePointFileReferenceThrowsCoverageParseException()
+    {
+        CoverageAnalyser coverageAnalyser = CreateAnalyser("MissingSequencePointFileReference.xml");
+
+        Exception e = Assert.Throws<CoverageParseException>(() => coverageAnalyser.AnalyseCoverage());
+        Assert.That(e.Message, Is.EqualTo("Attribute 'fileid' not found on element 'SequencePoint' and no method FileRef was available"));
+    }
+
+    [Test]
+    public void CoverageAnalyserAnalyseOpenCoverCoverageMissingBranchPointFileReferenceThrowsCoverageParseException()
+    {
+        CoverageAnalyser coverageAnalyser = CreateAnalyser("MissingBranchPointFileReference.xml");
+
+        Exception e = Assert.Throws<CoverageParseException>(() => coverageAnalyser.AnalyseCoverage());
+        Assert.That(e.Message, Is.EqualTo("Attribute 'fileid' not found on element 'BranchPoint' and no method FileRef was available"));
     }
 }

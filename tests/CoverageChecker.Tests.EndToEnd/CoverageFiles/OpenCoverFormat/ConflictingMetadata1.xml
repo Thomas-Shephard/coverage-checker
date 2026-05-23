@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CoverageSession>
+  <Modules>
+    <Module>
+      <Files>
+        <File uid="1" fullPath="tests/CoverageChecker.Tests.EndToEnd/CoverageFiles/OpenCoverFormat/conflicting-metadata.cs" />
+      </Files>
+      <Classes>
+        <Class>
+          <FullName>CoverageChecker.Tests.FirstClass</FullName>
+          <Methods>
+            <Method>
+              <Name>System.Void CoverageChecker.Tests.FirstClass::First()</Name>
+              <SequencePoints>
+                <SequencePoint vc="1" uspid="1" ordinal="0" offset="0" sl="70" fileid="1" />
+              </SequencePoints>
+            </Method>
+          </Methods>
+        </Class>
+      </Classes>
+    </Module>
+  </Modules>
+</CoverageSession>

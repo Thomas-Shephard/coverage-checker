@@ -190,6 +190,36 @@ public class ParserFactoryTests
     }
 
     [Test]
+    public void DetectFormatWithEmptyFileThrowsCoverageParseException()
+    {
+        string path = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(path, string.Empty);
+            Assert.Throws<CoverageParseException>(() => _factory.DetectFormat(path));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Test]
+    public void DetectFormatWithOnlyCommentThrowsCoverageParseException()
+    {
+        string path = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(path, "<!-- comment -->");
+            Assert.Throws<CoverageParseException>(() => _factory.DetectFormat(path));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Test]
     public void DetectFormatWithUnknownChildElementThrowsCoverageParseException()
     {
         string path = Path.GetTempFileName();

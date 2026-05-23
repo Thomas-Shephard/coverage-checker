@@ -23,10 +23,7 @@ internal class ParserFactory(ICoverageMergeService coverageMergeService) : IPars
         try
         {
             using XmlReader reader = XmlReader.Create(filePath, ParserBase.XmlReaderSettings);
-            if (reader.MoveToContent() != XmlNodeType.Element || reader.Depth != 0)
-            {
-                throw new CoverageParseException($"Could not find supported coverage root element in file: {filePath}");
-            }
+            reader.MoveToContent();
 
             if (reader.Name == "CoverageSession")
             {
