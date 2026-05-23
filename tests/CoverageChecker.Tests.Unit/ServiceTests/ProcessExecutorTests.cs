@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using CoverageChecker.Services;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace CoverageChecker.Tests.Unit.ServiceTests;
@@ -89,6 +90,14 @@ public class ProcessExecutorTests
         _sut.Execute("git", ["status"]);
 
         Assert.That(_mockProcess.Object.StartInfo.WorkingDirectory, Is.EqualTo(workingDir));
+    }
+
+    [Test]
+    public void ConstructorShouldUseProvidedLogger()
+    {
+        Mock<ILogger<ProcessExecutor>> logger = new();
+
+        Assert.DoesNotThrow(() => _ = new ProcessExecutor(() => _mockProcess.Object, null, logger.Object));
     }
 
     [Test]

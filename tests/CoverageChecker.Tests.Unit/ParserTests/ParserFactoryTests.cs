@@ -195,4 +195,19 @@ public class ParserFactoryTests
             File.Delete(path);
         }
     }
+
+    [Test]
+    public void DetectFormatWithOnlyNonElementContentThrowsCoverageParseException()
+    {
+        string path = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(path, "<coverage>text</coverage>");
+            Assert.Throws<CoverageParseException>(() => _factory.DetectFormat(path));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
 }

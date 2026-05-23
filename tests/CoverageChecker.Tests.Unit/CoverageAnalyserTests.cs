@@ -427,6 +427,26 @@ public class CoverageAnalyserTests
         Assert.That(result.Files, Has.Count.EqualTo(1));
     }
 
+    [Test]
+    public void AnalyseCoverageShouldHandleFilteringWhenCoverageHasNoFiles()
+    {
+        Mock<IFileFinder> mockFileFinder = new();
+        Mock<IParserFactory> mockParserFactory = new();
+        Mock<IGitService> mockGitService = new();
+        Mock<ICoverageParser> mockParser = new();
+
+        mockFileFinder.Setup(f => f.FindFiles(ValidDirectory)).Returns(["coverage.xml"]);
+        mockParserFactory.Setup(f => f.CreateParser(It.IsAny<CoverageFormat>(), It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()))
+                         .Returns(mockParser.Object);
+
+        CoverageAnalyserOptions options = CreateDefaultOptions() with { Include = ["src/**"] };
+        CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>(), Mock.Of<ICoverageRegressionService>());
+
+        Coverage result = sut.AnalyseCoverage();
+
+        Assert.That(result.Files, Is.Empty);
+    }
+
     private sealed class TestLoggerFactory(ILogger logger) : ILoggerFactory
     {
         public ILogger CreateLogger(string categoryName) => logger;

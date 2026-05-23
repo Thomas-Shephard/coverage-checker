@@ -641,6 +641,17 @@ public class GitServiceTests
     }
 
     [Test]
+    public void GetRenamesShouldAllowZeroThreshold()
+    {
+        _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
+        _mockExecutor.DiffOutput = "R100\told_file.cs\tnew_file.cs\n";
+
+        IDictionary<string, string> result = _sut.GetRenames("main", "HEAD", 0);
+
+        Assert.That(result, Has.Count.EqualTo(1));
+    }
+
+    [Test]
     public void GetRenamesShouldThrowGitExceptionWhenGitDiffFails()
     {
         _mockExecutor.DiffExitCode = 1;
@@ -661,5 +672,23 @@ public class GitServiceTests
 
         GitException? ex = Assert.Throws<GitException>(() => sut.GetRenames("main"));
         Assert.That(ex.Message, Does.Contain("Failed to execute 'git'"));
+    }
+
+    [TestCase("""\123abc""")]
+    [TestCase("""\123\8""")]
+    [TestCase("""\123\18""")]
+    [TestCase("""\123\128""")]
+    public void GetChangedLinesShouldStopOctalDecodeWhenNextSequenceIsNotOctal(string escapedSuffix)
+    {
+        _mockExecutor.RepoRoot = TestContext.CurrentContext.TestDirectory;
+        _mockExecutor.DiffOutput = $"""
+            +++ "b/file{escapedSuffix}.cs"
+            @@ -1 +1 @@
+            +change
+            """;
+
+        IDictionary<string, HashSet<int>> result = _sut.GetChangedLines("main");
+
+        Assert.That(result, Is.Not.Empty);
     }
 }

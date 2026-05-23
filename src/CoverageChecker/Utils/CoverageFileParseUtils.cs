@@ -23,9 +23,11 @@ internal static class CoverageFileParseUtils
         // Then the reader should continue reading until the end of the element to be consumed
         if (!startedWithEmptyElement && !startedWithEndElement)
         {
-            while (reader.Read() && reader.Depth > depth)
+            while (reader.Read())
             {
-                // Continue reading until the element has been consumed
+                // Continue reading until the element has been consumed.
+                if (reader.Depth <= depth)
+                    break;
             }
         }
 
@@ -87,7 +89,13 @@ internal static class CoverageFileParseUtils
         while (depth == reader.Depth)
         {
             // If the element name does not match or this is not the start of an element consume the current element
-            if (!(reader.NodeType == XmlNodeType.Element && reader.Name == elementName))
+            if (reader.NodeType != XmlNodeType.Element)
+            {
+                reader.Read();
+                continue;
+            }
+
+            if (reader.Name != elementName)
             {
                 reader.ConsumeElement(reader.Name);
                 continue;
