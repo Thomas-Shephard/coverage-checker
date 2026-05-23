@@ -115,19 +115,15 @@ public partial class CoverageAnalyser
         string root = rootDirectory ?? Environment.CurrentDirectory;
         Matcher matcher = CreateMatcher();
 
-        List<FileCoverage> filesToRemove = [];
-        foreach (FileCoverage file in coverage.Files)
-        {
-            if (IsFileExcluded(file, root, matcher))
-            {
-                filesToRemove.Add(file);
-            }
-        }
-
-        foreach (FileCoverage file in filesToRemove)
+        foreach (FileCoverage file in GetFilesToRemove(coverage, root, matcher))
         {
             coverage.RemoveFile(file);
         }
+    }
+
+    private static FileCoverage[] GetFilesToRemove(Coverage coverage, string root, Matcher matcher)
+    {
+        return coverage.Files.Where(file => IsFileExcluded(file, root, matcher)).ToArray();
     }
 
     private Matcher CreateMatcher()
