@@ -48,6 +48,12 @@ Run tests and check the coverage they produce. The `{output}` token is replaced 
 coveragechecker run --command "dotnet test --collect 'XPlat Code Coverage' --results-directory {output}" --line-threshold 90
 ```
 
+Run the test command from a solution or project subdirectory:
+
+```bash
+coveragechecker run --working-directory ./src/MySolution --command "dotnet test --collect 'XPlat Code Coverage' --results-directory {output}"
+```
+
 Check delta coverage against another branch:
 
 ```bash

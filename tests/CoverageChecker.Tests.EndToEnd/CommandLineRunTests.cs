@@ -120,6 +120,114 @@ public class CommandLineRunTests
     }
 
     [Test]
+    public async Task RunCommandExecutesInSpecifiedWorkingDirectory()
+    {
+        using TestDirectory testDirectory = new();
+        string commandDirectory = Path.Combine(testDirectory.Path, "project");
+        Directory.CreateDirectory(commandDirectory);
+
+        (int exitCode, string stdout) = await RunCli(
+            "run",
+            "--working-directory", commandDirectory,
+            "--command", "echo marker > cwd-marker.txt && echo dummy > {output}/coverage.xml",
+            "--continue-on-failure");
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exitCode, Is.Not.Zero);
+            Assert.That(File.Exists(Path.Combine(commandDirectory, "cwd-marker.txt")), Is.True);
+            Assert.That(File.Exists(Path.Combine(testDirectory.Path, "cwd-marker.txt")), Is.False);
+            Assert.That(stdout, Does.Contain("Error parsing coverage files."));
+        }
+    }
+
+    [Test]
+    public async Task RunCommandHandlesRelativeWorkingDirectory()
+    {
+        using TestDirectory testDirectory = new();
+        string commandDirectory = Path.Combine(testDirectory.Path, "project");
+        Directory.CreateDirectory(commandDirectory);
+
+        (int exitCode, string stdout) = await RunCliInDirectory(
+            testDirectory.Path,
+            "run",
+            "--working-directory", "project",
+            "--command", "echo marker > relative-marker.txt && echo dummy > {output}/coverage.xml",
+            "--continue-on-failure");
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exitCode, Is.Not.Zero);
+            Assert.That(File.Exists(Path.Combine(commandDirectory, "relative-marker.txt")), Is.True);
+            Assert.That(File.Exists(Path.Combine(testDirectory.Path, "relative-marker.txt")), Is.False);
+            Assert.That(stdout, Does.Contain("Error parsing coverage files."));
+        }
+    }
+
+    [Test]
+    public async Task RunCommandUsesRelativeOutputFromInvocationDirectoryWhenWorkingDirectoryIsSpecified()
+    {
+        using TestDirectory testDirectory = new();
+        string commandDirectory = Path.Combine(testDirectory.Path, "project");
+        Directory.CreateDirectory(commandDirectory);
+
+        (int exitCode, string stdout) = await RunCliInDirectory(
+            testDirectory.Path,
+            "run",
+            "--working-directory", "project",
+            "--output", "coverage-results",
+            "--command", "echo dummy > {output}/coverage.xml",
+            "--continue-on-failure");
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exitCode, Is.Not.Zero);
+            Assert.That(File.Exists(Path.Combine(testDirectory.Path, "coverage-results", "coverage.xml")), Is.True);
+            Assert.That(File.Exists(Path.Combine(commandDirectory, "coverage-results", "coverage.xml")), Is.False);
+            Assert.That(stdout, Does.Contain("Error parsing coverage files."));
+        }
+    }
+
+    [Test]
+    public async Task RunCommandFailsClearlyWhenWorkingDirectoryDoesNotExist()
+    {
+        using TestDirectory testDirectory = new();
+        string missingDirectory = Path.Combine(testDirectory.Path, "missing");
+
+        (int exitCode, string stdout) = await RunCli(
+            "run",
+            "--working-directory", missingDirectory,
+            "--command", "echo marker",
+            "--continue-on-failure");
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exitCode, Is.Not.Zero);
+            Assert.That(stdout, Does.Contain("Working directory does not exist:"));
+            Assert.That(stdout, Does.Contain(missingDirectory));
+        }
+    }
+
+    [Test]
+    public async Task RunCommandDefaultsToCurrentDirectory()
+    {
+        using TestDirectory testDirectory = new();
+
+        (int exitCode, string stdout) = await RunCliInDirectory(
+            testDirectory.Path,
+            "run",
+            "--command", "echo marker > default-marker.txt && echo dummy > {output}/coverage.xml",
+            "--continue-on-failure");
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exitCode, Is.Not.Zero);
+            Assert.That(File.Exists(Path.Combine(testDirectory.Path, "default-marker.txt")), Is.True);
+            Assert.That(stdout, Does.Contain("Error parsing coverage files."));
+        }
+    }
+
+    [Test]
     public async Task CheckCommandFailsWhenCoverageFileParsesNoFiles()
     {
         using TestDirectory testDirectory = new();

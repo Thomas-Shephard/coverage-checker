@@ -67,6 +67,9 @@ internal static partial class ProgramLogs
     [LoggerMessage(Level = LogLevel.Information, Message = "Running command: {Command}")]
     public static partial void LogRunningCommand(this ILogger logger, string command);
 
+    [LoggerMessage(Level = LogLevel.Error, Message = "Working directory does not exist: {WorkingDirectory}")]
+    public static partial void LogWorkingDirectoryNotFound(this ILogger logger, string workingDirectory);
+
     [LoggerMessage(Level = LogLevel.Error, Message = "Command failed with exit code {ExitCode}.")]
     public static partial void LogCommandFailed(this ILogger logger, int exitCode);
 

@@ -65,6 +65,7 @@ These options apply to both `check` and `run` commands.
 |-------------------------|-------------------------------------------------------------------------------------------------------|----------|---------|
 | `-c`, `--command`       | The command to execute. Use `{output}` as a placeholder for the results directory.                    | Yes      |         |
 | `-o`, `--output`        | The directory where coverage results will be stored. If not specified, a temporary directory is used. | No       |         |
+| `--working-directory`   | The directory where the command is executed. Relative paths are resolved from the current directory.  | No       | Current directory |
 | `-t`, `--timeout`       | The maximum amount of time, in minutes, that the specified command is allowed to run.                 | No       | 30      |
 | `--continue-on-failure` | Continue with coverage analysis even if the command fails.                                            | No       | `false` |
 
@@ -78,6 +79,12 @@ Run tests and check coverage in a single command. The `{output}` placeholder wil
 
 ```bash
 coveragechecker run --command "dotnet test --collect 'XPlat Code Coverage' --results-directory {output}" --line-threshold 90
+```
+
+Run tests from a project or solution subdirectory while invoking Coverage Checker from a repository root:
+
+```bash
+coveragechecker run --working-directory ./src/MySolution --command "dotnet test --collect 'XPlat Code Coverage' --results-directory {output}"
 ```
 
 ### Filtering Source Files
