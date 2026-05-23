@@ -391,21 +391,23 @@ static bool EvaluateOverallThresholds(CoverageResult result, CommandLineOptions 
 static bool EvaluateDeltaThresholds(CoverageResult result, CommandLineOptions options, ILogger logger)
 {
     bool failed = false;
+    double deltaLineThreshold = options.EffectiveDeltaLineThreshold;
+    double deltaBranchThreshold = options.EffectiveDeltaBranchThreshold;
 
     if (double.IsNaN(result.DeltaLineCoverage))
     {
         logger.LogNoApplicableDeltaLineCoverage();
         failed = true;
     }
-    else if (options.LineThreshold > result.DeltaLineCoverage)
+    else if (deltaLineThreshold > result.DeltaLineCoverage)
     {
-        logger.LogDeltaLineCoverageBelowThreshold(result.DeltaLineCoverage, options.LineThreshold);
+        logger.LogDeltaLineCoverageBelowThreshold(result.DeltaLineCoverage, deltaLineThreshold);
         failed = true;
     }
 
-    if (!double.IsNaN(result.DeltaBranchCoverage) && options.BranchThreshold > result.DeltaBranchCoverage)
+    if (!double.IsNaN(result.DeltaBranchCoverage) && deltaBranchThreshold > result.DeltaBranchCoverage)
     {
-        logger.LogDeltaBranchCoverageBelowThreshold(result.DeltaBranchCoverage, options.BranchThreshold);
+        logger.LogDeltaBranchCoverageBelowThreshold(result.DeltaBranchCoverage, deltaBranchThreshold);
         failed = true;
     }
 
@@ -549,8 +551,8 @@ static void AppendDeltaSummary(StringBuilder summary, CoverageResult result, Com
 {
     if (result.HasDeltaChangedLines)
     {
-        summary.AppendLine(FormatMetricRow("Delta Line Coverage", result.DeltaLineCoverage, options.LineThreshold, failOnNaN: true));
-        summary.AppendLine(FormatMetricRow("Delta Branch Coverage", result.DeltaBranchCoverage, options.BranchThreshold));
+        summary.AppendLine(FormatMetricRow("Delta Line Coverage", result.DeltaLineCoverage, options.EffectiveDeltaLineThreshold, failOnNaN: true));
+        summary.AppendLine(FormatMetricRow("Delta Branch Coverage", result.DeltaBranchCoverage, options.EffectiveDeltaBranchThreshold));
     }
     else
     {
@@ -580,7 +582,9 @@ static bool IsAnyThresholdViolated(CoverageResult result, CommandLineOptions opt
     }
 
     return options.Delta && result.HasDeltaChangedLines &&
-           (double.IsNaN(result.DeltaLineCoverage) || options.LineThreshold > result.DeltaLineCoverage || options.BranchThreshold > result.DeltaBranchCoverage);
+           (double.IsNaN(result.DeltaLineCoverage) ||
+            options.EffectiveDeltaLineThreshold > result.DeltaLineCoverage ||
+            options.EffectiveDeltaBranchThreshold > result.DeltaBranchCoverage);
 }
 
 static void EmitGitHubAnnotations(Coverage coverage, string rootDirectory)

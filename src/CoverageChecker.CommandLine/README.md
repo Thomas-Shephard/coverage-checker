@@ -49,6 +49,8 @@ These options apply to both `check` and `run` commands.
 | `-e`, `--exclude`          | Glob patterns of files to exclude from the coverage analysis.                              | No       |               |
 | `-l`, `--line-threshold`   | The line coverage threshold. Default: 80                                                   | No       | 80            |
 | `-b`, `--branch-threshold` | The branch coverage threshold. Default: 80                                                 | No       | 80            |
+| `--delta-line-threshold`   | The delta line coverage threshold. Defaults to `--line-threshold`.                         | No       |               |
+| `--delta-branch-threshold` | The delta branch coverage threshold. Defaults to `--branch-threshold`.                     | No       |               |
 | `--rename-threshold`       | The similarity threshold for rename detection (percentage). Default: 50                    | No       | 50            |
 | `--delta`                  | Calculate coverage for changed lines only.                                                 | No       | `false`       |
 | `--strict-delta`           | Fail when Git-changed files with changed lines are absent from coverage data.              | No       | `false`       |
@@ -104,6 +106,12 @@ Check coverage only for changed lines compared to the `develop` branch:
 coveragechecker --delta --delta-base origin/develop
 ```
 
+Use different thresholds for overall coverage and changed lines:
+
+```bash
+coveragechecker --delta --line-threshold 80 --delta-line-threshold 100
+```
+
 Fail when a changed file is not represented in the coverage report at all:
 
 ```bash
@@ -130,6 +138,7 @@ The CoverageChecker Command Line tool reads the specified coverage files and out
 If the line or branch coverage is below the specified threshold, the tool will exit with a non-zero exit code.
 If coverage files are found but no applicable lines remain after parsing or include/exclude filtering, line coverage is reported as unavailable and the tool exits with a non-zero exit code.
 Branch coverage with no branches is reported as unavailable and does not fail the branch threshold.
+Delta coverage uses `--delta-line-threshold` and `--delta-branch-threshold` when provided. If either delta threshold is omitted, it defaults to the corresponding overall threshold.
 For delta coverage, changed lines in files that appear in the coverage data must match covered line entries; if changed coverage files are found but none of their changed lines are matched, the tool exits with a non-zero exit code.
 Without `--strict-delta`, changed files that are completely absent from coverage data are ignored so docs and config-only changes remain compatible with existing workflows.
 With `--strict-delta`, Git-changed files with changed line numbers must be present in the coverage data. If `--include` or `--exclude` is provided, the strict missing-file check respects that same scope. Otherwise, strict delta applies to every file reported by Git with changed line numbers without distinguishing source from non-source files.
