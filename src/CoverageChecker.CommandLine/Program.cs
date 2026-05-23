@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using CommandLine;
 using CommandLine.Text;
 using CoverageChecker;
@@ -195,10 +196,27 @@ static async Task<int> RunCommandAndCheck(RunOptions options)
 
 static string PrepareCommand(string commandTemplate, string outputDir, ILogger logger)
 {
-    string escapedPath = $"\"{outputDir.Replace("\"", "\\\"")}\"";
-    string command = commandTemplate.Replace("{output}", escapedPath);
+    string command = OutputPathSuffixRegex().Replace(
+        commandTemplate,
+        match => QuoteShellPath(outputDir + match.Groups[1].Value));
+
+    command = command.Replace("{output}", QuoteShellPath(outputDir));
     logger.LogRunningCommand(command);
     return command;
+}
+
+static string QuoteShellPath(string path)
+{
+    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+    {
+        string normalizedPath = path.StartsWith(@"\\", StringComparison.Ordinal)
+            ? @"\\" + path[2..].Replace('\\', '/')
+            : path.Replace('\\', '/');
+
+        return $"\"{normalizedPath.Replace("\"", "\"\"")}\"";
+    }
+
+    return $"'{path.Replace("'", "'\\''")}'";
 }
 
 static async Task<int> ExecuteCommand(string command, string workingDirectory, int timeoutMinutes, ILogger logger)
@@ -207,9 +225,7 @@ static async Task<int> ExecuteCommand(string command, string workingDirectory, i
     process.StartInfo.FileName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "cmd.exe" : "sh";
     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
     {
-        // Use /s and wrap the command in quotes to ensure cmd.exe 
-        // preserves the internal quoting of the command string.
-        process.StartInfo.Arguments = $"/s /c \"{command}\"";
+        process.StartInfo.Arguments = $"/d /s /c \"{command}\"";
     }
     else
     {
@@ -655,4 +671,14 @@ static int DisplayHelp<T>(ParserResult<T> result)
 
     Console.WriteLine(helpText);
     return 1;
+}
+
+internal sealed partial class Program
+{
+    private Program()
+    {
+    }
+
+    [GeneratedRegex(@"\{output\}([\\/][^\s&|;<>""']*)")]
+    private static partial Regex OutputPathSuffixRegex();
 }
