@@ -1,4 +1,5 @@
 using CoverageChecker.Results;
+using CoverageChecker.Utils;
 
 namespace CoverageChecker.Services;
 
@@ -10,13 +11,18 @@ internal class DeltaCoverageService(ICoverageMergeService mergeService) : IDelta
         int gitChangedLineCount = changedLines.Values.Sum(lines => lines.Count);
         int matchedCoverageLineCount = 0;
         int changedCoverageFileCount = 0;
+        List<string> changedFilesMissingCoverage = [];
 
-        ILookup<string, FileCoverage> coverageFilesByPath = coverage.Files.ToLookup(f => f.Path, StringComparer.Ordinal);
+        ILookup<string, FileCoverage> coverageFilesByPath = coverage.Files.ToLookup(f => f.Path, PathUtils.PathComparer);
 
         foreach ((string gitPath, HashSet<int> changedLineNumbers) in changedLines)
         {
             if (changedLineNumbers.Count == 0) continue;
-            if (!coverageFilesByPath.Contains(gitPath)) continue;
+            if (!coverageFilesByPath.Contains(gitPath))
+            {
+                changedFilesMissingCoverage.Add(gitPath);
+                continue;
+            }
 
             changedCoverageFileCount++;
             FileCoverage mergedFile = resultCoverage.GetOrCreateFile(gitPath);
@@ -36,6 +42,6 @@ internal class DeltaCoverageService(ICoverageMergeService mergeService) : IDelta
             matchedCoverageLineCount += matchedLineNumbers.Count;
         }
 
-        return new DeltaResult(resultCoverage, matchedCoverageLineCount > 0, gitChangedLineCount, matchedCoverageLineCount, changedCoverageFileCount);
+        return new DeltaResult(resultCoverage, matchedCoverageLineCount > 0, gitChangedLineCount, matchedCoverageLineCount, changedCoverageFileCount, changedFilesMissingCoverage);
     }
 }

@@ -90,7 +90,8 @@ static CoverageResult CreateInitialResult(Coverage coverage)
         double.NaN,
         false,
         false,
-        false
+        false,
+        []
     );
 }
 
@@ -110,6 +111,7 @@ static bool TryHandleDeltaCoverage(CoverageAnalyser coverageAnalyser, Coverage c
             HasDeltaChangedLines = true,
             HasGitDeltaChangedLines = deltaResult.HasGitChangedLines,
             HasChangedCoverageFiles = deltaResult.HasChangedCoverageFiles,
+            ChangedFilesMissingCoverage = deltaResult.ChangedFilesMissingCoverage,
             DeltaLineCoverage = deltaCoverage.CalculateOverallCoverage(),
             DeltaBranchCoverage = deltaCoverage.CalculateOverallCoverage(CoverageType.Branch)
         };
@@ -122,13 +124,18 @@ static bool TryHandleDeltaCoverage(CoverageAnalyser coverageAnalyser, Coverage c
         result = result with
         {
             HasGitDeltaChangedLines = deltaResult.HasGitChangedLines,
-            HasChangedCoverageFiles = true
+            HasChangedCoverageFiles = true,
+            ChangedFilesMissingCoverage = deltaResult.ChangedFilesMissingCoverage
         };
         logger.LogDeltaLinesMissingFromCoverage();
     }
     else if (deltaResult.HasGitChangedLines)
     {
-        result = result with { HasGitDeltaChangedLines = true };
+        result = result with
+        {
+            HasGitDeltaChangedLines = true,
+            ChangedFilesMissingCoverage = deltaResult.ChangedFilesMissingCoverage
+        };
         logger.LogNoDeltaLinesFound();
     }
     else
@@ -303,6 +310,14 @@ static int CheckThresholds(CoverageResult result, CommandLineOptions options, bo
         failed = true;
     }
 
+    if (options is { Delta: true, StrictDelta: true } && result.ChangedFilesMissingCoverage.Count > 0)
+    {
+        logger.LogStrictDeltaFilesMissingFromCoverage(
+            result.ChangedFilesMissingCoverage.Count,
+            FormatStrictDeltaMissingFiles(result.ChangedFilesMissingCoverage));
+        failed = true;
+    }
+
     if (!failed)
     {
         logger.LogThresholdMet();
@@ -318,6 +333,31 @@ static int CheckThresholds(CoverageResult result, CommandLineOptions options, bo
     }
 
     return 1;
+}
+
+static string FormatStrictDeltaMissingFiles(IReadOnlyList<string> files)
+{
+    string baseDirectory = PathUtils.GetNormalizedFullPath(Environment.CurrentDirectory);
+
+    IEnumerable<string> displayPaths = files
+        .Take(5)
+        .Select(file => FormatDisplayPath(file, baseDirectory));
+
+    string suffix = files.Count > 5 ? ", ..." : string.Empty;
+    return string.Join(", ", displayPaths) + suffix;
+}
+
+static string FormatDisplayPath(string file, string baseDirectory)
+{
+    string normalizedFile = PathUtils.NormalizePath(file);
+
+    if (!Path.IsPathRooted(normalizedFile))
+    {
+        return normalizedFile;
+    }
+
+    string relativePath = PathUtils.NormalizePath(Path.GetRelativePath(baseDirectory, normalizedFile));
+    return relativePath.StartsWith("..", StringComparison.Ordinal) ? normalizedFile : relativePath;
 }
 
 static bool EvaluateOverallThresholds(CoverageResult result, CommandLineOptions options, ILogger logger)
@@ -525,6 +565,11 @@ static bool IsAnyThresholdViolated(CoverageResult result, CommandLineOptions opt
     }
 
     if (options.Delta && result.HasChangedCoverageFiles && !result.HasDeltaChangedLines)
+    {
+        return true;
+    }
+
+    if (options is { Delta: true, StrictDelta: true } && result.ChangedFilesMissingCoverage.Count > 0)
     {
         return true;
     }

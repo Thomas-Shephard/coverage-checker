@@ -55,11 +55,14 @@ internal static partial class ProgramLogs
     [LoggerMessage(Level = LogLevel.Information, Message = "Delta branch coverage: {BranchCoverage:P2}.")]
     public static partial void LogDeltaBranchCoverage(this ILogger logger, double branchCoverage);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "No changed lines found for delta coverage.")]
+    [LoggerMessage(Level = LogLevel.Information, Message = "No changed lines found in coverage data for delta coverage.")]
     public static partial void LogNoDeltaLinesFound(this ILogger logger);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Git reported changed lines, but none were found in the coverage data.")]
     public static partial void LogDeltaLinesMissingFromCoverage(this ILogger logger);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Strict delta coverage failed because {Count} changed file(s) were absent from coverage data: {Files}")]
+    public static partial void LogStrictDeltaFilesMissingFromCoverage(this ILogger logger, int count, string files);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Failed to perform delta coverage analysis.")]
     public static partial void LogDeltaAnalysisFailed(this ILogger logger, Exception exception);

@@ -4,16 +4,18 @@ namespace CoverageChecker.Results;
 /// Represents the result of a delta coverage analysis.
 /// </summary>
 /// <param name="coverage">The filtered coverage information.</param>
-/// <param name="hasChangedLines">Whether any changed lines were found in the coverage reports.</param>
+/// <param name="hasChangedLines">Whether any Git-changed lines were successfully matched to line entries in the coverage reports.</param>
 /// <param name="gitChangedLineCount">The number of changed lines reported by Git.</param>
 /// <param name="matchedCoverageLineCount">The number of changed lines found in the coverage reports.</param>
 /// <param name="changedCoverageFileCount">The number of changed files that were present in the coverage reports.</param>
+/// <param name="changedFilesMissingCoverage">Changed files that were not present in the coverage reports.</param>
 public class DeltaResult(
     Coverage coverage,
     bool hasChangedLines,
     int gitChangedLineCount,
     int matchedCoverageLineCount,
-    int changedCoverageFileCount)
+    int changedCoverageFileCount,
+    IReadOnlyList<string>? changedFilesMissingCoverage = null)
 {
     /// <summary>
     /// The filtered coverage information containing only the changed lines.
@@ -21,7 +23,7 @@ public class DeltaResult(
     public Coverage Coverage { get; } = coverage;
 
     /// <summary>
-    /// Gets a value indicating whether any of the changed lines were found in the coverage reports.
+    /// Gets a value indicating whether any Git-changed lines were successfully matched to line entries in the coverage reports.
     /// </summary>
     public bool HasChangedLines { get; } = hasChangedLines;
 
@@ -49,4 +51,14 @@ public class DeltaResult(
     /// Gets the number of changed files that were present in the coverage reports.
     /// </summary>
     public int ChangedCoverageFileCount { get; } = changedCoverageFileCount;
+
+    /// <summary>
+    /// Gets the changed files that were not present in the coverage reports.
+    /// </summary>
+    public IReadOnlyList<string> ChangedFilesMissingCoverage { get; } = changedFilesMissingCoverage ?? [];
+
+    /// <summary>
+    /// Gets the number of changed files that were not present in the coverage reports.
+    /// </summary>
+    public int ChangedFilesMissingCoverageCount => ChangedFilesMissingCoverage.Count;
 }

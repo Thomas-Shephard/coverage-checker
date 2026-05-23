@@ -67,6 +67,12 @@ public abstract record CommandLineOptions
     public bool Delta { get; init; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether changed files missing from coverage data should fail delta coverage.
+    /// </summary>
+    [Option("strict-delta", Required = false, HelpText = "Fail delta coverage when Git changed files with changed lines are absent from coverage data.")]
+    public bool StrictDelta { get; init; }
+
+    /// <summary>
     /// Gets or sets the base branch or commit to compare against for delta coverage.
     /// </summary>
     [Option("delta-base", Required = false, HelpText = "Base branch or commit to compare against for delta coverage. Default: origin/main", Default = "origin/main")]
