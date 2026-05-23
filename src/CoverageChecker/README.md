@@ -78,6 +78,11 @@ The `CoverageAnalyser` class returns objects like `Coverage`, `DeltaResult`, or 
 
 - `Coverage` property: A `Coverage` object containing only the filtered changed lines.
 - `HasChangedLines` property: Whether any changed lines were found in the coverage report.
+- `HasGitChangedLines` property: Whether Git reported any changed lines.
+- `GitChangedLineCount` property: The number of changed lines reported by Git.
+- `MatchedCoverageLineCount` property: The number of changed lines found in the coverage report.
+- `HasChangedCoverageFiles` property: Whether any changed files were present in the coverage report.
+- `ChangedCoverageFileCount` property: The number of changed files present in the coverage report.
 
 ### RegressionResult Object
 

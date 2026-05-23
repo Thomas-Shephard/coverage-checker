@@ -58,6 +58,9 @@ internal static partial class ProgramLogs
     [LoggerMessage(Level = LogLevel.Information, Message = "No changed lines found for delta coverage.")]
     public static partial void LogNoDeltaLinesFound(this ILogger logger);
 
+    [LoggerMessage(Level = LogLevel.Error, Message = "Git reported changed lines, but none were found in the coverage data.")]
+    public static partial void LogDeltaLinesMissingFromCoverage(this ILogger logger);
+
     [LoggerMessage(Level = LogLevel.Error, Message = "Failed to perform delta coverage analysis.")]
     public static partial void LogDeltaAnalysisFailed(this ILogger logger, Exception exception);
 

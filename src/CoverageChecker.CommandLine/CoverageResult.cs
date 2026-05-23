@@ -9,4 +9,6 @@ internal sealed record CoverageResult(
     Coverage? DeltaCoverage,
     double DeltaLineCoverage,
     double DeltaBranchCoverage,
-    bool HasDeltaChangedLines);
+    bool HasDeltaChangedLines,
+    bool HasGitDeltaChangedLines,
+    bool HasChangedCoverageFiles);

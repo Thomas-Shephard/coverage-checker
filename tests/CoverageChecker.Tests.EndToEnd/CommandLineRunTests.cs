@@ -196,11 +196,122 @@ public class CommandLineRunTests
         }
     }
 
+    [Test]
+    public async Task CheckCommandFailsWhenDeltaChangedLinesAreMissingFromCoverage()
+    {
+        using TestDirectory testDirectory = new();
+        RunGit(testDirectory.Path, "init");
+        RunGit(testDirectory.Path, "config user.email \"test@example.com\"");
+        RunGit(testDirectory.Path, "config user.name \"Test User\"");
+        RunGit(testDirectory.Path, "config commit.gpgsign false");
+        RunGit(testDirectory.Path, "config core.autocrlf false");
+
+        string changedFile = Path.Combine(testDirectory.Path, "Changed.cs");
+        File.WriteAllText(changedFile, "public class Changed\n{\n}\n");
+        RunGit(testDirectory.Path, "add .");
+        RunGit(testDirectory.Path, "commit -m \"Initial\"");
+        string baseCommit = RunGit(testDirectory.Path, "rev-parse HEAD").Trim();
+
+        File.WriteAllText(changedFile, "public class Changed\n{\n    public void Method() {}\n}\n");
+        RunGit(testDirectory.Path, "add Changed.cs");
+        RunGit(testDirectory.Path, "commit -m \"Update changed file\"");
+
+        string coverageXml = $"""
+            <?xml version="1.0" encoding="utf-8"?>
+            <coverage>
+              <sources>
+                <source>{testDirectory.Path}</source>
+              </sources>
+              <packages>
+                <package name="package-1">
+                  <classes>
+                    <class name="class-1" filename="Changed.cs">
+                      <methods/>
+                      <lines>
+                        <line number="1" hits="1"/>
+                      </lines>
+                    </class>
+                  </classes>
+                </package>
+              </packages>
+            </coverage>
+            """;
+        File.WriteAllText(Path.Combine(testDirectory.Path, "coverage.xml"), coverageXml);
+
+        (int exitCode, string stdout) = await RunCliInDirectory(testDirectory.Path, "check", "--directory", testDirectory.Path, "--glob-patterns", "coverage.xml", "--format", "Cobertura", "--delta", "--delta-base", baseCommit);
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exitCode, Is.Not.Zero);
+            Assert.That(stdout, Does.Contain("Git reported changed lines, but none were found in the coverage data."));
+            Assert.That(stdout, Does.Not.Contain("No changed lines found for delta coverage."));
+        }
+    }
+
+    [Test]
+    public async Task CheckCommandPassesWhenOnlyDeltaChangesAreAbsentFromCoverageFiles()
+    {
+        using TestDirectory testDirectory = new();
+        RunGit(testDirectory.Path, "init");
+        RunGit(testDirectory.Path, "config user.email \"test@example.com\"");
+        RunGit(testDirectory.Path, "config user.name \"Test User\"");
+        RunGit(testDirectory.Path, "config commit.gpgsign false");
+        RunGit(testDirectory.Path, "config core.autocrlf false");
+
+        string readme = Path.Combine(testDirectory.Path, "README.md");
+        File.WriteAllText(readme, "# Project\n");
+        RunGit(testDirectory.Path, "add README.md");
+        RunGit(testDirectory.Path, "commit -m \"Initial\"");
+        string baseCommit = RunGit(testDirectory.Path, "rev-parse HEAD").Trim();
+
+        File.WriteAllText(readme, "# Project\n\nDocs update.\n");
+        RunGit(testDirectory.Path, "add README.md");
+        RunGit(testDirectory.Path, "commit -m \"Update docs\"");
+
+        string coverageXml = $"""
+            <?xml version="1.0" encoding="utf-8"?>
+            <coverage>
+              <sources>
+                <source>{testDirectory.Path}</source>
+              </sources>
+              <packages>
+                <package name="package-1">
+                  <classes>
+                    <class name="class-1" filename="Covered.cs">
+                      <methods/>
+                      <lines>
+                        <line number="1" hits="1"/>
+                      </lines>
+                    </class>
+                  </classes>
+                </package>
+              </packages>
+            </coverage>
+            """;
+        File.WriteAllText(Path.Combine(testDirectory.Path, "Covered.cs"), "public class Covered {}\n");
+        File.WriteAllText(Path.Combine(testDirectory.Path, "coverage.xml"), coverageXml);
+
+        (int exitCode, string stdout) = await RunCliInDirectory(testDirectory.Path, "check", "--directory", testDirectory.Path, "--glob-patterns", "coverage.xml", "--format", "Cobertura", "--delta", "--delta-base", baseCommit);
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exitCode, Is.Zero);
+            Assert.That(stdout, Does.Contain("No changed lines found for delta coverage."));
+            Assert.That(stdout, Does.Not.Contain("Git reported changed lines, but none were found in the coverage data."));
+        }
+    }
+
     private static async Task<(int ExitCode, string Stdout)> RunCli(params string[] arguments)
+    {
+        return await RunCliInDirectory(Environment.CurrentDirectory, arguments);
+    }
+
+    private static async Task<(int ExitCode, string Stdout)> RunCliInDirectory(string workingDirectory, params string[] arguments)
     {
         ProcessStartInfo psi = new()
         {
             FileName = GetCliPath(),
+            WorkingDirectory = workingDirectory,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
@@ -225,6 +336,28 @@ public class CommandLineRunTests
         return (process.ExitCode, stdout + stderr);
     }
 
+    private static string RunGit(string workingDirectory, string arguments)
+    {
+        ProcessStartInfo psi = new()
+        {
+            FileName = "git",
+            Arguments = arguments,
+            WorkingDirectory = workingDirectory,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        using Process? process = Process.Start(psi);
+        Assert.That(process, Is.Not.Null);
+        process.WaitForExit();
+        string stdout = process.StandardOutput.ReadToEnd();
+        string stderr = process.StandardError.ReadToEnd();
+        Assert.That(process.ExitCode, Is.Zero, stderr);
+        return stdout;
+    }
+
     private sealed class TestDirectory : IDisposable
     {
         public TestDirectory()
@@ -237,9 +370,21 @@ public class CommandLineRunTests
 
         public void Dispose()
         {
-            if (System.IO.Directory.Exists(Path))
+            try
             {
-                System.IO.Directory.Delete(Path, true);
+                if (System.IO.Directory.Exists(Path))
+                {
+                    foreach (string file in System.IO.Directory.GetFiles(Path, "*", SearchOption.AllDirectories))
+                    {
+                        File.SetAttributes(file, FileAttributes.Normal);
+                    }
+
+                    System.IO.Directory.Delete(Path, true);
+                }
+            }
+            catch
+            {
+                // Ignore cleanup failures from transient file locks.
             }
         }
     }
