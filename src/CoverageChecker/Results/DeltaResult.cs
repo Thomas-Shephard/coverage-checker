@@ -61,4 +61,15 @@ public class DeltaResult(
     /// Gets the number of changed files that were not present in the coverage reports.
     /// </summary>
     public int ChangedFilesMissingCoverageCount => ChangedFilesMissingCoverage.Count;
+
+    internal DeltaResult WithChangedFilesMissingCoverage(IReadOnlyList<string> changedFilesMissingCoverage)
+    {
+        return new DeltaResult(
+            Coverage,
+            HasChangedLines,
+            GitChangedLineCount,
+            MatchedCoverageLineCount,
+            ChangedCoverageFileCount,
+            changedFilesMissingCoverage);
+    }
 }
