@@ -309,7 +309,13 @@ internal partial class OpenCoverParser(Coverage coverage, ILogger<OpenCoverParse
             int coveredBranches = line.CoveredBranches;
             if (branches > 0)
             {
-                GetOrCreateLineMap(_knownBranches, line.FilePath)[line.LineNumber] = branches;
+                Dictionary<int, int> fileBranches = GetOrCreateLineMap(_knownBranches, line.FilePath);
+                if (fileBranches.TryGetValue(line.LineNumber, out int knownBranches))
+                {
+                    branches = Math.Max(branches, knownBranches);
+                }
+
+                fileBranches[line.LineNumber] = branches;
             }
             else if (_knownBranches.TryGetValue(line.FilePath, out Dictionary<int, int>? fileBranches) &&
                      fileBranches.TryGetValue(line.LineNumber, out int knownBranches))
