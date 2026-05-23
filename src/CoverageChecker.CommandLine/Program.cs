@@ -673,8 +673,12 @@ static int DisplayHelp<T>(ParserResult<T> result)
     return 1;
 }
 
-partial class Program
+internal sealed partial class Program
 {
+    private Program()
+    {
+    }
+
     [GeneratedRegex(@"\{output\}([\\/][^\s&|;<>""']*)")]
     private static partial Regex OutputPathSuffixRegex();
 }
