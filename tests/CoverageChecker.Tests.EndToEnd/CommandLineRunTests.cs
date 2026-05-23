@@ -56,6 +56,8 @@ public class CommandLineRunTests
             UseShellExecute = false,
             CreateNoWindow = true
         };
+        RemoveGitHubActionsEnvironment(psi);
+
         psi.ArgumentList.Add("run");
         psi.ArgumentList.Add("--command");
         psi.ArgumentList.Add(command);
@@ -93,6 +95,8 @@ public class CommandLineRunTests
             UseShellExecute = false,
             CreateNoWindow = true
         };
+        RemoveGitHubActionsEnvironment(psi);
+
         psi.ArgumentList.Add("run");
         psi.ArgumentList.Add("--command");
         psi.ArgumentList.Add(command);
@@ -317,6 +321,7 @@ public class CommandLineRunTests
             UseShellExecute = false,
             CreateNoWindow = true
         };
+        RemoveGitHubActionsEnvironment(psi);
 
         foreach (string argument in arguments)
         {
@@ -334,6 +339,12 @@ public class CommandLineRunTests
         string stderr = await stderrTask;
 
         return (process.ExitCode, stdout + stderr);
+    }
+
+    private static void RemoveGitHubActionsEnvironment(ProcessStartInfo psi)
+    {
+        psi.Environment.Remove("GITHUB_ACTIONS");
+        psi.Environment.Remove("GITHUB_STEP_SUMMARY");
     }
 
     private static string RunGit(string workingDirectory, string arguments)
