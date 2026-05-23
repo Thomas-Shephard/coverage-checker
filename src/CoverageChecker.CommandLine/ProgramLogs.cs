@@ -22,11 +22,17 @@ internal static partial class ProgramLogs
     [LoggerMessage(Level = LogLevel.Error, Message = "Line coverage of {LineCoverage:P2} is below the required threshold of {LineThreshold:P2}")]
     public static partial void LogLineCoverageBelowThreshold(this ILogger logger, double lineCoverage, double lineThreshold);
 
+    [LoggerMessage(Level = LogLevel.Error, Message = "Line coverage could not be calculated because no applicable lines were found.")]
+    public static partial void LogNoApplicableLineCoverage(this ILogger logger);
+
     [LoggerMessage(Level = LogLevel.Error, Message = "Branch coverage of {BranchCoverage:P2} is below the required threshold of {BranchThreshold:P2}")]
     public static partial void LogBranchCoverageBelowThreshold(this ILogger logger, double branchCoverage, double branchThreshold);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Delta line coverage of {LineCoverage:P2} is below the required threshold of {LineThreshold:P2}")]
     public static partial void LogDeltaLineCoverageBelowThreshold(this ILogger logger, double lineCoverage, double lineThreshold);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Delta line coverage could not be calculated because no applicable changed lines were found.")]
+    public static partial void LogNoApplicableDeltaLineCoverage(this ILogger logger);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Delta branch coverage of {BranchCoverage:P2} is below the required threshold of {BranchThreshold:P2}")]
     public static partial void LogDeltaBranchCoverageBelowThreshold(this ILogger logger, double branchCoverage, double branchThreshold);

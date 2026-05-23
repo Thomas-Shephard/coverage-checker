@@ -279,7 +279,12 @@ static int CheckThresholds(CoverageResult result, CommandLineOptions options, bo
 static bool EvaluateOverallThresholds(CoverageResult result, CommandLineOptions options, ILogger logger)
 {
     bool failed = false;
-    if (options.LineThreshold > result.LineCoverage)
+    if (double.IsNaN(result.LineCoverage))
+    {
+        logger.LogNoApplicableLineCoverage();
+        failed = true;
+    }
+    else if (options.LineThreshold > result.LineCoverage)
     {
         logger.LogLineCoverageBelowThreshold(result.LineCoverage, options.LineThreshold);
         failed = true;
@@ -298,7 +303,12 @@ static bool EvaluateDeltaThresholds(CoverageResult result, CommandLineOptions op
 {
     bool failed = false;
 
-    if (!double.IsNaN(result.DeltaLineCoverage) && options.LineThreshold > result.DeltaLineCoverage)
+    if (double.IsNaN(result.DeltaLineCoverage))
+    {
+        logger.LogNoApplicableDeltaLineCoverage();
+        failed = true;
+    }
+    else if (options.LineThreshold > result.DeltaLineCoverage)
     {
         logger.LogDeltaLineCoverageBelowThreshold(result.DeltaLineCoverage, options.LineThreshold);
         failed = true;
@@ -423,7 +433,7 @@ static string BuildGitHubSummary(CoverageResult result, CommandLineOptions optio
     summary.AppendLine();
     summary.AppendLine("| Metric | Current | Threshold | Status |");
     summary.AppendLine("| :--- | :---: | :---: | :---: |");
-    summary.AppendLine(FormatMetricRow("Line Coverage", result.LineCoverage, options.LineThreshold));
+    summary.AppendLine(FormatMetricRow("Line Coverage", result.LineCoverage, options.LineThreshold, failOnNaN: true));
     summary.AppendLine(FormatMetricRow("Branch Coverage", result.BranchCoverage, options.BranchThreshold));
 
     if (options.Delta)
@@ -450,7 +460,7 @@ static void AppendDeltaSummary(StringBuilder summary, CoverageResult result, Com
 {
     if (result.HasDeltaChangedLines)
     {
-        summary.AppendLine(FormatMetricRow("Delta Line Coverage", result.DeltaLineCoverage, options.LineThreshold));
+        summary.AppendLine(FormatMetricRow("Delta Line Coverage", result.DeltaLineCoverage, options.LineThreshold, failOnNaN: true));
         summary.AppendLine(FormatMetricRow("Delta Branch Coverage", result.DeltaBranchCoverage, options.BranchThreshold));
     }
     else
@@ -461,13 +471,13 @@ static void AppendDeltaSummary(StringBuilder summary, CoverageResult result, Com
 
 static bool IsAnyThresholdViolated(CoverageResult result, CommandLineOptions options)
 {
-    if (options.LineThreshold > result.LineCoverage || options.BranchThreshold > result.BranchCoverage)
+    if (double.IsNaN(result.LineCoverage) || options.LineThreshold > result.LineCoverage || options.BranchThreshold > result.BranchCoverage)
     {
         return true;
     }
 
     return options.Delta && result.HasDeltaChangedLines &&
-           (options.LineThreshold > result.DeltaLineCoverage || options.BranchThreshold > result.DeltaBranchCoverage);
+           (double.IsNaN(result.DeltaLineCoverage) || options.LineThreshold > result.DeltaLineCoverage || options.BranchThreshold > result.DeltaBranchCoverage);
 }
 
 static void EmitGitHubAnnotations(Coverage coverage, string rootDirectory)
@@ -533,9 +543,9 @@ static bool ShouldShowBreakdown(double lineCoverage, double branchCoverage)
     return lineCoverage < 1.0 || (branchCoverage < 1.0 && !double.IsNaN(branchCoverage));
 }
 
-static string FormatMetricRow(string label, double value, double threshold)
+static string FormatMetricRow(string label, double value, double threshold, bool failOnNaN = false)
 {
-    bool passed = double.IsNaN(value) || value >= threshold;
+    bool passed = double.IsNaN(value) ? !failOnNaN : value >= threshold;
     string status = passed ? "✅" : "❌";
     string display = double.IsNaN(value) ? "N/A" : value.ToString("P2", CultureInfo.InvariantCulture);
     return $"| **{label}** | {display} | {threshold.ToString("P2", CultureInfo.InvariantCulture)} | {status} |";
