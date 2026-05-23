@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CoverageSession>
+  <Modules>
+    <Module>
+      <Files>
+        <File uid="1" fullPath="tests/CoverageChecker.Tests.EndToEnd/CoverageFiles/OpenCover/file-1.cs" />
+      </Files>
+      <Classes>
+        <Class>
+          <FullName>CoverageChecker.Tests.Branches</FullName>
+          <Methods>
+            <Method>
+              <Name>System.Void CoverageChecker.Tests.Branches::Decide()</Name>
+              <SequencePoints>
+                <SequencePoint vc="1" sl="20" fileid="1" />
+                <SequencePoint vc="1" sl="21" fileid="1" />
+                <SequencePoint vc="1" sl="22" fileid="1" />
+              </SequencePoints>
+              <BranchPoints>
+                <BranchPoint vc="1" sl="20" fileid="1" path="0" offset="1" />
+                <BranchPoint vc="0" sl="20" fileid="1" path="1" offset="1" />
+                <BranchPoint vc="1" sl="21" fileid="1" path="0" offset="2" />
+                <BranchPoint vc="1" sl="21" fileid="1" path="1" offset="2" />
+              </BranchPoints>
+            </Method>
+          </Methods>
+        </Class>
+      </Classes>
+    </Module>
+  </Modules>
+</CoverageSession>

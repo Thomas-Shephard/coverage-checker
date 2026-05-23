@@ -32,6 +32,14 @@ public class ParserFactoryTests
     }
 
     [Test]
+    public void ParserFactoryOpenCoverCoverageFormatReturnsOpenCoverParser()
+    {
+        ICoverageParser parser = _factory.CreateParser(CoverageFormat.OpenCover, new Coverage(), NullLoggerFactory.Instance);
+
+        Assert.That(parser, Is.InstanceOf<OpenCoverParser>());
+    }
+
+    [Test]
     public void ParserFactoryAutoCoverageFormatThrowsException()
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => _factory.CreateParser(CoverageFormat.Auto, new Coverage(), NullLoggerFactory.Instance));
@@ -69,6 +77,21 @@ public class ParserFactoryTests
         {
             File.WriteAllText(path, "<coverage version=\"1\"><file path=\"test.cs\"></file></coverage>");
             Assert.That(_factory.DetectFormat(path), Is.EqualTo(CoverageFormat.SonarQube));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Test]
+    public void DetectFormatOpenCoverFileReturnsOpenCover()
+    {
+        string path = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(path, "<?xml version=\"1.0\"?><CoverageSession><Modules /></CoverageSession>");
+            Assert.That(_factory.DetectFormat(path), Is.EqualTo(CoverageFormat.OpenCover));
         }
         finally
         {

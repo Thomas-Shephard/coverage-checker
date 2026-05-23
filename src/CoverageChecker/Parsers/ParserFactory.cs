@@ -13,6 +13,7 @@ internal class ParserFactory(ICoverageMergeService coverageMergeService) : IPars
         {
             CoverageFormat.Cobertura => new CoberturaParser(coverage, loggerFactory.CreateLogger<CoberturaParser>(), coverageMergeService),
             CoverageFormat.SonarQube => new SonarQubeParser(coverage, loggerFactory.CreateLogger<SonarQubeParser>(), coverageMergeService),
+            CoverageFormat.OpenCover => new OpenCoverParser(coverage, loggerFactory.CreateLogger<OpenCoverParser>(), coverageMergeService),
             _                        => throw new ArgumentOutOfRangeException(nameof(coverageFormat), "Unknown or unsupported coverage format")
         };
     }
@@ -22,7 +23,17 @@ internal class ParserFactory(ICoverageMergeService coverageMergeService) : IPars
         try
         {
             using XmlReader reader = XmlReader.Create(filePath, ParserBase.XmlReaderSettings);
-            if (!reader.ReadToFollowing("coverage") || reader.Depth != 0)
+            if (reader.MoveToContent() != XmlNodeType.Element || reader.Depth != 0)
+            {
+                throw new CoverageParseException($"Could not find supported coverage root element in file: {filePath}");
+            }
+
+            if (reader.Name == "CoverageSession")
+            {
+                return CoverageFormat.OpenCover;
+            }
+
+            if (reader.Name != "coverage")
             {
                 throw new CoverageParseException($"Could not find root 'coverage' element in file: {filePath}");
             }

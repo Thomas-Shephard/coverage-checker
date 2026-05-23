@@ -46,8 +46,7 @@ Coverage baselineCoverage = ...;
 RegressionResult regression = coverageAnalyser.CheckRegression(baselineCoverage, coverage, "origin/main", "HEAD");
 ```
 
-By using `CoverageFormat.Auto`, the library will attempt to detect whether each coverage file is in Cobertura or 
-SonarQube format. You can also specify a specific format if it is known.
+By using `CoverageFormat.Auto`, the library will attempt to detect whether each coverage file is in Cobertura, SonarQube, or OpenCover format. You can also specify a specific format if it is known.
 
 > **Note:** Delta coverage analysis and rename detection require Git to be installed and available on the system `PATH`.  
 > These methods interact with the underlying Git repository and may throw a `GitException` if Git is not installed, not on the `PATH`, the current directory is not a Git repository, or if Git commands fail.
@@ -56,7 +55,7 @@ SonarQube format. You can also specify a specific format if it is known.
 
 The `CoverageAnalyserOptions` class has the following properties:
 
-- `CoverageFormat`: The format of the coverage file. Options: `Auto`, `SonarQube`, `Cobertura`. Default: `Auto`.
+- `CoverageFormat`: The format of the coverage file. Options: `Auto`, `SonarQube`, `Cobertura`, `OpenCover`. Default: `Auto`.
 - `Directory`: The directory to search for the coverage file(s) within.
 - `GlobPatterns`: The glob patterns to use to search for the coverage report file(s). Default: `**/*.xml`.
 - `Include`: Optional glob patterns of **source files** to include in the analysis. 

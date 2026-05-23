@@ -18,5 +18,10 @@ public enum CoverageFormat
     /// <summary>
     /// The SonarQube coverage format.
     /// </summary>
-    SonarQube
+    SonarQube,
+
+    /// <summary>
+    /// The OpenCover coverage format.
+    /// </summary>
+    OpenCover
 }
