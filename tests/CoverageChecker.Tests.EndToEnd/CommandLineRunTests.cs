@@ -80,6 +80,65 @@ public class CommandLineRunTests
     }
 
     [Test]
+    public async Task RunCommandHandlesOutputPathContainingSpaces()
+    {
+        using TestDirectory testDirectory = new();
+        string outputDirectory = Path.Combine(testDirectory.Path, "coverage results");
+
+        (int exitCode, string stdout) = await RunCli(
+            "run",
+            "--output", outputDirectory,
+            "--command", "echo dummy > {output}/coverage.xml",
+            "--continue-on-failure");
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exitCode, Is.Not.Zero);
+            Assert.That(File.Exists(Path.Combine(outputDirectory, "coverage.xml")), Is.True);
+            Assert.That(stdout, Does.Contain("Error parsing coverage files."));
+        }
+    }
+
+    [Test]
+    public async Task RunCommandHandlesOutputPathContainingParentheses()
+    {
+        using TestDirectory testDirectory = new();
+        string outputDirectory = Path.Combine(testDirectory.Path, "coverage-results (unit)");
+
+        (int exitCode, string stdout) = await RunCli(
+            "run",
+            "--output", outputDirectory,
+            "--command", "echo dummy > {output}/coverage.xml",
+            "--continue-on-failure");
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exitCode, Is.Not.Zero);
+            Assert.That(File.Exists(Path.Combine(outputDirectory, "coverage.xml")), Is.True);
+            Assert.That(stdout, Does.Contain("Error parsing coverage files."));
+        }
+    }
+
+    [Test]
+    public async Task RunCommandUsesTemporaryOutputWhenOutputIsOmitted()
+    {
+        using TestDirectory testDirectory = new();
+
+        (int exitCode, string stdout) = await RunCliInDirectory(
+            testDirectory.Path,
+            "run",
+            "--command", "echo dummy > {output}/coverage.xml",
+            "--continue-on-failure");
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exitCode, Is.Not.Zero);
+            Assert.That(Directory.GetFiles(testDirectory.Path, "coverage.xml", SearchOption.AllDirectories), Is.Empty);
+            Assert.That(stdout, Does.Contain("Error parsing coverage files."));
+        }
+    }
+
+    [Test]
     public async Task RunCommandFailsWhenNoFilesFound()
     {
         string cliPath = GetCliPath();
@@ -120,10 +179,54 @@ public class CommandLineRunTests
     }
 
     [Test]
+    public async Task RunCommandWithoutOutputPlaceholderStillUsesConfiguredOutputDirectory()
+    {
+        using TestDirectory testDirectory = new();
+        string outputDirectory = Path.Combine(testDirectory.Path, "coverage results");
+        Directory.CreateDirectory(outputDirectory);
+
+        (int exitCode, string stdout) = await RunCliInDirectory(
+            outputDirectory,
+            "run",
+            "--output", outputDirectory,
+            "--command", "echo dummy > coverage.xml",
+            "--continue-on-failure");
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exitCode, Is.Not.Zero);
+            Assert.That(File.Exists(Path.Combine(outputDirectory, "coverage.xml")), Is.True);
+            Assert.That(stdout, Does.Contain("Error parsing coverage files."));
+        }
+    }
+
+    [Test]
     public async Task RunCommandExecutesInSpecifiedWorkingDirectory()
     {
         using TestDirectory testDirectory = new();
         string commandDirectory = Path.Combine(testDirectory.Path, "project");
+        Directory.CreateDirectory(commandDirectory);
+
+        (int exitCode, string stdout) = await RunCli(
+            "run",
+            "--working-directory", commandDirectory,
+            "--command", "echo marker > cwd-marker.txt && echo dummy > {output}/coverage.xml",
+            "--continue-on-failure");
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exitCode, Is.Not.Zero);
+            Assert.That(File.Exists(Path.Combine(commandDirectory, "cwd-marker.txt")), Is.True);
+            Assert.That(File.Exists(Path.Combine(testDirectory.Path, "cwd-marker.txt")), Is.False);
+            Assert.That(stdout, Does.Contain("Error parsing coverage files."));
+        }
+    }
+
+    [Test]
+    public async Task RunCommandHandlesWorkingDirectoryPathContainingSpaces()
+    {
+        using TestDirectory testDirectory = new();
+        string commandDirectory = Path.Combine(testDirectory.Path, "project with spaces");
         Directory.CreateDirectory(commandDirectory);
 
         (int exitCode, string stdout) = await RunCli(
