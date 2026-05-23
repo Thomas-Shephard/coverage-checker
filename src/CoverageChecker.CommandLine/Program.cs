@@ -554,6 +554,10 @@ static void AppendDeltaSummary(StringBuilder summary, CoverageResult result, Com
         summary.AppendLine(FormatMetricRow("Delta Line Coverage", result.DeltaLineCoverage, options.EffectiveDeltaLineThreshold, failOnNaN: true));
         summary.AppendLine(FormatMetricRow("Delta Branch Coverage", result.DeltaBranchCoverage, options.EffectiveDeltaBranchThreshold));
     }
+    else if (options.StrictDelta && result.ChangedFilesMissingCoverage.Count > 0)
+    {
+        summary.AppendLine("| **Delta Coverage** | N/A (Changed files missing from coverage data) | - | ❌ |");
+    }
     else
     {
         string message = result.HasChangedCoverageFiles
