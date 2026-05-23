@@ -2,6 +2,7 @@ using CoverageChecker.Parsers;
 using CoverageChecker.Results;
 using CoverageChecker.Services;
 using Microsoft.Extensions.FileSystemGlobbing;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace CoverageChecker.Tests.Unit;
@@ -365,30 +366,22 @@ public class CoverageAnalyserTests
     [Test]
     public void AnalyseCoverageShouldLogMessagesWhenLoggingIsEnabled()
     {
-        Mock<Microsoft.Extensions.Logging.ILoggerFactory> mockLoggerFactory = new();
-        Mock<Microsoft.Extensions.Logging.ILogger> mockLogger = new();
+        TestLogger logger = new(LogLevel.Information);
+        TestLoggerFactory loggerFactory = new(logger);
         Mock<IFileFinder> mockFileFinder = new();
         Mock<IParserFactory> mockParserFactory = new();
         Mock<IGitService> mockGitService = new();
         Mock<ICoverageParser> mockParser = new();
 
-        mockLoggerFactory.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(mockLogger.Object);
-        mockLogger.Setup(l => l.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Information)).Returns(true);
-
         mockFileFinder.Setup(f => f.FindFiles(ValidDirectory)).Returns(["file.xml"]);
         mockParserFactory.Setup(f => f.CreateParser(ValidCoverageFormat, It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()))
             .Returns(mockParser.Object);
 
-        CoverageAnalyser sut = new(CreateDefaultOptions(), mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>(), Mock.Of<ICoverageRegressionService>(), mockLoggerFactory.Object);
+        CoverageAnalyser sut = new(CreateDefaultOptions(), mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>(), Mock.Of<ICoverageRegressionService>(), loggerFactory);
 
         sut.AnalyseCoverage();
 
-        mockLogger.Verify(l => l.Log(
-            Microsoft.Extensions.Logging.LogLevel.Information,
-            It.IsAny<Microsoft.Extensions.Logging.EventId>(),
-            It.IsAny<It.IsAnyType>(),
-            It.IsAny<Exception>(),
-            It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.AtLeastOnce);
+        Assert.That(logger.LogLevels, Has.Member(LogLevel.Information));
     }
 
     [Test]
@@ -432,6 +425,39 @@ public class CoverageAnalyserTests
         Coverage result = sut.AnalyseCoverage();
 
         Assert.That(result.Files, Has.Count.EqualTo(1));
+    }
+
+    private sealed class TestLoggerFactory(ILogger logger) : ILoggerFactory
+    {
+        public ILogger CreateLogger(string categoryName) => logger;
+
+        public void AddProvider(ILoggerProvider provider)
+        {
+        }
+
+        public void Dispose()
+        {
+        }
+    }
+
+    private sealed class TestLogger(LogLevel enabledLevel) : ILogger
+    {
+        public List<LogLevel> LogLevels { get; } = [];
+
+        public IDisposable? BeginScope<TState>(TState state)
+            where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => logLevel >= enabledLevel;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            LogLevels.Add(logLevel);
+        }
     }
 
     [Test]
