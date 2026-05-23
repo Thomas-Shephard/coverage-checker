@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CoverageSession>
+  <Modules>
+    <Module>
+      <ModuleName>CoverageChecker.Tests</ModuleName>
+      <Files>
+        <File uid="1" fullPath="tests/CoverageChecker.Tests.EndToEnd/CoverageFiles/OpenCover/file-1.cs" />
+        <File uid="2" fullPath="tests/CoverageChecker.Tests.EndToEnd/CoverageFiles/OpenCover/file-2.cs" />
+      </Files>
+      <Classes>
+        <Class>
+          <FullName>CoverageChecker.Tests.Sample</FullName>
+          <Methods>
+            <Method>
+              <Name>System.Void CoverageChecker.Tests.Sample::Covered()</Name>
+              <SequencePoints>
+                <SequencePoint vc="1" sl="10" fileid="1" />
+                <SequencePoint vc="2" sl="11" fileid="1" />
+                <SequencePoint vc="1" sl="12" fileid="1" />
+              </SequencePoints>
+            </Method>
+            <Method>
+              <Name>System.Void CoverageChecker.Tests.Sample::AlsoCovered()</Name>
+              <SequencePoints>
+                <SequencePoint vc="1" sl="20" fileid="2" />
+                <SequencePoint vc="1" sl="21" fileid="2" />
+              </SequencePoints>
+            </Method>
+          </Methods>
+        </Class>
+      </Classes>
+    </Module>
+  </Modules>
+</CoverageSession>

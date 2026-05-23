@@ -7,7 +7,7 @@ Use it to enforce line and branch coverage thresholds, analyse changed lines in 
 
 ## Features
 
-- **Coverage formats**: Reads Cobertura and SonarQube reports. Cobertura reports with multiple sources are supported.
+- **Coverage formats**: Reads Cobertura, SonarQube, and OpenCover reports. Cobertura reports with multiple sources are supported.
 - **CLI and library APIs**: Use the global .NET tool in CI, or reference the library from custom build tooling.
 - **Threshold enforcement**: Fails the CLI when configured coverage targets are not met.
 - **Delta coverage**: Checks only changed lines against a Git base branch or commit.
@@ -36,7 +36,7 @@ Coverage Checker has two CLI commands:
 - `check`: analyses existing coverage files. This is the default command.
 - `run`: runs a command, substitutes `{output}` with a coverage output directory, then analyses the generated files.
 
-Check existing Cobertura or SonarQube coverage files:
+Check existing Cobertura, SonarQube, or OpenCover coverage files:
 
 ```bash
 coveragechecker check --directory ./coverage --format Cobertura --glob-patterns "**/coverage.cobertura.xml" --line-threshold 80 --branch-threshold 70
@@ -116,7 +116,7 @@ added to the job summary.
 - For delta coverage, changed lines in files that appear in the coverage data must also be present as covered or
   uncovered line entries. If changed coverage files are found but none of their changed lines match the coverage data, the CLI fails.
 - Delta coverage and rename detection require Git on the system `PATH`.
-- Cobertura and SonarQube reports are supported. Cobertura reports with multiple source roots are supported.
+- Cobertura, SonarQube, and OpenCover reports are supported. Cobertura reports with multiple source roots are supported.
 
 ## Library Usage
 

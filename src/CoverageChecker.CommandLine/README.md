@@ -41,17 +41,17 @@ coveragechecker run --command "dotnet test --collect 'XPlat Code Coverage' --res
 
 These options apply to both `check` and `run` commands.
 
-| Option                     | Description                                                                   | Required | Default               |
-|----------------------------|-------------------------------------------------------------------------------|----------|-----------------------|
-| `-f`, `--format`           | The format of the coverage file(s). Options: `Auto`, `SonarQube`, `Cobertura` | No       | `Auto`                |
-| `-g`, `--glob-patterns`    | The glob pattern(s) to use to search for the coverage file(s).                | No       | `**/*.xml`            |
-| `-i`, `--include`          | Glob patterns of files to include in the coverage analysis.                   | No       |                       |
-| `-e`, `--exclude`          | Glob patterns of files to exclude from the coverage analysis.                 | No       |                       |
-| `-l`, `--line-threshold`   | The line coverage threshold. Default: 80                                      | No       | 80                    |
-| `-b`, `--branch-threshold` | The branch coverage threshold. Default: 80                                    | No       | 80                    |
-| `--rename-threshold`       | The similarity threshold for rename detection (percentage). Default: 50       | No       | 50                    |
-| `--delta`                  | Calculate coverage for changed lines only.                                    | No       | `false`               |
-| `--delta-base`             | Base branch or commit to compare against for delta coverage.                  | No       | `origin/main`         |
+| Option                     | Description                                                                                | Required | Default       |
+|----------------------------|--------------------------------------------------------------------------------------------|----------|---------------|
+| `-f`, `--format`           | The format of the coverage file(s). Options: `Auto`, `SonarQube`, `Cobertura`, `OpenCover` | No       | `Auto`        |
+| `-g`, `--glob-patterns`    | The glob pattern(s) to use to search for the coverage file(s).                             | No       | `**/*.xml`    |
+| `-i`, `--include`          | Glob patterns of files to include in the coverage analysis.                                | No       |               |
+| `-e`, `--exclude`          | Glob patterns of files to exclude from the coverage analysis.                              | No       |               |
+| `-l`, `--line-threshold`   | The line coverage threshold. Default: 80                                                   | No       | 80            |
+| `-b`, `--branch-threshold` | The branch coverage threshold. Default: 80                                                 | No       | 80            |
+| `--rename-threshold`       | The similarity threshold for rename detection (percentage). Default: 50                    | No       | 50            |
+| `--delta`                  | Calculate coverage for changed lines only.                                                 | No       | `false`       |
+| `--delta-base`             | Base branch or commit to compare against for delta coverage.                               | No       | `origin/main` |
 
 ### `check` Specific Options
 
@@ -61,13 +61,13 @@ These options apply to both `check` and `run` commands.
 
 ### `run` Specific Options
 
-| Option                  | Description                                                                                           | Required | Default |
-|-------------------------|-------------------------------------------------------------------------------------------------------|----------|---------|
-| `-c`, `--command`       | The command to execute. Use `{output}` as a placeholder for the results directory.                    | Yes      |         |
-| `-o`, `--output`        | The directory where coverage results will be stored. If not specified, a temporary directory is used. | No       |         |
+| Option                  | Description                                                                                           | Required | Default           |
+|-------------------------|-------------------------------------------------------------------------------------------------------|----------|-------------------|
+| `-c`, `--command`       | The command to execute. Use `{output}` as a placeholder for the results directory.                    | Yes      |                   |
+| `-o`, `--output`        | The directory where coverage results will be stored. If not specified, a temporary directory is used. | No       |                   |
 | `--working-directory`   | The directory where the command is executed. Relative paths are resolved from the current directory.  | No       | Current directory |
-| `-t`, `--timeout`       | The maximum amount of time, in minutes, that the specified command is allowed to run.                 | No       | 30      |
-| `--continue-on-failure` | Continue with coverage analysis even if the command fails.                                            | No       | `false` |
+| `-t`, `--timeout`       | The maximum amount of time, in minutes, that the specified command is allowed to run.                 | No       | 30                |
+| `--continue-on-failure` | Continue with coverage analysis even if the command fails.                                            | No       | `false`           |
 
 The `--delta` and `--delta-base` options require Git to be installed and available on the system `PATH`.
 

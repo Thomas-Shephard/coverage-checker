@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CoverageSession>
+  <Modules>
+    <Module>
+      <Files>
+        <File uid="1" fullPath="tests/CoverageChecker.Tests.EndToEnd/CoverageFiles/OpenCoverFormat/file-1.cs" />
+      </Files>
+      <Classes>
+        <Class>
+          <FullName>CoverageChecker.Tests.MissingFileReference</FullName>
+          <Methods>
+            <Method>
+              <Name>System.Void CoverageChecker.Tests.MissingFileReference::BadBranchPoint()</Name>
+              <BranchPoints>
+                <BranchPoint vc="1" uspid="1" ordinal="0" offset="0" sl="90" />
+              </BranchPoints>
+            </Method>
+          </Methods>
+        </Class>
+      </Classes>
+    </Module>
+  </Modules>
+</CoverageSession>

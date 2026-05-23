@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CoverageSession>
+  <Modules>
+    <Module>
+      <Files>
+        <File uid="1" fullPath="tests/CoverageChecker.Tests.EndToEnd/CoverageFiles/OpenCover/file-1.cs" />
+      </Files>
+      <Classes>
+        <Class>
+          <FullName>CoverageChecker.Tests.Partial</FullName>
+          <Methods>
+            <Method>
+              <Name>System.Void CoverageChecker.Tests.Partial::Mixed()</Name>
+              <SequencePoints>
+                <SequencePoint vc="1" sl="1" fileid="1" />
+                <SequencePoint vc="0" sl="2" fileid="1" />
+                <SequencePoint vc="0" sl="3" fileid="1" />
+                <SequencePoint vc="4" sl="4" fileid="1" />
+                <SequencePoint vc="0" sl="5" fileid="1" />
+              </SequencePoints>
+            </Method>
+          </Methods>
+        </Class>
+      </Classes>
+    </Module>
+  </Modules>
+</CoverageSession>
