@@ -143,9 +143,34 @@ if ($IsWindows) {
     $toolExecutable = "$toolExecutable.exe"
 }
 
-& $toolExecutable --format Cobertura --directory $smokeRootFullPath --glob-patterns "coverage.cobertura.xml" --line-threshold 100 --branch-threshold 100
-if ($LASTEXITCODE -ne 0) {
-    throw "coveragechecker command failed with exit code $LASTEXITCODE."
+$previousGitHubActions = $env:GITHUB_ACTIONS
+$previousGitHubStepSummary = $env:GITHUB_STEP_SUMMARY
+$toolExitCode = 0
+try {
+    Remove-Item Env:GITHUB_ACTIONS -ErrorAction SilentlyContinue
+    Remove-Item Env:GITHUB_STEP_SUMMARY -ErrorAction SilentlyContinue
+
+    & $toolExecutable --format Cobertura --directory $smokeRootFullPath --glob-patterns "coverage.cobertura.xml" --line-threshold 100 --branch-threshold 100
+    $toolExitCode = $LASTEXITCODE
+}
+finally {
+    if ($null -eq $previousGitHubActions) {
+        Remove-Item Env:GITHUB_ACTIONS -ErrorAction SilentlyContinue
+    }
+    else {
+        $env:GITHUB_ACTIONS = $previousGitHubActions
+    }
+
+    if ($null -eq $previousGitHubStepSummary) {
+        Remove-Item Env:GITHUB_STEP_SUMMARY -ErrorAction SilentlyContinue
+    }
+    else {
+        $env:GITHUB_STEP_SUMMARY = $previousGitHubStepSummary
+    }
+}
+
+if ($toolExitCode -ne 0) {
+    throw "coveragechecker command failed with exit code $toolExitCode."
 }
 
 Write-Host "Package consumption smoke test passed."
