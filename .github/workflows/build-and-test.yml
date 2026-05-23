@@ -56,7 +56,6 @@ jobs:
             "/o:${{ vars.SONAR_ORGANIZATION }}"
             "/d:sonar.host.url=${{ vars.SONAR_HOST_URL }}"
             "/d:sonar.cs.opencover.reportsPaths=${COVERAGE_DIR}/**/coverage.opencover.xml"
-            "/d:sonar.qualitygate.wait=true"
           )
 
           dotnet sonarscanner "${args[@]}"
