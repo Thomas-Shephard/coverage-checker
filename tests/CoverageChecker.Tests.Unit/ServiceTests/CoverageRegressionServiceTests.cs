@@ -370,7 +370,7 @@ public class CoverageRegressionServiceTests
         {
             Assert.That(result.HasRegressions, Is.True);
             Assert.That(result.RegressedFiles[0].CoverageType, Is.EqualTo(CoverageType.Branch));
-            Assert.That(result.RegressedFiles[0].NewCoverage, Is.EqualTo(0.0));
+            Assert.That(result.RegressedFiles[0].NewCoverage, Is.Zero);
         }
     }
 
