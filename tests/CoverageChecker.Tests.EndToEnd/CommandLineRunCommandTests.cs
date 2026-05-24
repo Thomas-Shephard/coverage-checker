@@ -101,15 +101,16 @@ internal sealed class CommandLineRunCommandTests : CommandLineTestBase
     public async Task RunCommandFailureWithoutContinueOnFailureReturnsCommandExitCodeAndSkipsAnalysis()
     {
         using TestDirectory testDirectory = new();
-        File.WriteAllText(Path.Combine(testDirectory.Path, "Covered.cs"), "public class Covered { }");
-        File.WriteAllText(Path.Combine(testDirectory.Path, "coverage.xml"), CreateCoverageXml(testDirectory.Path, "Covered.cs"));
+        File.Copy(Path.Combine(CoberturaCoverageFiles, "FullLineCoverage.xml"), Path.Combine(testDirectory.Path, "coverage.xml"));
 
         (int exitCode, string stdout) = await RunCli(
             "run",
             "--output", testDirectory.Path,
             "--command", "exit 7",
+            "--format", "Cobertura",
+            "--glob-patterns", "coverage.xml",
             "--line-threshold", "100",
-            "--branch-threshold", "100");
+            "--branch-threshold", "0");
 
         using (Assert.EnterMultipleScope())
         {
@@ -123,22 +124,23 @@ internal sealed class CommandLineRunCommandTests : CommandLineTestBase
     public async Task RunCommandFailureWithContinueOnFailureAttemptsAnalysis()
     {
         using TestDirectory testDirectory = new();
-        File.WriteAllText(Path.Combine(testDirectory.Path, "Covered.cs"), "public class Covered { }");
-        File.WriteAllText(Path.Combine(testDirectory.Path, "coverage.xml"), CreateCoverageXml(testDirectory.Path, "Covered.cs"));
+        File.Copy(Path.Combine(CoberturaCoverageFiles, "FullLineCoverage.xml"), Path.Combine(testDirectory.Path, "coverage.xml"));
 
         (int exitCode, string stdout) = await RunCli(
             "run",
             "--output", testDirectory.Path,
             "--command", "exit 7",
             "--continue-on-failure",
+            "--format", "Cobertura",
+            "--glob-patterns", "coverage.xml",
             "--line-threshold", "100",
-            "--branch-threshold", "100");
+            "--branch-threshold", "0");
 
         using (Assert.EnterMultipleScope())
         {
             Assert.That(exitCode, Is.Zero);
             Assert.That(stdout, Does.Contain("Command failed with exit code 7. Continuing with coverage analysis as requested."));
-            Assert.That(stdout, Does.Contain("Parsed coverage information for 1 files."));
+            Assert.That(stdout, Does.Contain("Parsed coverage information for 3 files."));
             Assert.That(stdout, Does.Contain("The coverage threshold has been met."));
         }
     }
