@@ -18,7 +18,7 @@ internal static class GitHubReportWriter
             string summary = BuildSummary(result, options);
             await File.AppendAllTextAsync(summaryPath, summary);
 
-            if (IsAnyThresholdViolated(result, options))
+            if (ThresholdEvaluator.Evaluate(result, options).Failed)
             {
                 Coverage coverageToAnnotate = (options.Delta && result is { HasDeltaChangedLines: true, DeltaCoverage: not null })
                     ? result.DeltaCoverage
@@ -85,29 +85,6 @@ internal static class GitHubReportWriter
             string status = result.HasChangedCoverageFiles ? "❌" : "✅";
             summary.AppendLine(CultureInfo.InvariantCulture, $"| Delta Coverage | {message} | - | {status} |");
         }
-    }
-
-    private static bool IsAnyThresholdViolated(CoverageResult result, CommandLineOptions options)
-    {
-        if (double.IsNaN(result.LineCoverage) || options.LineThreshold > result.LineCoverage || options.BranchThreshold > result.BranchCoverage)
-        {
-            return true;
-        }
-
-        if (options.Delta && result.HasChangedCoverageFiles && !result.HasDeltaChangedLines)
-        {
-            return true;
-        }
-
-        if (options is { Delta: true, StrictDelta: true } && result.ChangedFilesMissingCoverage.Count > 0)
-        {
-            return true;
-        }
-
-        return options.Delta && result.HasDeltaChangedLines &&
-               (double.IsNaN(result.DeltaLineCoverage) ||
-                options.EffectiveDeltaLineThreshold > result.DeltaLineCoverage ||
-                options.EffectiveDeltaBranchThreshold > result.DeltaBranchCoverage);
     }
 
     private static void EmitAnnotations(Coverage coverage, string rootDirectory)

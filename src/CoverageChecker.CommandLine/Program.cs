@@ -158,26 +158,18 @@ static bool TryAnalyseDeltaCoverage(CoverageAnalyser analyser, Coverage coverage
 
 static int CheckThresholds(CoverageResult result, CommandLineOptions options, bool isGitHubActions, ILogger logger)
 {
-    bool failed = EvaluateOverallThresholds(result, options, logger);
+    ThresholdEvaluation thresholdEvaluation = ThresholdEvaluator.Evaluate(result, options);
 
-    if (options.Delta && result is { HasDeltaChangedLines: true, DeltaCoverage: not null })
-    {
-        failed |= EvaluateDeltaThresholds(result, options, logger);
-    }
-    else if (options.Delta && result.HasChangedCoverageFiles)
-    {
-        failed = true;
-    }
+    LogThresholdViolations(result, options, logger, thresholdEvaluation);
 
-    if (ShouldFailStrictDelta(result, options))
+    if (thresholdEvaluation.HasStrictDeltaMissingFiles)
     {
         logger.LogStrictDeltaFilesMissingFromCoverage(
             result.ChangedFilesMissingCoverage.Count,
             FormatStrictDeltaMissingFiles(result.ChangedFilesMissingCoverage));
-        failed = true;
     }
 
-    if (!failed)
+    if (!thresholdEvaluation.Failed)
     {
         logger.LogThresholdMet();
         return 0;
@@ -192,11 +184,6 @@ static int CheckThresholds(CoverageResult result, CommandLineOptions options, bo
     }
 
     return 1;
-}
-
-static bool ShouldFailStrictDelta(CoverageResult result, CommandLineOptions options)
-{
-    return options is { Delta: true, StrictDelta: true } && result.ChangedFilesMissingCoverage.Count > 0;
 }
 
 static string FormatStrictDeltaMissingFiles(IReadOnlyList<string> files)
@@ -224,53 +211,37 @@ static string FormatDisplayPath(string file, string baseDirectory)
     return relativePath.StartsWith("..", StringComparison.Ordinal) ? normalizedFile : relativePath;
 }
 
-static bool EvaluateOverallThresholds(CoverageResult result, CommandLineOptions options, ILogger logger)
+static void LogThresholdViolations(CoverageResult result, CommandLineOptions options, ILogger logger, ThresholdEvaluation thresholdEvaluation)
 {
-    bool failed = false;
-    if (double.IsNaN(result.LineCoverage))
+    if (thresholdEvaluation.HasNoApplicableLineCoverage)
     {
         logger.LogNoApplicableLineCoverage();
-        failed = true;
     }
-    else if (options.LineThreshold > result.LineCoverage)
+
+    if (thresholdEvaluation.IsLineCoverageBelowThreshold)
     {
         logger.LogLineCoverageBelowThreshold(result.LineCoverage, options.LineThreshold);
-        failed = true;
     }
 
-    if (options.BranchThreshold > result.BranchCoverage)
+    if (thresholdEvaluation.IsBranchCoverageBelowThreshold)
     {
         logger.LogBranchCoverageBelowThreshold(result.BranchCoverage, options.BranchThreshold);
-        failed = true;
     }
 
-    return failed;
-}
-
-static bool EvaluateDeltaThresholds(CoverageResult result, CommandLineOptions options, ILogger logger)
-{
-    bool failed = false;
-    double deltaLineThreshold = options.EffectiveDeltaLineThreshold;
-    double deltaBranchThreshold = options.EffectiveDeltaBranchThreshold;
-
-    if (double.IsNaN(result.DeltaLineCoverage))
+    if (thresholdEvaluation.HasNoApplicableDeltaLineCoverage || thresholdEvaluation.HasDeltaChangedLinesWithoutCoverageResults)
     {
         logger.LogNoApplicableDeltaLineCoverage();
-        failed = true;
-    }
-    else if (deltaLineThreshold > result.DeltaLineCoverage)
-    {
-        logger.LogDeltaLineCoverageBelowThreshold(result.DeltaLineCoverage, deltaLineThreshold);
-        failed = true;
     }
 
-    if (!double.IsNaN(result.DeltaBranchCoverage) && deltaBranchThreshold > result.DeltaBranchCoverage)
+    if (thresholdEvaluation.IsDeltaLineCoverageBelowThreshold)
     {
-        logger.LogDeltaBranchCoverageBelowThreshold(result.DeltaBranchCoverage, deltaBranchThreshold);
-        failed = true;
+        logger.LogDeltaLineCoverageBelowThreshold(result.DeltaLineCoverage, options.EffectiveDeltaLineThreshold);
     }
 
-    return failed;
+    if (thresholdEvaluation.IsDeltaBranchCoverageBelowThreshold)
+    {
+        logger.LogDeltaBranchCoverageBelowThreshold(result.DeltaBranchCoverage, options.EffectiveDeltaBranchThreshold);
+    }
 }
 
 static void ReportGaps(Coverage coverage, ILogger logger)
