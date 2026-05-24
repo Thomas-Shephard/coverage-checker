@@ -231,17 +231,19 @@ internal abstract class CommandLineTestBase
 
     protected static string CreateCoverageXml(string sourceDirectory, params (string FileName, (int Number, int Hits)[] Lines)[] files)
     {
+        string escapedSourceDirectory = System.Security.SecurityElement.Escape(sourceDirectory) ?? string.Empty;
         string classElements = string.Join(
             Environment.NewLine,
             files.Select((file, index) =>
             {
+                string escapedFileName = System.Security.SecurityElement.Escape(file.FileName) ?? string.Empty;
                 string lineElements = string.Join(
                     Environment.NewLine,
                     file.Lines.Select(line => $"                        <line number=\"{line.Number}\" hits=\"{line.Hits}\"/>"));
 
                 return string.Join(
                     Environment.NewLine,
-                    $"                    <class name=\"class-{index + 1}\" filename=\"{file.FileName}\">",
+                    $"                    <class name=\"class-{index + 1}\" filename=\"{escapedFileName}\">",
                     "                      <methods/>",
                     "                      <lines>",
                     lineElements,
@@ -253,7 +255,7 @@ internal abstract class CommandLineTestBase
             <?xml version="1.0" encoding="utf-8"?>
             <coverage>
               <sources>
-                <source>{sourceDirectory}</source>
+                <source>{escapedSourceDirectory}</source>
               </sources>
               <packages>
                 <package name="package-1">
