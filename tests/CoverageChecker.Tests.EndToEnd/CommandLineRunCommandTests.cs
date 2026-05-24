@@ -98,6 +98,54 @@ internal sealed class CommandLineRunCommandTests : CommandLineTestBase
     }
 
     [Test]
+    public async Task RunCommandFailureWithoutContinueOnFailureReturnsCommandExitCodeAndSkipsAnalysis()
+    {
+        using TestDirectory testDirectory = new();
+        File.Copy(Path.Combine(CoberturaCoverageFiles, "FullLineCoverage.xml"), Path.Combine(testDirectory.Path, "coverage.xml"));
+
+        (int exitCode, string stdout) = await RunCli(
+            "run",
+            "--output", testDirectory.Path,
+            "--command", "exit 7",
+            "--format", "Cobertura",
+            "--glob-patterns", "coverage.xml",
+            "--line-threshold", "100",
+            "--branch-threshold", "0");
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exitCode, Is.EqualTo(7));
+            Assert.That(stdout, Does.Contain("Command failed with exit code 7."));
+            Assert.That(stdout, Does.Not.Contain("Parsed coverage information"));
+        }
+    }
+
+    [Test]
+    public async Task RunCommandFailureWithContinueOnFailureAttemptsAnalysis()
+    {
+        using TestDirectory testDirectory = new();
+        File.Copy(Path.Combine(CoberturaCoverageFiles, "FullLineCoverage.xml"), Path.Combine(testDirectory.Path, "coverage.xml"));
+
+        (int exitCode, string stdout) = await RunCli(
+            "run",
+            "--output", testDirectory.Path,
+            "--command", "exit 7",
+            "--continue-on-failure",
+            "--format", "Cobertura",
+            "--glob-patterns", "coverage.xml",
+            "--line-threshold", "100",
+            "--branch-threshold", "0");
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exitCode, Is.Zero);
+            Assert.That(stdout, Does.Contain("Command failed with exit code 7. Continuing with coverage analysis as requested."));
+            Assert.That(stdout, Does.Contain("Parsed coverage information for 3 files."));
+            Assert.That(stdout, Does.Contain("The coverage threshold has been met."));
+        }
+    }
+
+    [Test]
     public async Task RunCommandWithoutOutputPlaceholderStillUsesConfiguredOutputDirectory()
     {
         using TestDirectory testDirectory = new();
