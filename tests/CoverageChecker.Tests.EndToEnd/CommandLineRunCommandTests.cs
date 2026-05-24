@@ -101,6 +101,7 @@ internal sealed class CommandLineRunCommandTests : CommandLineTestBase
     public async Task RunCommandFailureWithoutContinueOnFailureReturnsCommandExitCodeAndSkipsAnalysis()
     {
         using TestDirectory testDirectory = new();
+        File.WriteAllText(Path.Combine(testDirectory.Path, "Covered.cs"), "public class Covered { }");
         File.WriteAllText(Path.Combine(testDirectory.Path, "coverage.xml"), CreateCoverageXml(testDirectory.Path, "Covered.cs"));
 
         (int exitCode, string stdout) = await RunCli(
@@ -122,6 +123,7 @@ internal sealed class CommandLineRunCommandTests : CommandLineTestBase
     public async Task RunCommandFailureWithContinueOnFailureAttemptsAnalysis()
     {
         using TestDirectory testDirectory = new();
+        File.WriteAllText(Path.Combine(testDirectory.Path, "Covered.cs"), "public class Covered { }");
         File.WriteAllText(Path.Combine(testDirectory.Path, "coverage.xml"), CreateCoverageXml(testDirectory.Path, "Covered.cs"));
 
         (int exitCode, string stdout) = await RunCli(
@@ -135,7 +137,7 @@ internal sealed class CommandLineRunCommandTests : CommandLineTestBase
         using (Assert.EnterMultipleScope())
         {
             Assert.That(exitCode, Is.Zero);
-            Assert.That(stdout, Does.Contain("Command failed with exit code 7. Continuing with coverage analysis."));
+            Assert.That(stdout, Does.Contain("Command failed with exit code 7. Continuing with coverage analysis as requested."));
             Assert.That(stdout, Does.Contain("Parsed coverage information for 1 files."));
             Assert.That(stdout, Does.Contain("The coverage threshold has been met."));
         }
