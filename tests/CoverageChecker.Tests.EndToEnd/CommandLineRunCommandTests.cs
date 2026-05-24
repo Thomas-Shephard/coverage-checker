@@ -98,6 +98,50 @@ internal sealed class CommandLineRunCommandTests : CommandLineTestBase
     }
 
     [Test]
+    public async Task RunCommandFailureWithoutContinueOnFailureReturnsCommandExitCodeAndSkipsAnalysis()
+    {
+        using TestDirectory testDirectory = new();
+        File.WriteAllText(Path.Combine(testDirectory.Path, "coverage.xml"), CreateCoverageXml(testDirectory.Path, "Covered.cs"));
+
+        (int exitCode, string stdout) = await RunCli(
+            "run",
+            "--output", testDirectory.Path,
+            "--command", "exit 7",
+            "--line-threshold", "100",
+            "--branch-threshold", "100");
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exitCode, Is.EqualTo(7));
+            Assert.That(stdout, Does.Contain("Command failed with exit code 7."));
+            Assert.That(stdout, Does.Not.Contain("Parsed coverage information"));
+        }
+    }
+
+    [Test]
+    public async Task RunCommandFailureWithContinueOnFailureAttemptsAnalysis()
+    {
+        using TestDirectory testDirectory = new();
+        File.WriteAllText(Path.Combine(testDirectory.Path, "coverage.xml"), CreateCoverageXml(testDirectory.Path, "Covered.cs"));
+
+        (int exitCode, string stdout) = await RunCli(
+            "run",
+            "--output", testDirectory.Path,
+            "--command", "exit 7",
+            "--continue-on-failure",
+            "--line-threshold", "100",
+            "--branch-threshold", "100");
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exitCode, Is.Zero);
+            Assert.That(stdout, Does.Contain("Command failed with exit code 7. Continuing with coverage analysis."));
+            Assert.That(stdout, Does.Contain("Parsed coverage information for 1 files."));
+            Assert.That(stdout, Does.Contain("The coverage threshold has been met."));
+        }
+    }
+
+    [Test]
     public async Task RunCommandWithoutOutputPlaceholderStillUsesConfiguredOutputDirectory()
     {
         using TestDirectory testDirectory = new();
