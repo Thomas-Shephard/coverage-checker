@@ -57,6 +57,45 @@ internal sealed class CommandLineGitHubSummaryTests : CommandLineTestBase
         }
     }
 
+    [Test]
+    public async Task CheckCommandEscapesMarkdownSensitiveFileBreakdownPathsInGitHubSummary()
+    {
+        using TestDirectory testDirectory = new();
+        const string pipePath = "Markdown|Pipe.cs";
+        const string backtickPath = "Markdown`Backtick.cs";
+        File.WriteAllText(
+            Path.Combine(testDirectory.Path, "coverage.xml"),
+            CreateCoverageXml(
+                testDirectory.Path,
+                [
+                    (pipePath, [(1, 0), (2, 1)]),
+                    (backtickPath, [(1, 0), (2, 1)])
+                ]));
+
+        string summaryPath = Path.Combine(testDirectory.Path, "summary.md");
+
+        (int exitCode, string stdout) = await RunCliWithGitHubEnvironment(
+            testDirectory.Path,
+            summaryPath,
+            "check",
+            "--directory", testDirectory.Path,
+            "--glob-patterns", "coverage.xml",
+            "--format", "Cobertura",
+            "--line-threshold", "0");
+
+        string summary = await File.ReadAllTextAsync(summaryPath);
+        string expectedPipePath = Path.Combine(testDirectory.Path, pipePath).Replace('\\', '/').Replace("|", "\\|");
+        string expectedBacktickPath = Path.Combine(testDirectory.Path, backtickPath).Replace('\\', '/').Replace("`", " ");
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exitCode, Is.Zero);
+            Assert.That(stdout, Does.Not.Contain("::error::"));
+            Assert.That(summary, Does.Contain($"| `{expectedPipePath}` | 50.00 % | N/A | Lines: 1 |"));
+            Assert.That(summary, Does.Contain($"| `{expectedBacktickPath}` | 50.00 % | N/A | Lines: 1 |"));
+            Assert.That(summary, Does.Not.Contain("Markdown`Backtick.cs"));
+        }
+    }
 
     [Test]
     public async Task CheckCommandWritesGitHubSummaryWithEffectiveDeltaThresholds()

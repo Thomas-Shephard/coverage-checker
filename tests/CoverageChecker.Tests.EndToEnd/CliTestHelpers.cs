@@ -229,6 +229,45 @@ internal abstract class CommandLineTestBase
             """;
     }
 
+    protected static string CreateCoverageXml(string sourceDirectory, params (string FileName, (int Number, int Hits)[] Lines)[] files)
+    {
+        string escapedSourceDirectory = System.Security.SecurityElement.Escape(sourceDirectory) ?? string.Empty;
+        string classElements = string.Join(
+            Environment.NewLine,
+            files.Select((file, index) =>
+            {
+                string escapedFileName = System.Security.SecurityElement.Escape(file.FileName) ?? string.Empty;
+                string lineElements = string.Join(
+                    Environment.NewLine,
+                    file.Lines.Select(line => $"                        <line number=\"{line.Number}\" hits=\"{line.Hits}\"/>"));
+
+                return string.Join(
+                    Environment.NewLine,
+                    $"                    <class name=\"class-{index + 1}\" filename=\"{escapedFileName}\">",
+                    "                      <methods/>",
+                    "                      <lines>",
+                    lineElements,
+                    "                      </lines>",
+                    "                    </class>");
+            }));
+
+        return $"""
+            <?xml version="1.0" encoding="utf-8"?>
+            <coverage>
+              <sources>
+                <source>{escapedSourceDirectory}</source>
+              </sources>
+              <packages>
+                <package name="package-1">
+                  <classes>
+            {classElements}
+                  </classes>
+                </package>
+              </packages>
+            </coverage>
+            """;
+    }
+
     protected static string CreateChangedClass(string value)
     {
         return string.Join(
