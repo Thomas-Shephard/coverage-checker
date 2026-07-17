@@ -18,4 +18,8 @@
         <PackageReference Include="Microsoft.Extensions.Logging.Console"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <InternalsVisibleTo Include="CoverageChecker.CommandLine.Tests.Unit"/>
+    </ItemGroup>
+
 </Project>

@@ -49,7 +49,8 @@ internal sealed class CommandLineDeltaTests : CommandLineTestBase
         using (Assert.EnterMultipleScope())
         {
             Assert.That(exitCode, Is.Not.Zero);
-            Assert.That(stdout, Does.Contain("Git reported changed lines, but none were found in the coverage data."));
+            Assert.That(stdout, Does.Contain("Git reported 1 changed line(s), but none matched coverage line entries"));
+            Assert.That(stdout, Does.Contain("Check that report paths and line numbers match the checked-out source."));
             Assert.That(stdout, Does.Not.Contain("No changed lines found for delta coverage."));
         }
     }
@@ -271,8 +272,36 @@ internal sealed class CommandLineDeltaTests : CommandLineTestBase
         {
             Assert.That(exitCode, Is.Zero);
             Assert.That(stdout, Does.Contain("No changed lines found in coverage data for delta coverage."));
-            Assert.That(stdout, Does.Not.Contain("Git reported changed lines, but none were found in the coverage data."));
+            Assert.That(stdout, Does.Contain("1 changed file(s) were absent from coverage data: README.md"));
+            Assert.That(stdout, Does.Contain("only fail the check when --strict-delta is enabled"));
         }
     }
 
+    [Test]
+    public async Task NonStrictDeltaDoesNotWarnForMissingFilesOutsideIncludeScope()
+    {
+        using TestDirectory testDirectory = new();
+        string baseCommit = CreateGitRepoWithInitialCommit(testDirectory.Path, ("README.md", "# Project\n"));
+        WriteTextFile(testDirectory.Path, "README.md", "# Project\n\nUpdated.\n");
+        RunGit(testDirectory.Path, "add README.md");
+        RunGit(testDirectory.Path, "commit -m \"Update docs\"");
+        WriteTextFile(testDirectory.Path, "src/Covered.cs", "public class Covered {}\n");
+        File.WriteAllText(Path.Combine(testDirectory.Path, "coverage.xml"), CreateCoverageXml(testDirectory.Path, "src/Covered.cs"));
+
+        (int exitCode, string stdout) = await RunCliInDirectory(
+            testDirectory.Path,
+            "check",
+            "--directory", testDirectory.Path,
+            "--glob-patterns", "coverage.xml",
+            "--format", "Cobertura",
+            "--delta",
+            "--include", "src/**/*.cs",
+            "--delta-base", baseCommit);
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exitCode, Is.Zero);
+            Assert.That(stdout, Does.Not.Contain("changed file(s) were absent from coverage data"));
+        }
+    }
 }

@@ -528,6 +528,31 @@ public class CoverageAnalyserTests
     }
 
     [Test]
+    public void AnalyseCoverageShouldExplainWhenFiltersRemoveAllFiles()
+    {
+        TestLogger logger = new(LogLevel.Warning);
+        TestLoggerFactory loggerFactory = new(logger);
+        Mock<IFileFinder> mockFileFinder = new();
+        Mock<IParserFactory> mockParserFactory = new();
+        Mock<IGitService> mockGitService = new();
+        Mock<ICoverageParser> mockParser = new();
+        string root = Environment.CurrentDirectory;
+
+        mockFileFinder.Setup(f => f.FindFiles(ValidDirectory)).Returns(["coverage.xml"]);
+        mockGitService.Setup(g => g.GetRepoRoot()).Returns(root);
+        mockParserFactory.Setup(f => f.CreateParser(ValidCoverageFormat, It.IsAny<Coverage>(), It.IsAny<Microsoft.Extensions.Logging.ILoggerFactory>()))
+            .Callback<CoverageFormat, Coverage, Microsoft.Extensions.Logging.ILoggerFactory>((_, coverage, _) => coverage.GetOrCreateFile(Path.Combine(root, "tests", "File.cs")))
+            .Returns(mockParser.Object);
+
+        CoverageAnalyserOptions options = CreateDefaultOptions() with { Include = ["src/**"] };
+        CoverageAnalyser sut = new(options, mockFileFinder.Object, mockParserFactory.Object, mockGitService.Object, Mock.Of<IDeltaCoverageService>(), Mock.Of<ICoverageRegressionService>(), loggerFactory);
+
+        sut.AnalyseCoverage();
+
+        Assert.That(logger.Messages, Has.Some.Contains("File filters removed all 1 parsed file(s)").And.Contains("Include: [src/**]"));
+    }
+
+    [Test]
     public void AnalyseCoverageShouldThrowExceptionWhenNoFilesFound()
     {
         Mock<IFileFinder> mockFileFinder = new();
@@ -606,6 +631,7 @@ public class CoverageAnalyserTests
     private sealed class TestLogger(LogLevel enabledLevel) : ILogger
     {
         public List<LogLevel> LogLevels { get; } = [];
+        public List<string> Messages { get; } = [];
 
         public IDisposable? BeginScope<TState>(TState state)
             where TState : notnull => null;
@@ -620,6 +646,7 @@ public class CoverageAnalyserTests
             Func<TState, Exception?, string> formatter)
         {
             LogLevels.Add(logLevel);
+            Messages.Add(formatter(state, exception));
         }
     }
 
