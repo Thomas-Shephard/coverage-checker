@@ -170,6 +170,74 @@ internal sealed class CommandLineGitHubSummaryTests : CommandLineTestBase
     }
 
     [Test]
+    public async Task CheckCommandWritesGitHubSummaryForNonStrictMissingFile()
+    {
+        using TestDirectory testDirectory = new();
+        string baseCommit = CreateGitRepoWithInitialCommit(testDirectory.Path, ("README.md", "# Project\n"));
+        WriteTextFile(testDirectory.Path, "README.md", "# Project\n\nUpdated.\n");
+        RunGit(testDirectory.Path, "add README.md");
+        RunGit(testDirectory.Path, "commit -m \"Update docs\"");
+        WriteTextFile(testDirectory.Path, "Covered.cs", "public class Covered {}\n");
+        File.WriteAllText(Path.Combine(testDirectory.Path, "coverage.xml"), CreateCoverageXml(testDirectory.Path, "Covered.cs"));
+        string summaryPath = Path.Combine(testDirectory.Path, "summary.md");
+
+        (int exitCode, _) = await RunCliWithGitHubEnvironment(
+            testDirectory.Path,
+            summaryPath,
+            "check",
+            "--directory", testDirectory.Path,
+            "--glob-patterns", "coverage.xml",
+            "--format", "Cobertura",
+            "--delta",
+            "--delta-base", baseCommit);
+
+        string summary = await File.ReadAllTextAsync(summaryPath);
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exitCode, Is.Zero);
+            Assert.That(summary, Does.Contain("N/A (Changed files absent from coverage data; ignored without strict delta) | - | ✅"));
+            Assert.That(summary, Does.Not.Contain("N/A (No changed lines)"));
+        }
+    }
+
+    [Test]
+    public async Task CheckCommandShowsStrictMissingFileFailureWhenOtherDeltaLinesMatch()
+    {
+        using TestDirectory testDirectory = new();
+        string baseCommit = CreateGitRepoWithInitialCommit(
+            testDirectory.Path,
+            ("Covered.cs", "public class Covered\n{\n}\n"),
+            ("Missing.cs", "public class Missing\n{\n}\n"));
+        WriteTextFile(testDirectory.Path, "Covered.cs", "public class Covered\n{\n    public void Method() {}\n}\n");
+        WriteTextFile(testDirectory.Path, "Missing.cs", "public class Missing\n{\n    public void Method() {}\n}\n");
+        RunGit(testDirectory.Path, "add .");
+        RunGit(testDirectory.Path, "commit -m \"Update source\"");
+        File.WriteAllText(Path.Combine(testDirectory.Path, "coverage.xml"), CreateCoverageXml(testDirectory.Path, "Covered.cs", (1, 1), (2, 1), (3, 1), (4, 1)));
+        string summaryPath = Path.Combine(testDirectory.Path, "summary.md");
+
+        (int exitCode, _) = await RunCliWithGitHubEnvironment(
+            testDirectory.Path,
+            summaryPath,
+            "check",
+            "--directory", testDirectory.Path,
+            "--glob-patterns", "coverage.xml",
+            "--format", "Cobertura",
+            "--delta",
+            "--strict-delta",
+            "--delta-base", baseCommit);
+
+        string summary = await File.ReadAllTextAsync(summaryPath);
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exitCode, Is.Not.Zero);
+            Assert.That(summary, Does.Contain("N/A (Changed files missing from coverage data) | - | ❌"));
+            Assert.That(summary, Does.Not.Contain("| **Delta Line Coverage**"));
+        }
+    }
+
+    [Test]
     public async Task CheckCommandWritesGitHubSummaryForNoApplicableLineCoverage()
     {
         using TestDirectory testDirectory = new();

@@ -122,7 +122,7 @@ static bool TryHandleDeltaCoverage(CoverageAnalyser coverageAnalyser, Coverage c
             HasChangedCoverageFiles = true,
             ChangedFilesMissingCoverage = deltaResult.ChangedFilesMissingCoverage
         };
-        logger.LogDeltaLinesMissingFromCoverage();
+        logger.LogDeltaLinesMissingFromCoverage(deltaResult.GitChangedLineCount);
     }
     else if (deltaResult.HasGitChangedLines)
     {
@@ -138,6 +138,13 @@ static bool TryHandleDeltaCoverage(CoverageAnalyser coverageAnalyser, Coverage c
         logger.LogNoDeltaLinesFound();
     }
 
+    if (!options.StrictDelta && deltaResult.ChangedFilesMissingCoverage.Count > 0)
+    {
+        logger.LogDeltaFilesMissingFromCoverage(
+            deltaResult.ChangedFilesMissingCoverage.Count,
+            FormatMissingFiles(deltaResult.ChangedFilesMissingCoverage));
+    }
+
     return true;
 }
 
@@ -146,7 +153,7 @@ static bool TryAnalyseDeltaCoverage(CoverageAnalyser analyser, Coverage coverage
     deltaResult = null;
     try
     {
-        deltaResult = analyser.AnalyseDeltaCoverage(options.DeltaBase, coverage, options.StrictDelta);
+        deltaResult = analyser.AnalyseDeltaCoverage(options.DeltaBase, coverage, scopeMissingFiles: true);
         return true;
     }
     catch (Exception ex) when (ex is GitException or ArgumentException)
@@ -166,7 +173,7 @@ static int CheckThresholds(CoverageResult result, CommandLineOptions options, bo
     {
         logger.LogStrictDeltaFilesMissingFromCoverage(
             result.ChangedFilesMissingCoverage.Count,
-            FormatStrictDeltaMissingFiles(result.ChangedFilesMissingCoverage));
+            FormatMissingFiles(result.ChangedFilesMissingCoverage));
     }
 
     if (!thresholdEvaluation.Failed)
@@ -186,7 +193,7 @@ static int CheckThresholds(CoverageResult result, CommandLineOptions options, bo
     return 1;
 }
 
-static string FormatStrictDeltaMissingFiles(IReadOnlyList<string> files)
+static string FormatMissingFiles(IReadOnlyList<string> files)
 {
     string baseDirectory = PathUtils.GetNormalizedFullPath(Environment.CurrentDirectory);
 

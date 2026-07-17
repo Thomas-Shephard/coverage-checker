@@ -68,14 +68,18 @@ internal static class GitHubReportWriter
 
     private static void AppendDeltaSummary(StringBuilder summary, CoverageResult result, CommandLineOptions options)
     {
-        if (result.HasDeltaChangedLines)
+        if (options.StrictDelta && result.ChangedFilesMissingCoverage.Count > 0)
+        {
+            summary.AppendLine("| **Delta Coverage** | N/A (Changed files missing from coverage data) | - | ❌ |");
+        }
+        else if (result.HasDeltaChangedLines)
         {
             summary.AppendLine(FormatMetricRow("Delta Line Coverage", result.DeltaLineCoverage, options.EffectiveDeltaLineThreshold, failOnNaN: true));
             summary.AppendLine(FormatMetricRow("Delta Branch Coverage", result.DeltaBranchCoverage, options.EffectiveDeltaBranchThreshold));
         }
-        else if (options.StrictDelta && result.ChangedFilesMissingCoverage.Count > 0)
+        else if (result.ChangedFilesMissingCoverage.Count > 0)
         {
-            summary.AppendLine("| **Delta Coverage** | N/A (Changed files missing from coverage data) | - | ❌ |");
+            summary.AppendLine("| Delta Coverage | N/A (Changed files absent from coverage data; ignored without strict delta) | - | ✅ |");
         }
         else
         {

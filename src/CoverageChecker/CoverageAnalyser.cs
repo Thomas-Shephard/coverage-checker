@@ -116,10 +116,20 @@ public partial class CoverageAnalyser
         string root = GetFileFilterRoot(rootDirectory);
         _fileFilterRoot = root;
         Matcher matcher = CreateMatcher();
+        int parsedFileCount = coverage.Files.Count;
 
         foreach (FileCoverage file in GetFilesToRemove(coverage, root, matcher))
         {
             coverage.RemoveFile(file);
+        }
+
+        if (parsedFileCount > 0 && coverage.Files.Count == 0)
+        {
+            LogAllFilesFilteredOut(
+                parsedFileCount,
+                root,
+                string.Join(", ", _options.Include ?? ["**/*"]),
+                string.Join(", ", _options.Exclude ?? []));
         }
     }
 
@@ -260,4 +270,7 @@ public partial class CoverageAnalyser
 
     [LoggerMessage(Level = LogLevel.Debug, Message = "Failed to get git repository root. Assuming not in a git repository.")]
     private partial void LogGitRepoRootFailure(Exception ex);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "File filters removed all {Count} parsed file(s). Paths are matched relative to '{Root}'. Include: [{Include}]. Exclude: [{Exclude}].")]
+    private partial void LogAllFilesFilteredOut(int count, string root, string include, string exclude);
 }

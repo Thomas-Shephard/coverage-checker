@@ -58,8 +58,11 @@ internal static partial class ProgramLogs
     [LoggerMessage(Level = LogLevel.Information, Message = "No changed lines found in coverage data for delta coverage.")]
     public static partial void LogNoDeltaLinesFound(this ILogger logger);
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Git reported changed lines, but none were found in the coverage data.")]
-    public static partial void LogDeltaLinesMissingFromCoverage(this ILogger logger);
+    [LoggerMessage(Level = LogLevel.Error, Message = "Git reported {GitChangedLineCount} changed line(s), but none matched coverage line entries in files present in the report. Check that report paths and line numbers match the checked-out source.")]
+    public static partial void LogDeltaLinesMissingFromCoverage(this ILogger logger, int gitChangedLineCount);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "{Count} changed file(s) were absent from coverage data: {Files}. These files only fail the check when --strict-delta is enabled.")]
+    public static partial void LogDeltaFilesMissingFromCoverage(this ILogger logger, int count, string files);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Strict delta coverage failed because {Count} changed file(s) were absent from coverage data: {Files}")]
     public static partial void LogStrictDeltaFilesMissingFromCoverage(this ILogger logger, int count, string files);
